@@ -4,27 +4,22 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Login
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.VerifiedUser
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -45,31 +40,31 @@ fun ProfileOverviewCard(viewModel: RetraViewModel) {
     val profile by viewModel.socialProfile.collectAsStateWithLifecycle()
     val achievements by viewModel.achievements.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val feedback = LocalRetraFeedback.current
     val unlocked = achievements.count { it.progress.unlockedAtEpochMillis != null }
 
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.68f)),
-        shape = RoundedCornerShape(28.dp)
-    ) {
-        Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    GlassPanel(cornerRadius = 28.dp, contentPadding = PaddingValues(20.dp)) {
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 Box(
-                    Modifier.size(64.dp).background(MaterialTheme.colorScheme.primary, CircleShape),
+                    Modifier
+                        .size(62.dp)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.18f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         account?.initials ?: profile.displayName.take(1).uppercase(),
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
-                Column(Modifier.weight(1f)) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(account?.displayName ?: profile.displayName, style = MaterialTheme.typography.titleLarge)
-                    Text(account?.email ?: "Offline Retra profile", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(account?.email ?: "Offline profile", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(profile.friendCode, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.labelLarge)
                 }
-                RetraLogoTile(size = 52.dp)
+                RetraLogoTile(size = 46.dp)
             }
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -79,39 +74,49 @@ fun ProfileOverviewCard(viewModel: RetraViewModel) {
 
             if (account == null) {
                 FilledTonalButton(
-                    onClick = { viewModel.signInWithGoogle(context) },
+                    onClick = {
+                        feedback(FeedbackCue.CONFIRM)
+                        viewModel.signInWithGoogle(context)
+                    },
                     enabled = viewModel.googleAuthConfigured && operation == AuthOperation.IDLE,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(Icons.Default.Login, null)
                     Spacer(Modifier.size(8.dp))
-                    Text(if (operation == AuthOperation.SIGNING_IN) "Connecting…" else "Connect Google account")
+                    Text(if (operation == AuthOperation.SIGNING_IN) "Connecting…" else "Continue with Google")
                 }
-                if (!viewModel.googleAuthConfigured) {
-                    Text(
-                        "This build needs RETRA_GOOGLE_WEB_CLIENT_ID before Google sign-in can open.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
+                Text(
+                    if (viewModel.googleAuthConfigured) {
+                        "Google is optional. Local games, saves, cheats, and settings never require an account."
+                    } else {
+                        "Google sign-in is unavailable until RETRA_GOOGLE_WEB_CLIENT_ID is configured for this build."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (viewModel.googleAuthConfigured) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error
+                )
             } else {
-                Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.76f)) {
+                GlassPanel(cornerRadius = 20.dp, contentPadding = PaddingValues(14.dp)) {
                     Row(
-                        Modifier.fillMaxWidth().padding(14.dp),
+                        Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             if (account!!.trustLevel == AccountTrustLevel.SERVER_VERIFIED) Icons.Default.VerifiedUser else Icons.Default.CloudOff,
-                            null
+                            null,
+                            tint = MaterialTheme.colorScheme.primary
                         )
-                        Column(Modifier.weight(1f)) {
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text(
-                                if (account!!.trustLevel == AccountTrustLevel.SERVER_VERIFIED) "Cloud identity verified" else "Device identity connected",
+                                if (account!!.trustLevel == AccountTrustLevel.SERVER_VERIFIED) "Cloud identity verified" else "Google identity connected",
                                 style = MaterialTheme.typography.titleSmall
                             )
                             Text(
-                                if (account!!.trustLevel == AccountTrustLevel.SERVER_VERIFIED) "This account may use verified cloud services." else "A production backend must still validate the Google ID token and nonce.",
+                                if (account!!.trustLevel == AccountTrustLevel.SERVER_VERIFIED) {
+                                    "Verified cloud services may be enabled for this profile."
+                                } else {
+                                    "Cloud privileges remain disabled until a backend validates the ID token and nonce."
+                                },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -119,7 +124,10 @@ fun ProfileOverviewCard(viewModel: RetraViewModel) {
                     }
                 }
                 OutlinedButton(
-                    onClick = { viewModel.signOutGoogle(context) },
+                    onClick = {
+                        feedback(FeedbackCue.TAP)
+                        viewModel.signOutGoogle(context)
+                    },
                     enabled = operation == AuthOperation.IDLE,
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -134,9 +142,9 @@ fun ProfileOverviewCard(viewModel: RetraViewModel) {
 
 @Composable
 private fun ProfileStat(label: String, value: String, modifier: Modifier = Modifier) {
-    Surface(modifier = modifier, shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f)) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+    GlassPanel(modifier = modifier, cornerRadius = 20.dp, contentPadding = PaddingValues(14.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }

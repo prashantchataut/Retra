@@ -1,54 +1,39 @@
 # Test Results
 
 Date: 2026-07-19 UTC  
-Version: 0.5.0
+Version: 0.6.0
 
 ## Platform-neutral suite
 
-Command:
+`./tools/core-verification/run.sh`
 
-```bash
-./tools/core-verification/run.sh
-```
-
-Result: **36 passed, 0 failed**.
-
-Coverage includes GBA parsing, SHA-256, duplicate detection, catalog security, strict JSON, network policy, atomic storage, save envelopes, path traversal, bounded rewind, patching, cheat parsing/conflicts, achievements, social privacy, multiplayer compatibility/framing, and loopback transport.
+**36 passed, 0 failed.** Coverage includes GBA parsing, hashing, catalogs, secure network policy, save envelopes, atomic storage, rewind, patches, Retra Codes, achievements, social privacy, multiplayer compatibility, packet framing, and LAN loopback.
 
 ## Native reference engine
 
-Command:
+`./tools/native-verification/run.sh`
 
-```bash
-./tools/native-verification/run.sh
-```
-
-Result: **PASS** for load, frame generation, input, state serialize/restore, reset, and corruption rejection.
+**PASS:** load, frame, input, serialize/restore, reset, and corruption rejection.
 
 ## libretro frontend
 
-Command:
+`./tools/libretro-verification/run.sh`
 
-```bash
-./tools/libretro-verification/run.sh
-```
+**PASS:** ABI load, in-memory ROM, video, input, audio, state, battery memory, and cheat activation against the host mock core.
 
-Result: **PASS** for ABI loading, ROM load, video, input, audio, save states, battery memory, and cheat activation against the host mock core.
+## Project/static suite
 
-## Static project suite
+`SKIP_EXECUTION_SUITES=1 ./tools/project-verification/run.sh`
 
-Command:
+**PASS:** module graph, TOML, Android XML, icon references, public Compose weight API guard, glass components, feedback engine, notification channels/permissions, six sound assets, Room migrations, DI, catalogs, patches, cheats, achievements, social, multiplayer, skill snapshots, shell syntax, JNI and libretro C++20 `-Werror` compilation.
 
-```bash
-SKIP_EXECUTION_SUITES=1 ./tools/project-verification/run.sh
-```
+## Sound assets
 
-Result: **PASS** for module graph, Kotlin source expectations, Android XML, icons, Room migrations, DI, branding, onboarding/account files, secure catalogs, patches, cheats, achievements, social, multiplayer, rewind, screenshots, artwork, mGBA scripts, shell syntax, and C++20 `-Werror` compilation.
+All six cues were parsed as 16-bit mono PCM WAV at 22,050 Hz and are shorter than 0.5 seconds.
 
 ## Not run
 
-- Gradle/AGP compile
-- Android unit/instrumentation/UI tests
-- lint and R8
-- APK install/launch
-- physical-device, emulator, accessibility, performance, thermal, battery, and network testing
+- Android Gradle/AGP Kotlin compilation after the repair;
+- Android unit, instrumentation, screenshot, and Compose UI tests;
+- lint, R8, release signing, APK install/launch;
+- physical haptic, notification, audio, accessibility, thermal, and performance testing.

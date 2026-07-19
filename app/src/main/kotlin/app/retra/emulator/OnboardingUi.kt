@@ -1,6 +1,5 @@
 package app.retra.emulator
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -77,10 +75,7 @@ fun OnboardingScreen(
 ) {
     var step by rememberSaveable { mutableIntStateOf(0) }
     BoxWithConstraints(
-        Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .background(retraAuroraBrush())
+        Modifier.fillMaxSize()
     ) {
         val wide = maxWidth >= 760.dp
         if (wide) {
@@ -143,17 +138,17 @@ fun OnboardingScreen(
 
 @Composable
 private fun OnboardingBrandPanel(modifier: Modifier = Modifier) {
-    Card(
+    GlassPanel(
         modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f)),
-        shape = RoundedCornerShape(36.dp)
+        cornerRadius = 36.dp,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(36.dp)
     ) {
         Column(
-            Modifier.fillMaxSize().padding(36.dp),
+            Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            RetraLogo(size = 188.dp)
+            RetraLogo(size = 170.dp)
             Spacer(Modifier.height(24.dp))
             Text("Retra", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
             Text(
@@ -197,18 +192,21 @@ private fun OnboardingCard(
     onCompleteOffline: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    val feedback = LocalRetraFeedback.current
+    GlassPanel(
         modifier = modifier,
-        shape = RoundedCornerShape(32.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f))
+        settings = settings,
+        cornerRadius = 32.dp,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(24.dp)
     ) {
-        Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             LinearProgressIndicator(
                 progress = { (step + 1) / ONBOARDING_STEPS.toFloat() },
                 modifier = Modifier.fillMaxWidth()
             )
-            AnimatedContent(
+            RetraAnimatedContent(
                 targetState = step,
+                reduceMotion = settings.reduceMotion,
                 label = "onboarding-step",
                 modifier = Modifier.weight(1f).fillMaxWidth()
             ) { current ->
@@ -225,12 +223,24 @@ private fun OnboardingCard(
                     }
                 }
             }
-            HorizontalDivider()
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.16f))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (step > 0) {
-                    OutlinedButton(onClick = onBack, modifier = Modifier.weight(1f)) { Text("Back") }
+                    OutlinedButton(
+                        onClick = {
+                            feedback(FeedbackCue.TAP)
+                            onBack()
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) { Text("Back") }
                 }
-                Button(onClick = onNext, modifier = Modifier.weight(1f)) {
+                Button(
+                    onClick = {
+                        feedback(if (step == ONBOARDING_STEPS - 1) FeedbackCue.CONFIRM else FeedbackCue.TAP)
+                        onNext()
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
                     Text(if (step == ONBOARDING_STEPS - 1) "Enter Retra" else "Continue")
                 }
             }
@@ -343,11 +353,12 @@ private fun FeatureLine(icon: ImageVector, title: String, body: String) {
 
 @Composable
 private fun <T> ChoiceRow(values: List<T>, selected: T, label: (T) -> String, onSelected: (T) -> Unit) {
+    val feedback = LocalRetraFeedback.current
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         values.forEach { value ->
             FilterChip(
                 selected = value == selected,
-                onClick = { onSelected(value) },
+                onClick = { feedback(FeedbackCue.TAP); onSelected(value) },
                 label = { Text(label(value)) },
                 modifier = Modifier.weight(1f)
             )
@@ -357,13 +368,14 @@ private fun <T> ChoiceRow(values: List<T>, selected: T, label: (T) -> String, on
 
 @Composable
 private fun <T> ChoiceGrid(values: List<T>, selected: T, label: (T) -> String, onSelected: (T) -> Unit) {
+    val feedback = LocalRetraFeedback.current
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         values.chunked(2).forEach { row ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 row.forEach { value ->
                     FilterChip(
                         selected = value == selected,
-                        onClick = { onSelected(value) },
+                        onClick = { feedback(FeedbackCue.TAP); onSelected(value) },
                         label = { Text(label(value)) },
                         modifier = Modifier.weight(1f)
                     )

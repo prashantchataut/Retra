@@ -50,7 +50,7 @@ class NativeReferenceEmulationCore(context: Context) : EmulationCore, AutoClosea
     override val descriptor = CoreDescriptor(
         id = "retra-reference-native",
         displayName = "Retra Native Reference Pipeline",
-        version = "0.5.0",
+        version = "0.6.0",
         tier = CoreTier.DIAGNOSTIC_PIPELINE,
         supportsBatterySaves = false,
         supportsSaveStates = true,

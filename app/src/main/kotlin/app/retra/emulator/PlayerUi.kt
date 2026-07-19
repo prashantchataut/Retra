@@ -2,6 +2,7 @@ package app.retra.emulator
 
 import android.app.Activity
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -16,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
@@ -35,8 +35,6 @@ import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -47,6 +45,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -55,11 +54,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -104,6 +102,7 @@ fun PlayerScreen(
     }
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = {
@@ -121,6 +120,7 @@ fun PlayerScreen(
                         Icon(Icons.Default.Menu, contentDescription = "Open session menu")
                     }
                 },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 actions = {
                     if (gamePacks.isNotEmpty()) {
                         IconButton(onClick = { cheatsOpen = true }) {
@@ -138,21 +138,22 @@ fun PlayerScreen(
         }
     ) { padding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.background).padding(12.dp),
+            modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 12.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             if (viewModel.coreDescriptor.tier == CoreTier.DIAGNOSTIC_PIPELINE) {
-                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)) {
+                GlassPanel(cornerRadius = 20.dp) {
                     Row(
                         Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Icon(Icons.Default.Gamepad, null)
+                        Icon(Icons.Default.Gamepad, null, tint = MaterialTheme.colorScheme.primary)
                         Text(
-                            "This verifies native frames, controls, lifecycle, state files, and synthetic PCM audio. It does not execute GBA instructions.",
-                            style = MaterialTheme.typography.bodySmall
+                            "Diagnostic core active. Video, controls, lifecycle, state files, and audio are being verified without executing GBA instructions.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -273,9 +274,11 @@ private fun FrameSurface(
 ) {
     Surface(
         modifier = modifier.aspectRatio(3f / 2f),
-        shape = RoundedCornerShape(18.dp),
-        tonalElevation = 5.dp,
-        shadowElevation = 8.dp
+        shape = RoundedCornerShape(24.dp),
+        color = Color.Black,
+        tonalElevation = 0.dp,
+        shadowElevation = 3.dp,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.22f))
     ) {
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerHighest), contentAlignment = Alignment.Center) {
             AndroidView(
@@ -389,12 +392,12 @@ private fun PressControl(
     hapticsEnabled: Boolean,
     onPressed: (EmulatorButton, Boolean) -> Unit
 ) {
-    val haptics = LocalHapticFeedback.current
+    val feedback = LocalRetraFeedback.current
     Surface(
         modifier = modifier.pointerInput(button) {
             detectTapGestures(
                 onPress = {
-                    if (hapticsEnabled) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    if (hapticsEnabled) feedback(FeedbackCue.GAME_BUTTON)
                     onPressed(button, true)
                     try {
                         tryAwaitRelease()
@@ -405,8 +408,10 @@ private fun PressControl(
             )
         },
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = controlOpacity.coerceIn(0.25f, 1f)),
-        shadowElevation = 3.dp
+        color = MaterialTheme.colorScheme.surface.copy(alpha = (0.38f + controlOpacity.coerceIn(0.25f, 1f) * 0.38f)),
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.14f)),
+        shadowElevation = 1.dp
     ) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(label, fontWeight = FontWeight.Bold)

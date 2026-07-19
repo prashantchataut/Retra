@@ -38,6 +38,8 @@ for xml in root.glob("**/src/main/**/*.xml"):
 
 for kotlin in root.glob("**/src/main/**/*.kt"):
     source = kotlin.read_text()
+    if "import androidx.compose.foundation.layout.weight" in source:
+        raise SystemExit(f"Internal Compose weight import remains in {kotlin.relative_to(root)}")
     used_icons = set(re.findall(r"Icons\.Default\.([A-Za-z0-9_]+)", source))
     imported_icons = set(re.findall(r"import androidx\.compose\.material\.icons\.filled\.([A-Za-z0-9_]+)", source))
     unresolved = used_icons - imported_icons
@@ -108,9 +110,30 @@ for token in ["MultiplayerLanHost", "MAX_FRAME_BYTES", "InternetRelayTransport",
         raise SystemExit(f"Multiplayer transport capability missing: {token}")
 
 community_ui = (root / "app/src/main/kotlin/app/retra/emulator/CommunityUi.kt").read_text()
-for token in ["OnlineCatalogImportCard", "CommunityHub", "Retra achievements", "Multiplayer link architecture"]:
+for token in ["OnlineCatalogImportCard", "CommunityHub", "Achievements", "Multiplayer"]:
     if token not in community_ui:
         raise SystemExit(f"Community UI capability missing: {token}")
+
+
+manifest = (root / "app/src/main/AndroidManifest.xml").read_text()
+for permission in ["android.permission.VIBRATE", "android.permission.POST_NOTIFICATIONS"]:
+    if permission not in manifest:
+        raise SystemExit(f"Feedback/notification permission missing: {permission}")
+for sound in ["retra_tap.wav", "retra_confirm.wav", "retra_save.wav", "retra_achievement.wav", "retra_error.wav", "retra_invite.wav"]:
+    if not (root / "app/src/main/res/raw" / sound).is_file():
+        raise SystemExit(f"Original Retra sound cue missing: {sound}")
+feedback = (root / "app/src/main/kotlin/app/retra/emulator/RetraFeedback.kt").read_text()
+for token in ["SoundPool", "VibratorManager", "FeedbackCue", "EFFECT_TICK"]:
+    if token not in feedback:
+        raise SystemExit(f"Semantic feedback capability missing: {token}")
+notifications = (root / "app/src/main/kotlin/app/retra/emulator/RetraNotifications.kt").read_text()
+for token in ["NotificationChannel", "CHANNEL_ACHIEVEMENTS", "CHANNEL_DOWNLOADS", "CHANNEL_MULTIPLAYER", "POST_NOTIFICATIONS"]:
+    if token not in notifications:
+        raise SystemExit(f"Notification capability missing: {token}")
+glass = (root / "app/src/main/kotlin/app/retra/emulator/GlassUi.kt").read_text()
+for token in ["RetraBackdrop", "GlassPanel", "LocalRetraSettings", "RetraAnimatedContent", "reduceTransparency", "BlurredEdgeTreatment.Unbounded"]:
+    if token not in glass:
+        raise SystemExit(f"Premium glass design capability missing: {token}")
 
 skills = [
     "ui-ux-pro-max", "design-guide", "paperclip-create-agent", "design-taste-frontend", "mobile-android-design"
@@ -185,7 +208,7 @@ for token in ["retro_load_game", "retro_serialize", "retro_get_memory_data", "RT
     if token not in mgba_adapter:
         raise SystemExit(f"mGBA/libretro adapter capability missing: {token}")
 
-print("PASS project structure, TOML, XML, icons, migrations, patching, codes, catalogs, achievements, social, multiplayer, requested skill snapshots, DI, and emulation checks")
+print("PASS project structure, TOML, XML, public Compose APIs, glass UI, feedback, notifications, migrations, patching, codes, catalogs, achievements, social, multiplayer, requested skill snapshots, DI, and emulation checks")
 PY
 
 for script in "$ROOT"/scripts/*.sh "$ROOT"/tools/*/run.sh; do

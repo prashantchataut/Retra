@@ -84,6 +84,8 @@ class RetraViewModel @Inject constructor(
     private val googleAuthRepository: GoogleAuthRepository,
     private val screenshotRepository: ScreenshotRepository,
     private val audioOutput: AudioOutput,
+    private val feedbackEngine: RetraFeedbackEngine,
+    private val notifications: RetraNotificationCoordinator,
     private val emulationCore: EmulationCore
 ) : ViewModel() {
     val games: StateFlow<List<GameRecord>> = gameRepository.observeGames()
@@ -136,6 +138,7 @@ class RetraViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.settings.collect { value ->
                 audioOutput.configure(value.audioEnabled, value.masterVolume)
+                feedbackEngine.configure(value.hapticsEnabled, value.soundEffectsEnabled, value.soundEffectsVolume)
             }
         }
         viewModelScope.launch {
@@ -182,6 +185,7 @@ class RetraViewModel @Inject constructor(
     fun importFile(uri: Uri) = viewModelScope.launch {
         when (val result = gameRepository.importFile(uri)) {
             is ImportOutcome.Imported -> {
+                feedbackEngine.emit(FeedbackCue.CONFIRM)
                 _messages.emit("Imported ${result.game.title}.")
                 recordAchievement(AchievementEventType.GAME_IMPORTED, uniqueKey = result.game.sha256, game = result.game)
             }
@@ -208,6 +212,10 @@ class RetraViewModel @Inject constructor(
             is CatalogDownloadOutcome.Imported -> {
                 selectedGame.value = outcome.game
                 recordAchievement(AchievementEventType.GAME_IMPORTED, uniqueKey = outcome.game.sha256, game = outcome.game)
+                feedbackEngine.emit(FeedbackCue.CONFIRM)
+                if (settings.value.notificationsEnabled && settings.value.notifyDownloads) {
+                    notifications.notifyDownloadComplete(outcome.game.title)
+                }
                 _messages.emit("Downloaded, verified, and imported ${outcome.game.title}.")
             }
             is CatalogDownloadOutcome.Duplicate -> _messages.emit("${outcome.title} is already in the library.")
@@ -342,9 +350,13 @@ class RetraViewModel @Inject constructor(
             .onSuccess {
                 vaultRepository.refresh()
                 recordAchievement(AchievementEventType.SAVE_CREATED, game = activeGame.value)
+                feedbackEngine.emit(FeedbackCue.SAVE)
                 _messages.tryEmit("Saved state to slot $slotNumber.")
             }
-            .onFailure { _messages.tryEmit(it.message ?: "Save state failed.") }
+            .onFailure {
+                feedbackEngine.emit(FeedbackCue.ERROR)
+                _messages.tryEmit(it.message ?: "Save state failed.")
+            }
     }
 
     fun loadState(slotNumber: Int = 0) {
@@ -400,6 +412,9 @@ class RetraViewModel @Inject constructor(
         if (settings.value.autoSuspendOnBackground) {
             emulationCore.suspendSession()
             vaultRepository.refresh()
+            if (settings.value.notificationsEnabled) {
+                activeGame.value?.title?.let(notificationCoordinator::notifySuspendSaved)
+            }
         } else if (pausedByHost) {
             emulationCore.pause()
             emulationCore.saveBattery()
@@ -566,7 +581,13 @@ class RetraViewModel @Inject constructor(
 
     fun hostMultiplayer(mode: MultiplayerMode) {
         multiplayerRepository.host(activeGame.value, coreDescriptor, mode)
-            .onSuccess { code -> _messages.tryEmit("Hosted ${mode.name.lowercase().replace('_', ' ')} room $code.") }
+            .onSuccess { code ->
+                feedbackEngine.emit(FeedbackCue.INVITE)
+                if (settings.value.notificationsEnabled && settings.value.notifyMultiplayer) {
+                    notifications.notifyMultiplayerInvite(code)
+                }
+                _messages.tryEmit("Hosted ${mode.name.lowercase().replace('_', ' ')} room $code.")
+            }
             .onFailure { _messages.tryEmit(it.message ?: "Multiplayer hosting failed.") }
     }
 
@@ -634,6 +655,15 @@ class RetraViewModel @Inject constructor(
     fun setFontScale(value: Float) = viewModelScope.launch { settingsRepository.setFontScale(value) }
     fun setTouchControlOpacity(value: Float) = viewModelScope.launch { settingsRepository.setTouchControlOpacity(value) }
     fun setHapticsEnabled(value: Boolean) = viewModelScope.launch { settingsRepository.setHapticsEnabled(value) }
+    fun setSoundEffectsEnabled(value: Boolean) = viewModelScope.launch { settingsRepository.setSoundEffectsEnabled(value) }
+    fun setSoundEffectsVolume(value: Float) = viewModelScope.launch { settingsRepository.setSoundEffectsVolume(value) }
+    fun setNotificationsEnabled(value: Boolean) = viewModelScope.launch { settingsRepository.setNotificationsEnabled(value) }
+    fun setNotifyAchievements(value: Boolean) = viewModelScope.launch { settingsRepository.setNotifyAchievements(value) }
+    fun setNotifyDownloads(value: Boolean) = viewModelScope.launch { settingsRepository.setNotifyDownloads(value) }
+    fun setNotifyMultiplayer(value: Boolean) = viewModelScope.launch { settingsRepository.setNotifyMultiplayer(value) }
+    fun emitFeedback(cue: FeedbackCue) = feedbackEngine.emit(cue)
+    fun notificationsAllowed(): Boolean = notifications.canNotify()
+    fun notificationSettingsIntent(channelId: String? = null) = notifications.settingsIntent(channelId)
     fun setHighContrast(value: Boolean) = viewModelScope.launch { settingsRepository.setHighContrast(value) }
     fun setShowOnlineRecommendations(value: Boolean) = viewModelScope.launch { settingsRepository.setShowOnlineRecommendations(value) }
     fun setShowStatistics(value: Boolean) = viewModelScope.launch { settingsRepository.setShowStatistics(value) }
@@ -681,7 +711,17 @@ class RetraViewModel @Inject constructor(
                 )
             )
             updated.firstOrNull { it.definition.id !in previouslyUnlocked && it.progress.unlockedAtEpochMillis != null }
-                ?.let { _messages.emit("Achievement unlocked: ${it.definition.title} · ${it.definition.points} points") }
+                ?.let { unlocked ->
+                    feedbackEngine.emit(FeedbackCue.ACHIEVEMENT)
+                    if (settings.value.notificationsEnabled && settings.value.notifyAchievements) {
+                        notifications.notifyAchievement(
+                            unlocked.definition.title,
+                            unlocked.definition.description,
+                            unlocked.definition.points
+                        )
+                    }
+                    _messages.emit("Achievement unlocked: ${unlocked.definition.title} · ${unlocked.definition.points} points")
+                }
         }
     }
 

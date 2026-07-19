@@ -47,3 +47,7 @@ The previously included Android skills were also retained and applied:
 - `design-taste-frontend`: deliberate variance, limited gradients/glass, fewer repetitive cards, strong hero anchors, and readable dense technical surfaces.
 - `mobile-android-design`: Credential Manager, bottom navigation/rail adaptation, contextual controller capture, noisy-audio handling, Android launcher/splash resources, and platform storage behavior.
 - `paperclip-create-agent`: reviewed only; still not invoked because no Paperclip organization, manager, budget, or durable agent objective was provided.
+## 0.6 application
+
+The retained UI/UX, Android, adaptive-layout, Compose-style, edge-to-edge, and testing guidance was applied to the Prism Glass redesign. The release emphasizes a single visual grammar, adaptive navigation, crisp content over decorative blur, focused settings categories, accessible fallbacks, consistent 48dp-oriented interaction targets, and explicit host/static verification.
+

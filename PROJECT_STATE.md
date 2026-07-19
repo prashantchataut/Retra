@@ -2,31 +2,32 @@
 
 ## Current milestone
 
-**Retra 0.5.0 — branded onboarding, optional Google identity, gameplay-ready player UX, rewind/screenshots, and customizable library.**
+**Retra 0.6.0 — Prism Glass UI, semantic feedback, notification channels, and repair for the reported Compose compiler failure.**
 
-## Stable architecture
+## Stable foundations
 
-- `:core:model` — durable product models.
-- `:core:rom` — GBA headers, hashing, catalog rules.
-- `:core:emulation` — state machine, envelopes, atomic storage, input, bounded rewind.
-- `:core:patching`, `:core:cheats`, `:core:achievements`, `:core:social`, `:core:multiplayer` — platform-neutral systems.
-- `:emulation:api` — UI-independent emulator contract.
-- `:emulation:native` — reference JNI pipeline and mGBA/libretro adapter.
-- `:app` — Compose UI, Room/DataStore, Credential Manager, downloads, artwork, audio, screenshots, lifecycle, and DI.
+- modular Kotlin/Compose architecture;
+- platform-neutral ROM, catalog, patch, cheat, achievement, social, multiplayer, save, and rewind systems;
+- JNI reference engine and mGBA/libretro frontend;
+- Room/DataStore persistence and explicit migrations;
+- adaptive onboarding, library, player, Vault, Discover, community, profile, and categorized settings;
+- offline-first Google-optional identity;
+- original brand and original short sound assets.
 
 ## Exact continuation point
 
-1. Install a reviewed Android SDK/NDK/Gradle environment.
-2. Run `scripts/fetch-mgba-archive.sh` and `scripts/build-mgba-libretro-android.sh`.
-3. Build `:app:assembleDebug`; resolve real compiler/API differences before adding features.
-4. Run the device matrix in `NEXT_ACTIONS.md` and update this file with evidence.
-5. Configure a Google OAuth Web client ID and implement a server token-verification/session endpoint before enabling cloud privileges.
+1. Rerun `gradle --no-daemon --stacktrace :app:assembleRelease` in the same CI that produced the supplied failure.
+2. Resolve only newly surfaced compiler/lint errors; do not weaken the public Compose API guard.
+3. Build reviewed mGBA ABI libraries and install the APK on arm64 hardware.
+4. Run the device matrix in `NEXT_ACTIONS.md`.
+5. Capture screenshots and perform a visual QA pass before further feature growth.
 
 ## Non-negotiable invariants
 
-- save integrity outranks visual features;
-- ROMs and native code are never downloaded silently;
-- legal remote content is explicit, licensed, bounded, and hash verified;
-- Google ID tokens are ephemeral and never treated as server verification;
-- diagnostic rendering is never called GBA emulation;
-- working local play remains available without an account or network.
+- save integrity outranks visual effects;
+- glass never reduces text contrast or hides focus state;
+- reduced transparency and reduced motion are respected;
+- frequent haptics stay subtle and can be disabled;
+- notification permission is requested in context and notifications remain optional;
+- local gameplay never requires Google or network access;
+- no commercial ROMs or unreviewed native binaries are bundled.

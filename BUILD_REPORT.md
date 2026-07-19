@@ -1,30 +1,37 @@
-# Retra 0.5.0 Build Report
+# Retra 0.6.0 Build Report
 
-## Implemented in source
+## Reported failure
 
-- Adaptive onboarding, Retra Prism brand assets, launcher icon, themed icon, and splash configuration.
-- Google Credential Manager button flow with cryptographic nonce, official Google ID credential parsing, local identity persistence, disconnect, and strict no-token-persistence behavior.
-- Real mGBA/libretro Android frontend boundary with ROM hash re-verification, frames, audio, input, battery memory, states, cheats, speed control, and runtime metrics.
-- Integer pixel scaling, optional smoothing, immersive player, audio volume/mute/focus, pause on noisy output, touch/gamepad/keyboard input, controller disconnect safety, and tester.
-- Five save-state slots, bounded rewind, screenshots, suspend/resume, fast-forward, slow motion, and session controls.
-- Searchable/customizable library with favorites, editable title/notes, and bounded app-private cover art.
-- Existing legal catalogs, secure downloads, patches, Retra Codes, achievements, social profile, and multiplayer architecture retained.
+The supplied CI run reached `:app:compileReleaseKotlin` after successfully compiling the platform-neutral modules and all three native ABIs. Kotlin then rejected six explicit imports of Compose's internal `weight` implementation.
 
-## Android build command
+## Repair
 
-Expected after installing the toolchain and staging mGBA:
+Removed `import androidx.compose.foundation.layout.weight` from:
 
-```bash
-./gradlew :app:assembleDebug
-```
+- `CommunityUi.kt`
+- `ControllerUi.kt`
+- `OnboardingUi.kt`
+- `PlayerUi.kt`
+- `ProfileUi.kt`
+- `RetraUi.kt`
 
-## Android build result
+`Modifier.weight(...)` remains only inside `Row` or `Column` receiver scopes, which resolves to the public Compose API. `tools/project-verification/run.sh` now fails if the forbidden import returns.
 
-**Not executed.** The sandbox has Java and CMake but no Gradle command, Android SDK manager, Android SDK platforms, Android NDK, ADB, emulator, or cached Android dependencies. Outbound DNS is unavailable to normal build processes.
+## Implemented in 0.6.0
 
-No APK or AAB is included and no device behavior is claimed as verified.
+- Prism Glass component system and quieter dark/light palettes.
+- Minimal adaptive top bar, bottom bar, navigation rail, content panels, pills, profile, community, catalog, Vault, library, onboarding, and player-status surfaces.
+- Categorized settings UX instead of one giant preference form.
+- Reduced-transparency fallback and decorative-only blur.
+- Semantic haptic engine with API-aware predefined effects and brief API 26-28 fallbacks.
+- Original Retra tap, confirmation, save, achievement, error, and invite sound cues.
+- Asynchronous `SoundPool` load tracking so unloaded cues are never played.
+- Separate preferences for haptics, UI sounds, UI-sound volume, and notification categories.
+- Android notification channels and Android 13+ contextual permission flow.
+- Achievement, verified-download, multiplayer-room, and suspend-protection notifications.
+- Existing ROM playback, saves, rewind, screenshots, catalogs, patches, cheats, identity, and multiplayer foundations retained.
 
-## Host verification
+## Verification executed here
 
 ```text
 core-verification:       36 passed, 0 failed
@@ -34,16 +41,26 @@ project-verification:    PASS
 shell syntax:            PASS
 JNI C++20 -Werror:       PASS
 libretro C++20 -Werror:  PASS
+sound asset inspection:  PASS (6 PCM mono cues, all under 0.5 seconds)
 ```
 
-## Device validation still required
+## Full Android build
 
-- all target ABIs and Android 8–current;
-- common save types, RTC, process death, low storage, damaged states, and ROM revisions;
-- audio latency/focus/Bluetooth routes and headphone disconnect;
-- SurfaceView scaling, foldables, tablets, cutouts, refresh rates, and thermal pressure;
-- touch ergonomics, controller models, D-pad navigation, reconnect, keyboard mappings, and accessibility services;
-- Credential Manager on devices with and without eligible Google accounts;
-- screenshot MediaStore behavior and custom artwork memory use;
-- rewind performance and state determinism;
-- release signing, R8, Baseline Profiles, macrobenchmarks, and Play pre-launch testing.
+**Not executable in this sandbox.** There is no Gradle runtime, Android SDK/NDK installation, ADB, emulator, or dependency cache. The exact CI compilation error has been removed and guarded, but `:app:assembleRelease` must be rerun in the user's Android build environment before calling the release buildable.
+
+Expected command:
+
+```bash
+gradle --no-daemon --stacktrace :app:assembleRelease
+```
+
+## Required device validation
+
+- API 26 through current Android versions;
+- dark, light, OLED, dynamic color, high contrast, reduced motion, and reduced transparency;
+- phone, tablet, foldable, gaming handheld, display cutout, and large font sizes;
+- haptic quality and fallback behavior across actuator classes;
+- notification permission denial/allow/dismiss, channels, sounds, vibration, and system-disabled notifications;
+- SoundPool routing, Bluetooth, Do Not Disturb, mute, and audio focus;
+- TalkBack, switch access, controller-only navigation, and minimum touch targets;
+- gameplay audio/video/input/save behavior with reviewed mGBA ABI libraries.

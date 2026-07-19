@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.6.0 — 2026-07-19
+
+### Build repair
+- Removed invalid explicit imports of Compose's internal `weight` property from six UI files.
+- Added a static regression gate that rejects the forbidden import.
+
+### Prism Glass redesign
+- Unified onboarding, navigation, home, library, Discover, Vault, profile, community, settings, and player status under one restrained glass component system.
+- Reduced saturation, simplified typography, limited blur to decorative atmosphere, and added opaque reduced-transparency fallbacks.
+- Reorganized settings into focused categories rather than one long preference page.
+
+### Feedback and notifications
+- Added six original short Retra interface sounds with asynchronous SoundPool load tracking.
+- Added semantic haptics for taps, game controls, confirmation, saves, achievements, invitations, and errors.
+- Added separate user settings for haptics, interface sounds, interface volume, and notification categories.
+- Added Android notification channels, contextual Android 13+ permission UX, and notifications for achievements, verified downloads, multiplayer rooms, and protected suspend states.
+
+### Verification
+- Retained 36/36 platform-neutral checks, native and libretro host passes, and expanded project verification for public Compose API usage, glass UI, permissions, channels, feedback, and sound assets.
+
 ## 0.5.0 — 2026-07-19
 
 ### Brand and onboarding

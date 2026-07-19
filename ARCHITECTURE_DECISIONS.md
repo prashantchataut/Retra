@@ -39,3 +39,20 @@ Game controls consume controller/keyboard events only during gameplay or the exp
 ## AD-010 — Visual design is token-driven
 
 The original Retra Prism mark and Material 3 tokens drive onboarding, navigation, library, player, and profile. Glass and gradients are reserved for narrative anchors; dense technical screens remain opaque and readable.
+
+## AD-011 — Glass is a surface system, not a blur effect
+
+Content remains crisp. Blur is limited to decorative background atmosphere, while glass panels use translucent color, subtle edge highlights, and opaque accessibility fallbacks.
+
+## AD-012 — Feedback is semantic and user-controlled
+
+A central engine maps event meaning to short audio and haptic cues. Game buttons avoid interface sounds, frequent actions use light haptics, and users can independently disable haptics, interface sounds, or notifications.
+
+## AD-013 — Notification permission is contextual
+
+Channels are created at app startup, but Android 13+ runtime permission is requested only from the notification settings surface. No emulator capability depends on permission approval.
+
+## AD-014 — Settings disclose one category at a time
+
+The profile remains visible, while preferences are partitioned into focused categories to reduce scanning cost and accidental changes.
+

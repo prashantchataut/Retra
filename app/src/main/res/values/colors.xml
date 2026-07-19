@@ -2,4 +2,5 @@
 <resources>
     <color name="retra_launcher_background">#07080D</color>
     <color name="retra_splash_background">#07080D</color>
+    <color name="retra_indigo">#7567FF</color>
 </resources>

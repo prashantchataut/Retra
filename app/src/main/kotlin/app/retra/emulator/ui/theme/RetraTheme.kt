@@ -23,8 +23,8 @@ import app.retra.core.model.AccentPalette
 import app.retra.core.model.AppSettings
 import app.retra.core.model.ThemeMode
 
-val VoidBlack = Color(0xFF07080D)
-val MidnightNavy = Color(0xFF101424)
+val VoidBlack = Color(0xFF080A0F)
+val MidnightNavy = Color(0xFF11141B)
 val RetraIndigo = Color(0xFF7567FF)
 val PrismCyan = Color(0xFF45D9FF)
 val MemoryViolet = Color(0xFFB38BFF)
@@ -50,7 +50,7 @@ private val DarkBase = darkColorScheme(
     onBackground = CloudWhite,
     surface = MidnightNavy,
     onSurface = CloudWhite,
-    surfaceVariant = Color(0xFF1A2034),
+    surfaceVariant = Color(0xFF191E28),
     onSurfaceVariant = Color(0xFFC7C9D7),
     outline = Color(0xFF8F93A6),
     error = ErrorCoral
@@ -66,11 +66,11 @@ private val LightBase = lightColorScheme(
     secondaryContainer = Color(0xFFB1ECFF),
     onSecondaryContainer = Color(0xFF001F27),
     tertiary = Color(0xFF6B4E9B),
-    background = SoftCloud,
+    background = Color(0xFFF3F4F7),
     onBackground = DeepInk,
     surface = Color.White,
     onSurface = DeepInk,
-    surfaceVariant = Color(0xFFE7E7EF),
+    surfaceVariant = Color(0xFFE8EAF0),
     onSurfaceVariant = MutedInk,
     outline = Color(0xFF747585),
     error = Color(0xFFBA1A1A)
@@ -97,8 +97,8 @@ private fun themedColors(base: ColorScheme, accent: Palette, highContrast: Boole
 )
 
 private fun typography(scale: Float) = Typography(
-    displaySmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = (36 * scale).sp, lineHeight = (42 * scale).sp),
-    headlineLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = (30 * scale).sp, lineHeight = (36 * scale).sp),
+    displaySmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = (34 * scale).sp, lineHeight = (42 * scale).sp),
+    headlineLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = (29 * scale).sp, lineHeight = (36 * scale).sp),
     headlineMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = (24 * scale).sp, lineHeight = (30 * scale).sp),
     titleLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = (20 * scale).sp, lineHeight = (26 * scale).sp),
     titleMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = (16 * scale).sp, lineHeight = (22 * scale).sp),
@@ -137,11 +137,9 @@ fun RetraTheme(settings: AppSettings, content: @Composable () -> Unit) {
         else -> LightBase
     }
     val accented = themedColors(base, palette(settings.accentPalette, dark), settings.highContrast)
-    val surfaceAlpha = if (settings.reduceTransparency) 1f else (0.72f + settings.glassIntensity.coerceIn(0f, 1f) * 0.28f)
-    val colors = accented.copy(
-        surfaceVariant = accented.surfaceVariant.copy(alpha = surfaceAlpha),
-        primaryContainer = accented.primaryContainer.copy(alpha = surfaceAlpha)
-    )
+    // Keep the Material color scheme opaque for text fields, dialogs, and accessibility.
+    // Liquid-glass translucency is applied deliberately by GlassPanel instead of globally.
+    val colors = accented
     MaterialTheme(
         colorScheme = colors,
         typography = typography(settings.fontScale.coerceIn(0.85f, 1.3f)),

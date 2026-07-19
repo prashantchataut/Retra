@@ -5,7 +5,6 @@ import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,8 +25,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -51,6 +50,8 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Palette
@@ -93,6 +94,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -151,6 +153,17 @@ private enum class Destination(val label: String, val icon: ImageVector) {
     SETTINGS("You", Icons.Default.AccountCircle)
 }
 
+private enum class SettingsCategory(val label: String, val icon: ImageVector) {
+    APPEARANCE("Appearance", Icons.Default.Palette),
+    LIBRARY("Library", Icons.Default.LibraryBooks),
+    PLAYER("Player", Icons.Default.Memory),
+    FEEDBACK("Feel", Icons.Default.VolumeUp),
+    NOTIFICATIONS("Alerts", Icons.Default.Notifications),
+    CONTROLS("Controls", Icons.Default.Gamepad),
+    BOOST("Boost", Icons.Default.Speed),
+    PRIVACY("Privacy", Icons.Default.Security)
+}
+
 @Composable
 fun RetraRoot(viewModel: RetraViewModel = viewModel()) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -166,12 +179,17 @@ fun RetraRoot(viewModel: RetraViewModel = viewModel()) {
     val context = LocalContext.current
 
     RetraTheme(settings) {
-        val snackbarHostState = remember { SnackbarHostState() }
-        LaunchedEffect(viewModel) {
-            viewModel.messages.collect { snackbarHostState.showSnackbar(it) }
-        }
+        CompositionLocalProvider(
+            LocalRetraFeedback provides viewModel::emitFeedback,
+            LocalRetraSettings provides settings
+        ) {
+            RetraBackdrop(settings) {
+                val snackbarHostState = remember { SnackbarHostState() }
+                LaunchedEffect(viewModel) {
+                    viewModel.messages.collect { snackbarHostState.showSnackbar(it) }
+                }
 
-        if (!settings.onboardingComplete) {
+                if (!settings.onboardingComplete) {
             OnboardingScreen(
                 settings = settings,
                 account = account,
@@ -246,6 +264,8 @@ fun RetraRoot(viewModel: RetraViewModel = viewModel()) {
                 onDeleteCatalog = viewModel::deleteCatalog,
                 onDeleteVaultRecord = viewModel::deleteVaultRecord
             )
+                }
+            }
         }
     }
 }
@@ -291,20 +311,14 @@ private fun MainShell(
         val useRail = maxWidth >= 720.dp
         if (useRail) {
             Row(Modifier.fillMaxSize()) {
-                NavigationRail(
-                    modifier = Modifier.fillMaxHeight(),
-                    header = { LogoMarkSmall() }
-                ) {
-                    Spacer(Modifier.height(12.dp))
-                    Destination.entries.forEach { item ->
-                        NavigationRailItem(
-                            selected = destination == item,
-                            onClick = { destinationName = item.name },
-                            icon = { Icon(item.icon, contentDescription = item.label) },
-                            label = { Text(item.label) }
-                        )
+                PremiumNavigationRail(
+                    settings = settings,
+                    selected = destination,
+                    onSelected = { item ->
+                        viewModel.emitFeedback(FeedbackCue.TAP)
+                        destinationName = item.name
                     }
-                }
+                )
                 MainScaffold(
                     viewModel = viewModel,
                     modifier = Modifier.weight(1f),
@@ -408,35 +422,31 @@ private fun MainScaffold(
 ) {
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        RetraLogoTile(size = 34.dp)
-                        Text(destination.label)
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.Transparent),
+            PremiumTopBar(
+                settings = settings,
+                title = destination.label,
+                coreAvailable = coreAvailable
             )
         },
         bottomBar = {
             if (showBottomNavigation) {
-                NavigationBar {
-                    Destination.entries.forEach { item ->
-                        NavigationBarItem(
-                            selected = destination == item,
-                            onClick = { onDestination(item) },
-                            icon = { Icon(item.icon, contentDescription = item.label) },
-                            label = { Text(item.label) }
-                        )
+                PremiumBottomBar(
+                    settings = settings,
+                    selected = destination,
+                    onSelected = { item ->
+                        viewModel.emitFeedback(FeedbackCue.TAP)
+                        onDestination(item)
                     }
-                }
+                )
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
-        AnimatedContent(
+        RetraAnimatedContent(
             targetState = destination,
+            reduceMotion = settings.reduceMotion,
             label = "destination",
             modifier = Modifier.fillMaxSize().consumeWindowInsets(innerPadding).padding(innerPadding)
         ) { target ->
@@ -472,6 +482,146 @@ private fun MainScaffold(
 }
 
 @Composable
+private fun PremiumTopBar(
+    settings: AppSettings,
+    title: String,
+    coreAvailable: Boolean
+) {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+    ) {
+        GlassPanel(
+            modifier = Modifier.fillMaxWidth(),
+            settings = settings,
+            cornerRadius = 22.dp,
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
+        ) {
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                RetraLogoTile(size = 34.dp)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                    Text(title, style = MaterialTheme.typography.titleLarge)
+                    Text(
+                        if (coreAvailable) "Ready to play" else "Library mode",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Surface(
+                    shape = CircleShape,
+                    color = if (coreAvailable) SaveMint.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+                ) {
+                    Box(Modifier.padding(8.dp), contentAlignment = Alignment.Center) {
+                        Box(
+                            Modifier
+                                .size(8.dp)
+                                .background(if (coreAvailable) SaveMint else MaterialTheme.colorScheme.outline, CircleShape)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PremiumBottomBar(
+    settings: AppSettings,
+    selected: Destination,
+    onSelected: (Destination) -> Unit
+) {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        GlassPanel(
+            modifier = Modifier.fillMaxWidth(),
+            settings = settings,
+            cornerRadius = 28.dp,
+            contentPadding = PaddingValues(6.dp)
+        ) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                Destination.entries.forEach { item ->
+                    GlassPill(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(18.dp))
+                            .clickable { onSelected(item) },
+                        selected = selected == item
+                    ) {
+                        Column(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 5.dp, vertical = 8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Icon(item.icon, contentDescription = item.label, modifier = Modifier.size(21.dp))
+                            if (selected == item) {
+                                Text(item.label, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PremiumNavigationRail(
+    settings: AppSettings,
+    selected: Destination,
+    onSelected: (Destination) -> Unit
+) {
+    Box(
+        Modifier
+            .fillMaxHeight()
+            .padding(start = 12.dp, top = 12.dp, bottom = 12.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        GlassPanel(
+            settings = settings,
+            cornerRadius = 30.dp,
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 12.dp)
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                RetraLogoTile(size = 46.dp)
+                Spacer(Modifier.height(8.dp))
+                Destination.entries.forEach { item ->
+                    GlassPill(
+                        modifier = Modifier
+                            .width(78.dp)
+                            .clip(RoundedCornerShape(18.dp))
+                            .clickable { onSelected(item) },
+                        selected = selected == item
+                    ) {
+                        Column(
+                            Modifier.fillMaxWidth().padding(vertical = 10.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(item.icon, contentDescription = item.label, modifier = Modifier.size(22.dp))
+                            Text(item.label, style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun LogoMarkSmall() {
     RetraLogoTile(modifier = Modifier.padding(10.dp), size = 52.dp)
 }
@@ -491,7 +641,7 @@ private fun HomeScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            HeroCard(game = games.firstOrNull(), coreAvailable = coreAvailable, coreStatus = coreStatus, onImportFile, onGameSelected)
+            HeroCard(game = games.firstOrNull(), settings = settings, coreAvailable = coreAvailable, coreStatus = coreStatus, onImportFile, onGameSelected)
         }
         if (settings.showStatistics) {
             item { SectionTitle("Your Retra") }
@@ -525,41 +675,64 @@ private fun HomeScreen(
 @Composable
 private fun HeroCard(
     game: GameRecord?,
+    settings: AppSettings,
     coreAvailable: Boolean,
     coreStatus: String,
     onImportFile: () -> Unit,
     onGameSelected: (GameRecord) -> Unit
 ) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.76f)),
-        modifier = Modifier.fillMaxWidth()
+    val feedback = LocalRetraFeedback.current
+    GlassPanel(
+        modifier = Modifier.fillMaxWidth(),
+        settings = settings,
+        cornerRadius = 30.dp,
+        contentPadding = PaddingValues(22.dp)
     ) {
-        Box(
-            modifier = Modifier.fillMaxWidth().background(
-                Brush.linearGradient(listOf(RetraIndigo.copy(alpha = 0.52f), PrismCyan.copy(alpha = 0.14f)))
-            ).padding(24.dp)
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    StatusPill(
-                        text = if (game == null) "YOUR LIBRARY" else "CONTINUE PLAYING",
-                        icon = Icons.Default.AutoAwesome
-                    )
-                    RetraLogoTile(size = 58.dp)
-                }
-                Text(game?.title ?: "Bring your memories home", style = MaterialTheme.typography.headlineLarge)
+        Column(verticalArrangement = Arrangement.spacedBy(18.dp), modifier = Modifier.fillMaxWidth()) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                StatusPill(
+                    text = if (game == null) "PRIVATE LIBRARY" else "CONTINUE PLAYING",
+                    icon = if (game == null) Icons.Default.Security else Icons.Default.PlayArrow
+                )
+                RetraLogoTile(size = 50.dp)
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 Text(
-                    if (game == null) "Import a personal GBA backup and Retra will verify its header, calculate its SHA-256, and add it to your private library."
-                    else if (coreAvailable) "Your most recent title is ready for verified native-pipeline testing."
-                    else coreStatus,
+                    game?.title ?: "Your games, beautifully organized.",
+                    style = MaterialTheme.typography.headlineLarge
+                )
+                Text(
+                    if (game == null) {
+                        "Import a personal GBA backup. Retra validates the cartridge header, hashes the file, and keeps the collection local by default."
+                    } else if (coreAvailable) {
+                        "Resume with the same display, audio, controls, cheats, and save profile."
+                    } else {
+                        coreStatus
+                    },
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Button(onClick = { if (game == null) onImportFile() else onGameSelected(game) }) {
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Button(
+                    onClick = {
+                        feedback(FeedbackCue.CONFIRM)
+                        if (game == null) onImportFile() else onGameSelected(game)
+                    }
+                ) {
                     Icon(if (game == null) Icons.Default.Add else Icons.Default.PlayArrow, null)
                     Spacer(Modifier.width(8.dp))
-                    Text(if (game == null) "Import a game" else "Open details")
+                    Text(if (game == null) "Import game" else "Continue")
                 }
+                Text(
+                    if (coreAvailable) "Core ready" else "Library available",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (coreAvailable) SaveMint else MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
@@ -567,11 +740,11 @@ private fun HeroCard(
 
 @Composable
 private fun StatCard(label: String, value: String, icon: ImageVector, modifier: Modifier = Modifier) {
-    Card(modifier) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Icon(icon, null, tint = MaterialTheme.colorScheme.secondary)
+    GlassPanel(modifier = modifier, cornerRadius = 22.dp, contentPadding = PaddingValues(14.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(icon, null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(20.dp))
             Text(value, style = MaterialTheme.typography.titleLarge)
-            Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -657,58 +830,96 @@ private fun LibraryScreen(
 
 @Composable
 private fun GameGridCard(game: GameRecord, onGameSelected: (GameRecord) -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable { onGameSelected(game) },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f))
+    val feedback = LocalRetraFeedback.current
+    GlassPanel(
+        modifier = Modifier.fillMaxWidth().clickable {
+            feedback(FeedbackCue.TAP)
+            onGameSelected(game)
+        },
+        cornerRadius = 24.dp
     ) {
-        Box(modifier = Modifier.fillMaxWidth().aspectRatio(0.86f)) {
-            GameArtwork(game = game, modifier = Modifier.fillMaxSize())
-            if (game.favorite) {
-                Icon(
-                    Icons.Default.Star,
-                    contentDescription = "Favorite",
-                    tint = AdventureGold,
-                    modifier = Modifier.align(Alignment.TopEnd).padding(10.dp)
+        Column {
+            Box(modifier = Modifier.fillMaxWidth().aspectRatio(0.86f)) {
+                GameArtwork(game = game, modifier = Modifier.fillMaxSize())
+                if (game.favorite) {
+                    Surface(
+                        modifier = Modifier.align(Alignment.TopEnd).padding(9.dp),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.74f)
+                    ) {
+                        Icon(
+                            Icons.Default.Star,
+                            contentDescription = "Favorite",
+                            tint = AdventureGold,
+                            modifier = Modifier.padding(7.dp).size(18.dp)
+                        )
+                    }
+                }
+            }
+            Column(Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(game.title, maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    game.gameCode.ifBlank { "Unknown code" },
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontFamily = FontFamily.Monospace
                 )
             }
-        }
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(game.title, maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleMedium)
-            Text(game.gameCode.ifBlank { "Unknown code" }, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = FontFamily.Monospace)
         }
     }
 }
 
 @Composable
 private fun GameListRow(game: GameRecord, onGameSelected: (GameRecord) -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth().clickable { onGameSelected(game) }) {
-        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+    val feedback = LocalRetraFeedback.current
+    GlassPanel(
+        modifier = Modifier.fillMaxWidth().clickable {
+            feedback(FeedbackCue.TAP)
+            onGameSelected(game)
+        },
+        cornerRadius = 22.dp,
+        contentPadding = PaddingValues(13.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             GameArtwork(
                 game = game,
-                modifier = Modifier.size(56.dp).clip(RoundedCornerShape(14.dp))
+                modifier = Modifier.size(58.dp).clip(RoundedCornerShape(16.dp))
             )
-            Column(Modifier.weight(1f)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(game.title, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("${formatBytes(game.sizeBytes)} • ${game.gameCode.ifBlank { "No game code" }}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    "${formatBytes(game.sizeBytes)} · ${game.gameCode.ifBlank { "No game code" }}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-            if (game.favorite) Icon(Icons.Default.Star, contentDescription = "Favorite", tint = AdventureGold)
-            Icon(Icons.Default.PlayArrow, contentDescription = "Open ${game.title}")
+            if (game.favorite) Icon(Icons.Default.Star, contentDescription = "Favorite", tint = AdventureGold, modifier = Modifier.size(19.dp))
+            Icon(Icons.Default.PlayArrow, contentDescription = "Open ${game.title}", tint = MaterialTheme.colorScheme.primary)
         }
     }
 }
 
 @Composable
 private fun EmptyLibraryCard(onImportFile: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    val feedback = LocalRetraFeedback.current
+    GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 28.dp, contentPadding = PaddingValues(26.dp)) {
         Column(
-            Modifier.fillMaxWidth().padding(24.dp),
+            Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Icon(Icons.Default.Storage, null, modifier = Modifier.size(42.dp), tint = MaterialTheme.colorScheme.secondary)
-            Text("Your library is waiting", style = MaterialTheme.typography.titleLarge)
-            Text("Choose a personal .gba backup. Retra never bundles commercial ROMs.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Button(onClick = onImportFile) { Text("Choose a file") }
+            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)) {
+                Icon(Icons.Default.Storage, null, modifier = Modifier.padding(14.dp).size(30.dp), tint = MaterialTheme.colorScheme.primary)
+            }
+            Text("Start your private library", style = MaterialTheme.typography.titleLarge)
+            Text(
+                "Choose one of your own .gba backups. Retra never bundles commercial games.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Button(onClick = {
+                feedback(FeedbackCue.CONFIRM)
+                onImportFile()
+            }) { Text("Choose a game") }
         }
     }
 }
@@ -725,6 +936,7 @@ private fun DiscoverScreen(
     showOnlineRecommendations: Boolean,
     viewModel: RetraViewModel
 ) {
+    val feedback = LocalRetraFeedback.current
     val visibleCatalogs = if (showOnlineRecommendations) catalogs else catalogs.filterNot(StoredCatalog::builtIn)
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -734,19 +946,31 @@ private fun DiscoverScreen(
         item { OnlineCatalogImportCard(viewModel) }
         item { CommunityHub(viewModel) }
         item {
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 24.dp, contentPadding = PaddingValues(17.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Security, null)
-                        Column(Modifier.weight(1f)) {
+                        Surface(shape = CircleShape, color = SaveMint.copy(alpha = 0.13f)) {
+                            Icon(Icons.Default.Security, null, tint = SaveMint, modifier = Modifier.padding(9.dp).size(20.dp))
+                        }
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                             Text("Reviewed legal catalogs", style = MaterialTheme.typography.titleMedium)
-                            Text("Only public-domain, open-source, licensed homebrew, demos, and synthetic test content are accepted.")
+                            Text(
+                                "Public-domain, open-source, licensed homebrew, demos, and synthetic test content only.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
-                    OutlinedButton(onClick = onImportCatalog, modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton(
+                        onClick = {
+                            feedback(FeedbackCue.CONFIRM)
+                            onImportCatalog()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Icon(Icons.Default.Add, null)
                         Spacer(Modifier.width(8.dp))
-                        Text("Import restricted JSON catalog")
+                        Text("Import catalog")
                     }
                 }
             }
@@ -754,28 +978,28 @@ private fun DiscoverScreen(
         item {
             val valid = validation is CatalogValidationResult.Valid
             StatusPill(
-                text = if (valid) "${visibleCatalogs.size} visible validated catalog source${if (visibleCatalogs.size == 1) "" else "s"}" else "Built-in manifest validation failed",
+                text = if (valid) "${visibleCatalogs.size} validated catalog source${if (visibleCatalogs.size == 1) "" else "s"}" else "Catalog validation failed",
                 icon = if (valid) Icons.Default.VerifiedUser else Icons.Default.Info
             )
         }
         visibleCatalogs.forEach { source ->
             item(key = "catalog:${source.manifest.catalogId}") {
-                Card {
-                    Row(
-                        Modifier.fillMaxWidth().padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
+                GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 22.dp, contentPadding = PaddingValues(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                             Text(source.manifest.name, style = MaterialTheme.typography.titleLarge)
                             Text(
                                 "${source.manifest.owner} · ${source.manifest.games.size} entries · ${if (source.builtIn) "Built in" else "Imported"}",
+                                style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(source.manifest.description, style = MaterialTheme.typography.bodySmall)
                         }
                         if (!source.builtIn) {
-                            IconButton(onClick = { onDeleteCatalog(source) }) {
+                            IconButton(onClick = {
+                                feedback(FeedbackCue.TAP)
+                                onDeleteCatalog(source)
+                            }) {
                                 Icon(Icons.Default.DeleteOutline, contentDescription = "Delete ${source.manifest.name}")
                             }
                         }
@@ -795,14 +1019,15 @@ private fun DiscoverScreen(
             }
         }
         item {
-            Card {
-                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Network provider status", style = MaterialTheme.typography.titleMedium)
+            GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 22.dp, contentPadding = PaddingValues(17.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Secure by construction", style = MaterialTheme.typography.titleMedium)
                     Text(
-                        "Imported manifests use strict UTF-8 JSON, reject duplicate or unknown fields, enforce bounded sizes, block local/private targets, and require HTTPS, exact length, SHA-256, GBA validation, and licensing provenance.",
+                        "Catalogs are strict UTF-8 JSON. Retra blocks private targets, cross-host redirects, unknown fields, oversized files, invalid hashes, and missing license provenance.",
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    StatusPill("Secure downloader ready", Icons.Default.Security)
+                    StatusPill("Downloader ready", Icons.Default.Security)
                 }
             }
         }
@@ -816,17 +1041,17 @@ private fun CatalogCard(
     downloadable: Boolean,
     onDownload: (CatalogEntry) -> Unit
 ) {
-    Card {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    val feedback = LocalRetraFeedback.current
+    GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 24.dp, contentPadding = PaddingValues(18.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
             Text(entry.title, style = MaterialTheme.typography.titleLarge)
-            Text(entry.description, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(entry.description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 StatusPill(entry.license)
                 StatusPill(formatBytes(entry.fileSize))
             }
-            Text("Creator: ${entry.creator}", style = MaterialTheme.typography.bodyMedium)
-            Text(entry.distributionPermission, style = MaterialTheme.typography.bodyMedium, color = SaveMint)
-            Text(entry.sha256, style = MaterialTheme.typography.bodyMedium, fontFamily = FontFamily.Monospace, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text("By ${entry.creator}", style = MaterialTheme.typography.labelLarge)
+            Text(entry.distributionPermission, style = MaterialTheme.typography.bodySmall, color = SaveMint)
             if (progress != null && progress.phase in setOf(CatalogDownloadPhase.CONNECTING, CatalogDownloadPhase.DOWNLOADING, CatalogDownloadPhase.VERIFYING, CatalogDownloadPhase.IMPORTING)) {
                 val fraction = if (progress.totalBytes > 0) (progress.bytesDownloaded.toFloat() / progress.totalBytes).coerceIn(0f, 1f) else 0f
                 LinearProgressIndicator(progress = { fraction }, modifier = Modifier.fillMaxWidth())
@@ -838,10 +1063,16 @@ private fun CatalogCard(
                 CatalogDownloadPhase.VERIFYING,
                 CatalogDownloadPhase.IMPORTING
             )
-            OutlinedButton(onClick = { onDownload(entry) }, enabled = downloadable && !active) {
+            OutlinedButton(
+                onClick = {
+                    feedback(FeedbackCue.CONFIRM)
+                    onDownload(entry)
+                },
+                enabled = downloadable && !active
+            ) {
                 Icon(if (downloadable) Icons.Default.Download else Icons.Default.CloudOff, null)
                 Spacer(Modifier.width(8.dp))
-                Text(if (downloadable) "Download and verify" else "Preview endpoint not published")
+                Text(if (downloadable) "Download and verify" else "Preview only")
             }
             progress?.message?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
@@ -854,6 +1085,7 @@ private fun VaultScreen(
     records: List<VaultSaveRecord>,
     onDelete: (VaultSaveRecord) -> Unit
 ) {
+    val feedback = LocalRetraFeedback.current
     val titlesByHash = remember(games) { games.associateBy({ it.sha256.lowercase() }, GameRecord::title) }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -861,38 +1093,46 @@ private fun VaultScreen(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-                Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Icon(Icons.Default.Save, null, modifier = Modifier.size(38.dp))
-                    Text("Retra Vault", style = MaterialTheme.typography.headlineMedium)
-                    Text("State snapshots are bound to the ROM hash and core version, checksummed, atomically replaced, and backed up locally.")
+            GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 28.dp, contentPadding = PaddingValues(22.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)) {
+                        Icon(Icons.Default.Save, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(12.dp).size(28.dp))
+                    }
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Retra Vault", style = MaterialTheme.typography.headlineMedium)
+                        Text(
+                            "Checksummed states, automatic suspend snapshots, and rotating local backups.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
-        item { VaultFeature("Atomic state storage", "Implemented for diagnostic and gameplay-core snapshots", Icons.Default.Storage) }
-        item { VaultFeature("Rotating backups", "Implemented · three generations", Icons.Default.Security) }
+        item { VaultFeature("Atomic state storage", "Bound to ROM identity and emulator core version", Icons.Default.Storage) }
+        item { VaultFeature("Rotating backups", "Three local generations before replacement", Icons.Default.Security) }
         if (records.isEmpty()) {
             item {
-                Card {
+                GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 24.dp, contentPadding = PaddingValues(22.dp)) {
                     Column(
-                        Modifier.fillMaxWidth().padding(22.dp),
+                        Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("No local snapshots yet", style = MaterialTheme.typography.titleLarge)
-                        Text("Open a title and use Quick Save. Compatible background suspend snapshots also appear here.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("No snapshots yet", style = MaterialTheme.typography.titleLarge)
+                        Text(
+                            "Open a game and use Quick Save. Automatic background suspends also appear here.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
         } else {
             item { SectionTitle("Local timeline") }
             items(records, key = VaultSaveRecord::relativePath) { record ->
-                Card {
-                    Row(
-                        Modifier.fillMaxWidth().padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
+                GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 22.dp, contentPadding = PaddingValues(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Icon(
                             if (record.kind == SaveKind.SUSPEND) Icons.Default.Pause else Icons.Default.Save,
                             contentDescription = null,
@@ -909,36 +1149,38 @@ private fun VaultScreen(
                                     SaveKind.SUSPEND -> "Automatic suspend"
                                     SaveKind.BATTERY -> "Battery save"
                                 },
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                "${DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(record.createdAtEpochMillis))} · ${formatBytes(record.sizeBytes)}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                "${record.coreId} ${record.coreVersion}",
+                                "${DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(record.createdAtEpochMillis))} · ${formatBytes(record.sizeBytes)}",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        IconButton(onClick = { onDelete(record) }) {
+                        IconButton(onClick = {
+                            feedback(FeedbackCue.TAP)
+                            onDelete(record)
+                        }) {
                             Icon(Icons.Default.DeleteOutline, contentDescription = "Delete snapshot")
                         }
                     }
                 }
             }
         }
-        item { VaultFeature("Cloud synchronization", "Not started; ROM upload remains disabled by design", Icons.Default.CloudOff) }
+        item { VaultFeature("Cloud synchronization", "Optional save-only provider planned; ROM upload remains disabled", Icons.Default.CloudOff) }
     }
 }
 
 @Composable
 private fun VaultFeature(title: String, status: String, icon: ImageVector) {
-    Card {
-        Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+    GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 22.dp, contentPadding = PaddingValues(16.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, null, tint = MaterialTheme.colorScheme.secondary)
-            Column(Modifier.weight(1f)) { Text(title, style = MaterialTheme.typography.titleMedium); Text(status, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(title, style = MaterialTheme.typography.titleMedium)
+                Text(status, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 }
@@ -955,74 +1197,135 @@ private fun SettingsScreen(
     onPerformanceChanged: (PerformanceProfile) -> Unit,
     viewModel: RetraViewModel
 ) {
+    var selectedName by rememberSaveable { mutableStateOf(SettingsCategory.APPEARANCE.name) }
+    val selected = SettingsCategory.valueOf(selectedName)
+    val feedback = LocalRetraFeedback.current
+
     Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         ProfileOverviewCard(viewModel)
-        SettingsSection("Appearance", Icons.Default.Palette) {
-            Text("Theme", style = MaterialTheme.typography.titleMedium)
-            FlowChips(ThemeMode.entries, settings.themeMode, { it.name.humanize() }, onThemeChanged)
-            Text("Accent palette", style = MaterialTheme.typography.titleMedium)
-            FlowChips(AccentPalette.entries, settings.accentPalette, { it.name.humanize() }, viewModel::setAccentPalette)
-            ToggleSetting("Use Android dynamic color", settings.dynamicColor, onDynamicColorChanged)
-            ToggleSetting("High contrast", settings.highContrast, viewModel::setHighContrast)
-            ToggleSetting("Reduce transparency", settings.reduceTransparency, onReduceTransparencyChanged)
-            ToggleSetting("Reduce motion", settings.reduceMotion, onReduceMotionChanged)
-            Text("Glass intensity: ${(settings.glassIntensity * 100).toInt()}%")
-            Slider(settings.glassIntensity, viewModel::setGlassIntensity, valueRange = 0f..1f)
-            Text("Corner scale: ${settings.cornerScale.formatOne()}×")
-            Slider(settings.cornerScale, viewModel::setCornerScale, valueRange = 0.75f..1.35f)
-            Text("Font scale: ${settings.fontScale.formatOne()}×")
-            Slider(settings.fontScale, viewModel::setFontScale, valueRange = 0.85f..1.3f)
+
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Preferences", style = MaterialTheme.typography.titleLarge)
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(SettingsCategory.entries, key = { it.name }) { category ->
+                    FilterChip(
+                        selected = category == selected,
+                        onClick = {
+                            feedback(FeedbackCue.TAP)
+                            selectedName = category.name
+                        },
+                        leadingIcon = { Icon(category.icon, null, modifier = Modifier.size(18.dp)) },
+                        label = { Text(category.label) }
+                    )
+                }
+            }
         }
-        SettingsSection("Library & home", Icons.Default.LibraryBooks) {
-            Text("Default layout", style = MaterialTheme.typography.titleMedium)
-            FlowChips(LibraryLayout.entries, settings.libraryLayout, { it.name.humanize() }, onLayoutChanged)
-            Text("Content density", style = MaterialTheme.typography.titleMedium)
-            FlowChips(ContentDensity.entries, settings.contentDensity, { it.name.humanize() }, viewModel::setContentDensity)
-            Text("Startup destination", style = MaterialTheme.typography.titleMedium)
-            FlowChips(StartupDestination.entries, settings.startupDestination, { it.name.humanize() }, viewModel::setStartupDestination)
-            ToggleSetting("Show library statistics", settings.showStatistics, viewModel::setShowStatistics)
-            ToggleSetting("Show legal online recommendations", settings.showOnlineRecommendations, viewModel::setShowOnlineRecommendations)
-        }
-        SettingsSection("Display & audio", Icons.Default.Memory) {
-            ToggleSetting("Integer pixel scaling", settings.integerScaling, viewModel::setIntegerScaling)
-            ToggleSetting("Smooth display filtering", settings.displaySmoothing, viewModel::setDisplaySmoothing)
-            ToggleSetting("Show performance overlay", settings.showPerformanceOverlay, viewModel::setShowPerformanceOverlay)
-            ToggleSetting("Game audio", settings.audioEnabled, viewModel::setAudioEnabled)
-            Text("Master volume: ${(settings.masterVolume * 100).toInt()}%")
-            Slider(settings.masterVolume, viewModel::setMasterVolume, valueRange = 0f..1f, enabled = settings.audioEnabled)
-            Text("Integer scaling preserves sharp source pixels when the available surface is large enough. Smoothing is optional and disabled by default.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        SettingsSection("Controls", Icons.Default.Gamepad) {
-            ToggleSetting("Show touch controls", settings.showTouchControls, viewModel::setShowTouchControls)
-            Text("Touch-control opacity: ${(settings.touchControlOpacity * 100).toInt()}%")
-            Slider(settings.touchControlOpacity, viewModel::setTouchControlOpacity, valueRange = 0.25f..1f, enabled = settings.showTouchControls)
-            ToggleSetting("Haptic feedback", settings.hapticsEnabled, viewModel::setHapticsEnabled)
-            ToggleSetting("Create suspend state in background", settings.autoSuspendOnBackground, viewModel::setAutoSuspendOnBackground)
-            ToggleSetting("Pause when headphones disconnect", settings.pauseOnHeadphoneDisconnect, viewModel::setPauseOnHeadphoneDisconnect)
-            ControllerInputTester(viewModel)
-        }
-        SettingsSection("Retra Boost", Icons.Default.Speed) {
-            Text("Performance profile", style = MaterialTheme.typography.titleMedium)
-            FlowChips(PerformanceProfile.entries, settings.performanceProfile, { it.name.humanize() }, onPerformanceChanged)
-            Text("Default fast-forward: ${settings.fastForwardSpeed.formatOne()}×")
-            Slider(
-                value = settings.fastForwardSpeed,
-                onValueChange = onFastForwardChanged,
-                valueRange = 1f..16f,
-                steps = 14,
-                modifier = Modifier.semantics { contentDescription = "Default fast-forward speed" }
-            )
-            Text("Fast-forward changes emulation speed; it is not advertised as native game FPS enhancement.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        SettingsSection("Privacy & diagnostics", Icons.Default.Security) {
-            InfoRow("ROM uploads", "Disabled")
-            InfoRow("Crash reports", "Not configured")
-            InfoRow("Anonymous diagnostics", "Off")
-            InfoRow("Social data", "Local public labels only")
-            InfoRow("Core status", "Runtime-selected; gameplay only when reviewed mGBA loads")
+
+        when (selected) {
+            SettingsCategory.APPEARANCE -> SettingsSection("Appearance", Icons.Default.Palette) {
+                Text("Theme", style = MaterialTheme.typography.titleMedium)
+                FlowChips(ThemeMode.entries, settings.themeMode, { it.name.humanize() }, onThemeChanged)
+                Text("Accent palette", style = MaterialTheme.typography.titleMedium)
+                FlowChips(AccentPalette.entries, settings.accentPalette, { it.name.humanize() }, viewModel::setAccentPalette)
+                ToggleSetting("Use Android dynamic color", settings.dynamicColor, onDynamicColorChanged)
+                ToggleSetting("High contrast", settings.highContrast, viewModel::setHighContrast)
+                ToggleSetting("Reduce transparency", settings.reduceTransparency, onReduceTransparencyChanged)
+                ToggleSetting("Reduce motion", settings.reduceMotion, onReduceMotionChanged)
+                Text("Glass intensity: ${(settings.glassIntensity * 100).toInt()}%")
+                Slider(settings.glassIntensity, viewModel::setGlassIntensity, valueRange = 0f..1f)
+                Text("Corner scale: ${settings.cornerScale.formatOne()}×")
+                Slider(settings.cornerScale, viewModel::setCornerScale, valueRange = 0.75f..1.35f)
+                Text("Font scale: ${settings.fontScale.formatOne()}×")
+                Slider(settings.fontScale, viewModel::setFontScale, valueRange = 0.85f..1.3f)
+            }
+
+            SettingsCategory.LIBRARY -> SettingsSection("Library & home", Icons.Default.LibraryBooks) {
+                Text("Default layout", style = MaterialTheme.typography.titleMedium)
+                FlowChips(LibraryLayout.entries, settings.libraryLayout, { it.name.humanize() }, onLayoutChanged)
+                Text("Content density", style = MaterialTheme.typography.titleMedium)
+                FlowChips(ContentDensity.entries, settings.contentDensity, { it.name.humanize() }, viewModel::setContentDensity)
+                Text("Startup destination", style = MaterialTheme.typography.titleMedium)
+                FlowChips(StartupDestination.entries, settings.startupDestination, { it.name.humanize() }, viewModel::setStartupDestination)
+                ToggleSetting("Show library statistics", settings.showStatistics, viewModel::setShowStatistics)
+                ToggleSetting("Show legal online recommendations", settings.showOnlineRecommendations, viewModel::setShowOnlineRecommendations)
+            }
+
+            SettingsCategory.PLAYER -> SettingsSection("Display & audio", Icons.Default.Memory) {
+                ToggleSetting("Integer pixel scaling", settings.integerScaling, viewModel::setIntegerScaling)
+                ToggleSetting("Smooth display filtering", settings.displaySmoothing, viewModel::setDisplaySmoothing)
+                ToggleSetting("Show performance overlay", settings.showPerformanceOverlay, viewModel::setShowPerformanceOverlay)
+                ToggleSetting("Game audio", settings.audioEnabled, viewModel::setAudioEnabled)
+                Text("Master volume: ${(settings.masterVolume * 100).toInt()}%")
+                Slider(settings.masterVolume, viewModel::setMasterVolume, valueRange = 0f..1f, enabled = settings.audioEnabled)
+                Text(
+                    "Integer scaling preserves sharp source pixels. Smoothing is optional and disabled by default.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            SettingsCategory.FEEDBACK -> SettingsSection("Feel & sound", Icons.Default.VolumeUp) {
+                ToggleSetting("Haptic feedback", settings.hapticsEnabled, viewModel::setHapticsEnabled)
+                ToggleSetting("Retra interface sounds", settings.soundEffectsEnabled, viewModel::setSoundEffectsEnabled)
+                Text("Interface sound volume: ${(settings.soundEffectsVolume * 100).toInt()}%")
+                Slider(
+                    settings.soundEffectsVolume,
+                    viewModel::setSoundEffectsVolume,
+                    valueRange = 0f..1f,
+                    enabled = settings.soundEffectsEnabled
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedButton(onClick = { viewModel.emitFeedback(FeedbackCue.CONFIRM) }) { Text("Test tap") }
+                    OutlinedButton(onClick = { viewModel.emitFeedback(FeedbackCue.ACHIEVEMENT) }) { Text("Test celebration") }
+                }
+                Text(
+                    "Short original cues and subtle semantic haptics reinforce actions without becoming noisy.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            SettingsCategory.NOTIFICATIONS -> SettingsSection("Notifications", Icons.Default.Notifications) {
+                NotificationPreferences(settings, viewModel)
+            }
+
+            SettingsCategory.CONTROLS -> SettingsSection("Controls", Icons.Default.Gamepad) {
+                ToggleSetting("Show touch controls", settings.showTouchControls, viewModel::setShowTouchControls)
+                Text("Touch-control opacity: ${(settings.touchControlOpacity * 100).toInt()}%")
+                Slider(settings.touchControlOpacity, viewModel::setTouchControlOpacity, valueRange = 0.25f..1f, enabled = settings.showTouchControls)
+                ToggleSetting("Create suspend state in background", settings.autoSuspendOnBackground, viewModel::setAutoSuspendOnBackground)
+                ToggleSetting("Pause when headphones disconnect", settings.pauseOnHeadphoneDisconnect, viewModel::setPauseOnHeadphoneDisconnect)
+                ControllerInputTester(viewModel)
+            }
+
+            SettingsCategory.BOOST -> SettingsSection("Retra Boost", Icons.Default.Speed) {
+                Text("Performance profile", style = MaterialTheme.typography.titleMedium)
+                FlowChips(PerformanceProfile.entries, settings.performanceProfile, { it.name.humanize() }, onPerformanceChanged)
+                Text("Default fast-forward: ${settings.fastForwardSpeed.formatOne()}×")
+                Slider(
+                    value = settings.fastForwardSpeed,
+                    onValueChange = onFastForwardChanged,
+                    valueRange = 1f..16f,
+                    steps = 14,
+                    modifier = Modifier.semantics { contentDescription = "Default fast-forward speed" }
+                )
+                Text(
+                    "Fast-forward changes emulation speed; it is not presented as native game FPS enhancement.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            SettingsCategory.PRIVACY -> SettingsSection("Privacy & diagnostics", Icons.Default.Security) {
+                InfoRow("ROM uploads", "Disabled")
+                InfoRow("Crash reports", "Not configured")
+                InfoRow("Anonymous diagnostics", "Off")
+                InfoRow("Social data", "Local public labels only")
+                InfoRow("Core status", "Gameplay only when the reviewed mGBA core loads")
+            }
         }
         Spacer(Modifier.height(24.dp))
     }
@@ -1030,11 +1333,19 @@ private fun SettingsScreen(
 
 @Composable
 private fun <T> FlowChips(values: List<T>, selected: T, label: (T) -> String, onSelected: (T) -> Unit) {
+    val feedback = LocalRetraFeedback.current
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         values.chunked(3).forEach { rowValues ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 rowValues.forEach { value ->
-                    FilterChip(selected = value == selected, onClick = { onSelected(value) }, label = { Text(label(value)) })
+                    FilterChip(
+                        selected = value == selected,
+                        onClick = {
+                            feedback(FeedbackCue.TAP)
+                            onSelected(value)
+                        },
+                        label = { Text(label(value)) }
+                    )
                 }
             }
         }
@@ -1042,10 +1353,27 @@ private fun <T> FlowChips(values: List<T>, selected: T, label: (T) -> String, on
 }
 
 @Composable
-private fun ToggleSetting(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+internal fun ToggleSetting(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    enabled: Boolean = true
+) {
+    val feedback = LocalRetraFeedback.current
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, Modifier.weight(1f))
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        Text(
+            label,
+            Modifier.weight(1f),
+            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
+        )
+        Switch(
+            checked = checked,
+            enabled = enabled,
+            onCheckedChange = { value ->
+                feedback(FeedbackCue.TAP)
+                onCheckedChange(value)
+            }
+        )
     }
 }
 
@@ -1059,13 +1387,15 @@ private fun InfoRow(label: String, value: String) {
 
 @Composable
 private fun SettingsSection(title: String, icon: ImageVector, content: @Composable ColumnScope.() -> Unit) {
-    Card {
-        Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 26.dp, contentPadding = PaddingValues(18.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(icon, null, tint = MaterialTheme.colorScheme.secondary)
+                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f)) {
+                    Icon(icon, null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(8.dp).size(19.dp))
+                }
                 Text(title, style = MaterialTheme.typography.titleLarge)
             }
-            HorizontalDivider()
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.16f))
             content()
         }
     }
@@ -1423,10 +1753,19 @@ private fun DetailRow(label: String, value: String) {
 
 @Composable
 private fun StatusCard() {
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f))) {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Build honesty", style = MaterialTheme.typography.titleLarge)
-            Text("The local library, Vault saves, diagnostic native pipeline, host-verified mGBA/libretro adapter, secure legal-catalog and cheat-pack downloads, IPS/UPS/BPS patching, in-session declarative cheats, local achievements, private-first profiles, and checksummed LAN transport are implemented in source. Android gameplay still requires a reviewed bundled mGBA library and device validation; provider OAuth, internet relay, cloud sync, rewind, and real GBA link play require external credentials or core callbacks.")
+    GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 24.dp, contentPadding = PaddingValues(18.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(13.dp), verticalAlignment = Alignment.Top) {
+            Surface(shape = CircleShape, color = SaveMint.copy(alpha = 0.13f)) {
+                Icon(Icons.Default.Security, null, tint = SaveMint, modifier = Modifier.padding(9.dp).size(20.dp))
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text("Private by default", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "Your local ROMs and saves stay on this device unless you explicitly choose a verified catalog or future sync provider.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }

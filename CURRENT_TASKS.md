@@ -1,15 +1,16 @@
 # Current Tasks
 
-## Completed in 0.5.0
+## Completed in 0.6.0
 
-- Replaced temporary branding with original production assets and applied them throughout Android resources and Compose.
-- Added adaptive five-step onboarding and optional Google identity.
-- Added functional display/audio/control preferences.
-- Added immersive player, save slots, rewind, screenshots, slow motion, fast-forward hold, audio-route pause, and controller safety.
-- Added searchable favorites, editable metadata, notes, and custom cover art.
-- Added pinned archive-based mGBA source acquisition and Gradle-discoverable core tasks.
-- Expanded host verification to 36 pure checks and new static release gates.
+- Removed six invalid internal Compose `weight` imports and added a regression gate.
+- Rebuilt the primary UI around the Prism Glass system.
+- Reorganized settings into focused categories.
+- Added semantic haptics and user controls.
+- Added six original short interface sounds and load-safe SoundPool playback.
+- Added Android notification channels, contextual permission UX, category controls, and event notifications.
+- Preserved all emulator, library, catalog, patch, cheat, identity, achievement, social, and multiplayer foundations.
+- Re-ran all host and static verification suites.
 
 ## Active release task
 
-Build and device-test an APK with staged mGBA libraries. Until this is complete, do not represent 0.5.0 as a production binary.
+Rerun the Android release build in CI, then conduct real-device visual, haptic, sound, notification, accessibility, and gameplay validation.

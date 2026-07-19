@@ -43,6 +43,12 @@ class SettingsRepository @Inject constructor(
         val fontScale = floatPreferencesKey("font_scale")
         val touchControlOpacity = floatPreferencesKey("touch_control_opacity")
         val hapticsEnabled = booleanPreferencesKey("haptics_enabled")
+        val soundEffectsEnabled = booleanPreferencesKey("sound_effects_enabled")
+        val soundEffectsVolume = floatPreferencesKey("sound_effects_volume")
+        val notificationsEnabled = booleanPreferencesKey("notifications_enabled")
+        val notifyAchievements = booleanPreferencesKey("notify_achievements")
+        val notifyDownloads = booleanPreferencesKey("notify_downloads")
+        val notifyMultiplayer = booleanPreferencesKey("notify_multiplayer")
         val highContrast = booleanPreferencesKey("high_contrast")
         val showOnlineRecommendations = booleanPreferencesKey("show_online_recommendations")
         val showStatistics = booleanPreferencesKey("show_statistics")
@@ -69,11 +75,17 @@ class SettingsRepository @Inject constructor(
             accentPalette = preferences[Keys.accentPalette].enumOrDefault(AccentPalette.RETRA_PRISM),
             contentDensity = preferences[Keys.contentDensity].enumOrDefault(ContentDensity.BALANCED),
             startupDestination = preferences[Keys.startupDestination].enumOrDefault(StartupDestination.HOME),
-            glassIntensity = (preferences[Keys.glassIntensity] ?: 0.35f).coerceIn(0f, 1f),
+            glassIntensity = (preferences[Keys.glassIntensity] ?: 0.62f).coerceIn(0f, 1f),
             cornerScale = (preferences[Keys.cornerScale] ?: 1f).coerceIn(0.75f, 1.35f),
             fontScale = (preferences[Keys.fontScale] ?: 1f).coerceIn(0.85f, 1.3f),
             touchControlOpacity = (preferences[Keys.touchControlOpacity] ?: 0.72f).coerceIn(0.25f, 1f),
             hapticsEnabled = preferences[Keys.hapticsEnabled] ?: true,
+            soundEffectsEnabled = preferences[Keys.soundEffectsEnabled] ?: true,
+            soundEffectsVolume = (preferences[Keys.soundEffectsVolume] ?: 0.55f).coerceIn(0f, 1f),
+            notificationsEnabled = preferences[Keys.notificationsEnabled] ?: true,
+            notifyAchievements = preferences[Keys.notifyAchievements] ?: true,
+            notifyDownloads = preferences[Keys.notifyDownloads] ?: true,
+            notifyMultiplayer = preferences[Keys.notifyMultiplayer] ?: true,
             highContrast = preferences[Keys.highContrast] ?: false,
             showOnlineRecommendations = preferences[Keys.showOnlineRecommendations] ?: true,
             showStatistics = preferences[Keys.showStatistics] ?: true,
@@ -104,6 +116,12 @@ class SettingsRepository @Inject constructor(
     suspend fun setFontScale(value: Float) = edit { it[Keys.fontScale] = value.coerceIn(0.85f, 1.3f) }
     suspend fun setTouchControlOpacity(value: Float) = edit { it[Keys.touchControlOpacity] = value.coerceIn(0.25f, 1f) }
     suspend fun setHapticsEnabled(value: Boolean) = edit { it[Keys.hapticsEnabled] = value }
+    suspend fun setSoundEffectsEnabled(value: Boolean) = edit { it[Keys.soundEffectsEnabled] = value }
+    suspend fun setSoundEffectsVolume(value: Float) = edit { it[Keys.soundEffectsVolume] = value.coerceIn(0f, 1f) }
+    suspend fun setNotificationsEnabled(value: Boolean) = edit { it[Keys.notificationsEnabled] = value }
+    suspend fun setNotifyAchievements(value: Boolean) = edit { it[Keys.notifyAchievements] = value }
+    suspend fun setNotifyDownloads(value: Boolean) = edit { it[Keys.notifyDownloads] = value }
+    suspend fun setNotifyMultiplayer(value: Boolean) = edit { it[Keys.notifyMultiplayer] = value }
     suspend fun setHighContrast(value: Boolean) = edit { it[Keys.highContrast] = value }
     suspend fun setShowOnlineRecommendations(value: Boolean) = edit { it[Keys.showOnlineRecommendations] = value }
     suspend fun setShowStatistics(value: Boolean) = edit { it[Keys.showStatistics] = value }

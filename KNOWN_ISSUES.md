@@ -1,13 +1,11 @@
 # Known Issues
 
-- No Android APK/AAB was built because the sandbox lacks Gradle, Android SDK/NDK, ADB, and dependency access.
-- The archive intentionally excludes compiled mGBA libraries and the upstream source tree; fetch/build scripts are provided.
-- Google sign-in cannot complete without a real Web OAuth client ID, eligible device account, and device testing.
-- Receiving a Google ID token only creates a device identity. Cloud/social account trust requires a production verification backend.
-- Rewind serialization cadence and 32 MiB budget are not profiled on real devices; low-end tuning may be required.
-- mGBA state compatibility, save memory, RTC, and cheat behavior are host-adapter tested but not Android-hardware tested.
-- Custom artwork decoding and MediaStore screenshots require memory/storage testing across OEM devices.
-- Pre-Android 10 screenshots use app-specific external storage rather than the public gallery.
-- Touch-control placement is adaptive but a drag-to-position editor is not complete.
-- Provider OAuth, cloud sync, achievements federation, hosted relay, and actual GBA link multiplayer remain external integrations.
-- Room schema 4 could not be exported by AGP in this environment; the migration is statically checked but must be build-tested.
+- The repaired Android project could not be recompiled here because the sandbox lacks Gradle and Android SDK/NDK tooling.
+- The archive excludes compiled mGBA libraries; source acquisition/build scripts are provided.
+- SoundPool output, notification sounds, haptic strength, Bluetooth routing, and OEM notification behavior need physical-device testing.
+- Compose blur is decorative and ignored by older Android versions; the UI remains usable through translucent/opaque surfaces.
+- Notification channel sound/vibration choices become system-controlled after channel creation, as required by Android.
+- Google sign-in requires a real Web OAuth client ID; cloud trust additionally requires backend token/nonce verification.
+- Rewind cadence, touch ergonomics, controller matrix, screenshots, custom artwork, and save compatibility require device profiling.
+- Drag-to-position touch controls, cloud sync, provider OAuth, hosted relay, and real GBA link-cable callbacks remain incomplete.
+- Room schema export and migrations must be exercised by a real AGP build.

@@ -2,74 +2,85 @@
 
 **Relive the games that made you.**
 
-Retra is a privacy-first Android Game Boy Advance emulator shell built with Kotlin, Jetpack Compose, Material 3, Room, DataStore, Credential Manager, WorkManager, JNI, CMake, and a pinned mGBA/libretro integration path.
+Retra is a privacy-first Android Game Boy Advance emulator built with Kotlin, Jetpack Compose, Material 3, Room, DataStore, Credential Manager, WorkManager, JNI, CMake, and a pinned mGBA/libretro integration path.
 
-## 0.5.0 milestone
+## 0.6.0 milestone — Prism Glass
 
-This source release turns the earlier architecture into a substantially more complete emulator product:
+This release repairs the reported Compose compilation failure and rebuilds the interaction layer around a minimal, premium, accessible glass system.
 
-- multi-step adaptive onboarding with offline-first setup and optional Google identity;
-- original Retra Prism launcher icon, monochrome icon, splash treatment, in-app logo, and wordmark sources;
-- gameplay-capable mGBA 0.10.5 libretro frontend selected when reviewed Android ABI libraries are bundled;
-- `SurfaceView` video, integer scaling, optional smoothing, immersive system bars, audio focus, volume, mute, and headphone-disconnect pause;
-- touch, keyboard, Bluetooth, USB, D-pad hat, analog fallback, disconnect clearing, and a live controller tester;
-- fast-forward, slow motion, five save-state slots, battery saves, checksummed suspend states, bounded rewind, screenshots, reset, and session menu;
-- secure local ROM imports, legal HTTPS catalogs, exact hashes, patches, custom/internet cheat packs, local achievements, social profile, and multiplayer transport foundations;
-- library search, favorites, editable title/notes, custom cover art, recent and favorite shelves;
-- highly adjustable theme, palette, glass, density, typography, library layout, controls, display, audio, startup, privacy, and home behavior.
+### Build repair
+
+The failed release build imported Compose's internal `RowColumnParentData.weight` symbol from six screens. Retra now uses the public `RowScope`/`ColumnScope` `Modifier.weight` API without importing the internal implementation. The project verifier rejects that import if it is reintroduced.
+
+### Refined experience
+
+- one coherent Prism Glass component system for onboarding, navigation, home, library, Discover, Vault, profile, community, settings, and player status;
+- translucent surfaces with subtle edge highlights while text fields, dialogs, and dense content stay crisp;
+- decorative background blur only, with opaque fallbacks for reduced-transparency mode and older Android versions;
+- settings reorganized into focused Appearance, Library, Player, Feel, Alerts, Controls, Boost, and Privacy categories;
+- less saturated dark surfaces, quieter typography, consistent spacing, semantic hierarchy, and 48dp-friendly controls;
+- responsive phone/tablet navigation retained.
+
+### Feel, sound, and notifications
+
+- semantic haptic cues for taps, game buttons, confirmation, saves, achievements, invitations, and errors;
+- six original short Retra sound cues loaded through `SoundPool`;
+- independent haptic, UI-sound, and UI-sound-volume settings;
+- Android notification channels for achievements, verified downloads, multiplayer, and save protection;
+- contextual Android 13+ notification permission request instead of prompting on first launch;
+- channel and app notification settings remain user-controlled;
+- background suspend-state notification when enabled.
+
+### Emulator and library foundation retained
+
+- mGBA 0.10.5 libretro frontend, memory-only ROM delivery, frame/audio/input/state/battery/cheat plumbing;
+- touch, keyboard, Bluetooth and USB controllers;
+- five state slots, rewind, screenshots, fast-forward and slow motion;
+- ROM import, legal HTTPS catalogs, secure downloads, patching, Retra Codes, achievements, social profile, and multiplayer foundations;
+- library search, favorites, notes, titles, and custom cover art;
+- optional Google identity that never gates offline play.
 
 ## Honest build status
 
 | Area | Status |
 |---|---|
-| Pure Kotlin content/security/emulation logic | Implemented; 36 host checks pass |
-| Native diagnostic JNI pipeline | Implemented; host verification passes |
-| mGBA/libretro frontend ABI | Implemented; host mock-core verification passes |
-| Android mGBA shared libraries | Build/staging scripts ready; binaries are not bundled in this archive |
-| Android APK/AAB | Not produced in this sandbox because Gradle, Android SDK, Android NDK, and ADB are unavailable |
-| Google Credential Manager UI | Implemented in source; requires a real Web OAuth client ID and device testing |
-| Google-backed Retra account | Requires a production backend to verify ID tokens/nonces and issue sessions |
-| LAN transport architecture | Host-tested; real GBA link gameplay still requires core link callbacks and synchronization |
+| Reported `weight` compilation failure | Source fix complete; exact forbidden import is statically gated |
+| Platform-neutral logic | 36 checks pass |
+| Native diagnostic JNI pipeline | Host verification passes |
+| mGBA/libretro frontend | Host mock-core verification passes |
+| Project structure / UI / notifications / feedback | Static verifier passes |
+| Full Android Gradle build | Must be rerun in Android CI; this sandbox has no Gradle or Android SDK |
+| Android mGBA ABI libraries | Reproducible build/staging scripts included; binaries not bundled |
+| Device UX, audio, haptics, and notification testing | Required before production release |
 
-Retra never labels the diagnostic renderer as GBA emulation. When `libmgba_libretro.so` is absent or incomplete, the app explicitly falls back to native pipeline diagnostics.
+No APK or AAB is claimed from this environment.
 
-## Build prerequisites
+## Build
+
+Prerequisites:
 
 - JDK 21
-- Android Studio / Android SDK matching `compileSdk 37`
+- Android SDK matching `compileSdk 37`
 - Android NDK and CMake
-- network access to Google Maven and Maven Central
-- optional Google OAuth Web client ID
-- reviewed mGBA 0.10.5 source
-
-### Google identity
-
-```bash
-./gradlew :app:assembleDebug \
-  -PRETRA_GOOGLE_WEB_CLIENT_ID="YOUR_WEB_CLIENT_ID.apps.googleusercontent.com"
-```
-
-See `docs/GOOGLE_SIGN_IN_SETUP.md`.
-
-### Gameplay core
+- Gradle 9.5 or compatible wrapper runtime
+- access to Google Maven and Maven Central
+- reviewed mGBA 0.10.5 source/core binaries
 
 ```bash
 ./scripts/fetch-mgba-archive.sh
 export ANDROID_NDK_HOME=/path/to/android-ndk
 ABIS="arm64-v8a armeabi-v7a x86_64" ./scripts/build-mgba-libretro-android.sh
-./gradlew :app:assembleDebug
+gradle --no-daemon :app:assembleRelease
 ```
 
-Equivalent Gradle tasks are available:
+Optional Google identity:
 
 ```bash
-./gradlew :emulation:native:fetchMgbaSource
-./gradlew :emulation:native:buildMgbaCore
+gradle --no-daemon :app:assembleRelease \
+  -PRETRA_GOOGLE_WEB_CLIENT_ID="YOUR_WEB_CLIENT_ID.apps.googleusercontent.com"
 ```
 
-See `docs/ROM_PLAYBACK_SETUP.md` and `docs/MGBA_INTEGRATION_PLAN.md`.
-
-## Verification available in this archive
+## Verification
 
 ```bash
 ./tools/core-verification/run.sh
@@ -78,23 +89,20 @@ See `docs/ROM_PLAYBACK_SETUP.md` and `docs/MGBA_INTEGRATION_PLAN.md`.
 SKIP_EXECUTION_SUITES=1 ./tools/project-verification/run.sh
 ```
 
-The host suites validate parsers, secure downloads, catalog and cheat rules, patch formats, save envelopes, atomic storage, rewind memory bounds, achievements, social/multiplayer logic, JNI state handling, libretro ROM/frame/audio/input/state/battery/cheat behavior, XML/TOML, Room migrations, branding, and project wiring.
-
 ## Content policy
 
-Retra does not include commercial ROMs, proprietary BIOS files, pre-patched copyrighted games, piracy indexes, executable cheat scripts, or runtime-downloaded native code. Legal catalogs require HTTPS, creator/license/distribution details, exact size and SHA-256, GBA validation, bounded redirects, and private-network blocking. Users import personal backups or permitted homebrew.
+Retra includes no commercial ROMs, proprietary BIOS files, piracy indexes, pre-patched copyrighted games, executable cheat scripts, credentials, or runtime-downloaded native code. Remote content must be explicit, authorized, bounded, and hash-verified.
 
 ## Key documents
 
 - `BUILD_REPORT.md`
+- `TEST_RESULTS.md`
 - `IMPLEMENTATION_STATUS.md`
 - `PROJECT_STATE.md`
-- `NEXT_ACTIONS.md`
 - `KNOWN_ISSUES.md`
-- `TEST_RESULTS.md`
-- `THREAT_MODEL.md`
+- `NEXT_ACTIONS.md`
+- `docs/BUILD_FAILURE_0.5_ANALYSIS.md`
+- `docs/UI_UX_AUDIT_0.6.md`
+- `docs/FEEDBACK_AND_NOTIFICATIONS.md`
 - `docs/ROM_PLAYBACK_SETUP.md`
 - `docs/GOOGLE_SIGN_IN_SETUP.md`
-- `docs/BRAND_IDENTITY.md`
-- `docs/UI_UX_AUDIT_0.5.md`
-- `design-system/retra/MASTER.md`

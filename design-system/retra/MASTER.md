@@ -41,3 +41,14 @@ Retra Prism is token-driven. Indigo is brand/action, cyan is technical/live, vio
 - Game cards accept bounded custom covers; deterministic token-based artwork remains the fallback.
 - Player chrome yields to the 240×160 frame, hides system bars, and keeps advanced actions inside one scrollable session sheet.
 - Google sign-in uses neutral explicit wording and a generic login glyph rather than a counterfeit Google logo.
+## 0.6 Prism Glass application notes
+
+- Use one neutral background and one glass panel family.
+- Reserve blur for non-interactive atmospheric shapes.
+- Use primary color for focus, selection, and primary action—not entire cards.
+- Default panel radius: 24–28dp; nested panels: 18–20dp.
+- Default spacing rhythm: 8 / 12 / 16 / 24dp.
+- Settings show one category at a time.
+- Every glass surface must remain legible in opaque reduced-transparency mode.
+- Haptics and audio are semantic, brief, and optional.
+

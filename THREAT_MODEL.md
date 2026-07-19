@@ -82,3 +82,21 @@ Controls: copied snapshots, 32 MiB maximum, thread-safe queue, minimum-history c
 ### Automatic backup
 
 Android automatic backup is disabled to prevent silent cloud transfer of ROMs, saves, artwork, private catalogs, and local identity metadata. Any future backup must be explicit, encrypted, user-scoped, conflict-aware, and ROM-excluding by default.
+
+## 0.6 additions
+
+### Notification abuse
+- Notifications are opt-in on Android 13+, category-bounded, and never required for gameplay.
+- Quiet channels are used for downloads and save protection.
+- Notification text excludes ROM bytes, save contents, tokens, and private filesystem paths.
+
+### Audio and haptic abuse
+- Interface cues are short, bundled resources only; no remote audio is executed.
+- Game-button feedback is haptic-only to avoid masking gameplay audio.
+- Haptics, sounds, volume, and notification categories are user controlled.
+
+### Visual deception
+- Glass never obscures permission, provenance, error, or security text.
+- Reduced-transparency mode uses opaque surfaces.
+- Diagnostic native output remains explicitly labeled and is never represented as GBA gameplay.
+
