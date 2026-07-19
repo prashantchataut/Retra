@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Retra" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">#7567FF</item>
+        <item name="android:windowBackground">@color/retra_splash_background</item>
+        <item name="android:windowSplashScreenBackground">@color/retra_splash_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_retra_foreground</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/retra_splash_background</item>
+    </style>
+</resources>

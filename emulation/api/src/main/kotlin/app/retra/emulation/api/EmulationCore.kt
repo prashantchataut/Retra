@@ -98,6 +98,7 @@ interface EmulationCore {
     fun loadState(slot: SaveSlot): Result<Unit>
     fun applyCheats(cheats: List<ActiveCheat>): Result<Unit>
     fun clearCheats(): Result<Unit>
+    fun rewind(steps: Int = 1): Result<Int>
     fun getRuntimeMetrics(): RuntimeMetrics = metrics.value
     val isAvailable: Boolean
     val unavailableReason: String?

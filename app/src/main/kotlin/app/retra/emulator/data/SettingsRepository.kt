@@ -46,6 +46,14 @@ class SettingsRepository @Inject constructor(
         val highContrast = booleanPreferencesKey("high_contrast")
         val showOnlineRecommendations = booleanPreferencesKey("show_online_recommendations")
         val showStatistics = booleanPreferencesKey("show_statistics")
+        val integerScaling = booleanPreferencesKey("integer_scaling")
+        val displaySmoothing = booleanPreferencesKey("display_smoothing")
+        val showPerformanceOverlay = booleanPreferencesKey("show_performance_overlay")
+        val showTouchControls = booleanPreferencesKey("show_touch_controls")
+        val audioEnabled = booleanPreferencesKey("audio_enabled")
+        val masterVolume = floatPreferencesKey("master_volume")
+        val autoSuspendOnBackground = booleanPreferencesKey("auto_suspend_on_background")
+        val pauseOnHeadphoneDisconnect = booleanPreferencesKey("pause_on_headphone_disconnect")
     }
 
     val settings: Flow<AppSettings> = context.retraDataStore.data.map { preferences ->
@@ -68,7 +76,15 @@ class SettingsRepository @Inject constructor(
             hapticsEnabled = preferences[Keys.hapticsEnabled] ?: true,
             highContrast = preferences[Keys.highContrast] ?: false,
             showOnlineRecommendations = preferences[Keys.showOnlineRecommendations] ?: true,
-            showStatistics = preferences[Keys.showStatistics] ?: true
+            showStatistics = preferences[Keys.showStatistics] ?: true,
+            integerScaling = preferences[Keys.integerScaling] ?: true,
+            displaySmoothing = preferences[Keys.displaySmoothing] ?: false,
+            showPerformanceOverlay = preferences[Keys.showPerformanceOverlay] ?: false,
+            showTouchControls = preferences[Keys.showTouchControls] ?: true,
+            audioEnabled = preferences[Keys.audioEnabled] ?: true,
+            masterVolume = (preferences[Keys.masterVolume] ?: 1f).coerceIn(0f, 1f),
+            autoSuspendOnBackground = preferences[Keys.autoSuspendOnBackground] ?: true,
+            pauseOnHeadphoneDisconnect = preferences[Keys.pauseOnHeadphoneDisconnect] ?: true
         )
     }
 
@@ -91,6 +107,14 @@ class SettingsRepository @Inject constructor(
     suspend fun setHighContrast(value: Boolean) = edit { it[Keys.highContrast] = value }
     suspend fun setShowOnlineRecommendations(value: Boolean) = edit { it[Keys.showOnlineRecommendations] = value }
     suspend fun setShowStatistics(value: Boolean) = edit { it[Keys.showStatistics] = value }
+    suspend fun setIntegerScaling(value: Boolean) = edit { it[Keys.integerScaling] = value }
+    suspend fun setDisplaySmoothing(value: Boolean) = edit { it[Keys.displaySmoothing] = value }
+    suspend fun setShowPerformanceOverlay(value: Boolean) = edit { it[Keys.showPerformanceOverlay] = value }
+    suspend fun setShowTouchControls(value: Boolean) = edit { it[Keys.showTouchControls] = value }
+    suspend fun setAudioEnabled(value: Boolean) = edit { it[Keys.audioEnabled] = value }
+    suspend fun setMasterVolume(value: Float) = edit { it[Keys.masterVolume] = value.coerceIn(0f, 1f) }
+    suspend fun setAutoSuspendOnBackground(value: Boolean) = edit { it[Keys.autoSuspendOnBackground] = value }
+    suspend fun setPauseOnHeadphoneDisconnect(value: Boolean) = edit { it[Keys.pauseOnHeadphoneDisconnect] = value }
 
     private suspend fun edit(block: (androidx.datastore.preferences.core.MutablePreferences) -> Unit) {
         context.retraDataStore.edit { preferences -> block(preferences) }

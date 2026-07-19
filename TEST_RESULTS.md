@@ -1,9 +1,9 @@
 # Test Results
 
-Session date: 2026-07-19
-Version: 0.4.0
+Date: 2026-07-19 UTC  
+Version: 0.5.0
 
-## Platform-neutral core suite
+## Platform-neutral suite
 
 Command:
 
@@ -11,9 +11,9 @@ Command:
 ./tools/core-verification/run.sh
 ```
 
-Result: **35 passed, 0 failed.**
+Result: **36 passed, 0 failed**.
 
-Coverage includes GBA parsing, SHA-256, duplicates, catalog validation, input/session state, save envelope/atomic backup/path safety, IPS/UPS/BPS patching and corruption, declarative cheats/matching/conflicts/executable rejection, HTTPS catalog policy and restricted JSON, local/private target and unsafe ID rejection, achievement counters/unique progress/integrity, social friend codes/privacy-safe sharing, multiplayer exact compatibility, packet CRC/order, and LAN loopback framing.
+Coverage includes GBA parsing, SHA-256, duplicate detection, catalog security, strict JSON, network policy, atomic storage, save envelopes, path traversal, bounded rewind, patching, cheat parsing/conflicts, achievements, social privacy, multiplayer compatibility/framing, and loopback transport.
 
 ## Native reference engine
 
@@ -23,11 +23,9 @@ Command:
 ./tools/native-verification/run.sh
 ```
 
-Result: **PASS.**
+Result: **PASS** for load, frame generation, input, state serialize/restore, reset, and corruption rejection.
 
-Verified load, frame generation, input marker, state creation, restore, reset, and corrupted-state rejection.
-
-## Libretro gameplay adapter
+## libretro frontend
 
 Command:
 
@@ -35,11 +33,9 @@ Command:
 ./tools/libretro-verification/run.sh
 ```
 
-Result: **PASS.**
+Result: **PASS** for ABI loading, ROM load, video, input, audio, save states, battery memory, and cheat activation against the host mock core.
 
-Verified ABI symbol loading, in-memory ROM loading, frame conversion, GBA input, PCM audio, state serialization, battery-save memory, and cheat reset/set through a deterministic fake libretro core.
-
-## Project/static verification
+## Static project suite
 
 Command:
 
@@ -47,18 +43,12 @@ Command:
 SKIP_EXECUTION_SUITES=1 ./tools/project-verification/run.sh
 ```
 
-Result: **PASS.**
+Result: **PASS** for module graph, Kotlin source expectations, Android XML, icons, Room migrations, DI, branding, onboarding/account files, secure catalogs, patches, cheats, achievements, social, multiplayer, rewind, screenshots, artwork, mGBA scripts, shell syntax, and C++20 `-Werror` compilation.
 
-Verified thirteen modules and build files; TOML/XML parsing; Material icon imports; non-destructive Room migrations; patch, codes, catalog, achievements, social, multiplayer, requested skill snapshots, DI and emulation contracts; shell syntax; and host C++20 compilation of JNI and libretro adapter with `-Werror`.
+## Not run
 
-## Combined script note
-
-The non-skipping project script reruns all compilation suites and exceeded the command runner’s time limit after the 35 core checks. This is a runner-duration limitation, not a failed assertion. Its constituent suites and static phase were executed separately and passed.
-
-## Not executed
-
-- Android Gradle build, lint, JVM Android tests, or instrumentation tests.
-- APK install/launch.
-- Real mGBA Android library loading.
-- Device rendering, audio, controllers, haptics, lifecycle, Room, SAF, or network downloads.
-- Real GBA link multiplayer, OAuth, cloud, or internet relay.
+- Gradle/AGP compile
+- Android unit/instrumentation/UI tests
+- lint and R8
+- APK install/launch
+- physical-device, emulator, accessibility, performance, thermal, battery, and network testing

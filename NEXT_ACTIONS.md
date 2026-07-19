@@ -1,9 +1,10 @@
 # Next Actions
 
-1. **Produce the first Android debug build.** Generate the wrapper, resolve pinned dependencies, run `:app:assembleDebug`, unit tests, lint, and Compose tests; fix Android-only compile or code-generation issues.
-2. **Integrate real mGBA on device.** Fetch the pinned source, verify its license/hash, build `libmgba_libretro.so`, package ABIs, and run ROM/frame/audio/input/state/battery/cheat tests on arm64 hardware.
-3. **Complete durability testing.** Exercise process death, background/foreground, storage pressure, interrupted writes, corrupted states, migrations, and pre-cheat recovery on real Android filesystems.
-4. **Implement core link callbacks.** Define serial/link timing events, deterministic synchronization, rollback/resync behavior, and compatibility fixtures before connecting the existing LAN transport to gameplay.
-5. **Harden internet services.** Add DNS-resolution private-address enforcement, certificate/network tests, durable WorkManager queues, catalog signatures/revocation, and explicit trust UX.
-6. **Run product QA.** Accessibility audit, screen-reader/controller-only navigation, foldable/tablet layouts, thermal/battery profiling, low-end-device tests, and save-integrity soak tests.
-7. **Add credentialed services only after foundations pass.** Provider OAuth, relay, cloud saves, and external achievements require real credentials, privacy terms, account deletion/export, security review, and operational ownership.
+1. **Create the Android build environment.** Install SDK 37, build tools, platform tools, NDK, CMake, and Gradle wrapper dependencies; run `:app:assembleDebug`, unit tests, and lint.
+2. **Compile and bundle mGBA.** Build arm64-v8a first, then armeabi-v7a and x86_64; verify the exact libretro symbols and license notices inside the APK.
+3. **Run gameplay validation.** Use legal homebrew and personal backups across save types, RTC games, patches, cheats, states, rewind, fast-forward, audio routes, process death, and low storage.
+4. **Run UI/device validation.** Phones, tablets, foldables, gaming handhelds, Android TV exploration, controller-only navigation, TalkBack, font scaling, high contrast, reduced motion, and themed icons.
+5. **Implement the identity backend.** Verify Google ID token signature/issuer/audience/expiry/nonce, issue revocable Retra sessions, support account deletion/export, and keep ROM upload disabled.
+6. **Add cloud save providers.** Opt-in encrypted save/settings backup with conflict history; never default-upload ROMs.
+7. **Expose mGBA link callbacks.** Build deterministic local link synchronization before enabling multiplayer gameplay claims.
+8. **Finish release engineering.** R8, Baseline Profiles, macrobenchmarks, crash reporting consent, privacy policy, accessibility audit, signing, SBOM, dependency scanning, and Play pre-launch reports.

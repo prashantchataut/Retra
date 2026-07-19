@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.5.0 — 2026-07-19
+
+### Brand and onboarding
+- Created and applied the original Retra Prism logo, wordmark, adaptive launcher icon, Android 13 monochrome icon, and Android 12+ splash treatment.
+- Rebuilt onboarding as a five-step adaptive journey covering privacy, library, player safety, personalization, and optional Google identity.
+- Added a polished You/profile surface with offline identity, friend code, achievement status, Google connect/disconnect, and server-verification disclosure.
+
+### Emulator experience
+- Added functional integer scaling, optional display smoothing, performance overlay, audio mute/volume, touch-control visibility, background suspend selection, and headphone-disconnect pause.
+- Added immersive player system bars, five save-state slots, bounded 32 MiB rewind, screenshots, slow motion, fast-forward hold, and expanded session controls.
+- Added controller disconnect clearing, live controller testing, contextual keyboard/gamepad capture, extra face/trigger mappings, and L3/R3 rewind/fast-forward shortcuts.
+- Added a reproducible SHA-256-verified mGBA archive fetch path and Gradle core tasks.
+
+### Library
+- Added search, favorites, favorite shelf/count, editable titles and notes, custom cover artwork, and deterministic fallback artwork.
+- Added Room schema 4 and explicit migration for favorites, notes, and cover-art paths.
+
+### Identity and privacy
+- Added Credential Manager Sign in with Google using explicit button flow, secure nonce, official credential parsing, ephemeral ID tokens, local account metadata, and credential-state clearing.
+- Disabled Android automatic backup so private ROM/save/account data is not silently uploaded.
+
+### Verification
+- Expanded the pure host suite to 36 checks with bounded rewind coverage.
+- Expanded static gates for branding, identity, functional settings, screenshots, artwork, Room schema 4, and mGBA acquisition.
+- Kept native and libretro host suites passing.
+
 ## 0.4.0 — 2026-07-19
 
 ### Added

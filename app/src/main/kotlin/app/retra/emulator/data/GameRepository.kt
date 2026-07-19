@@ -119,6 +119,14 @@ class GameRepository @Inject constructor(
         gameDao.markPlayed(id, System.currentTimeMillis())
     }
 
+    suspend fun setFavorite(id: Long, favorite: Boolean) = withContext(Dispatchers.IO) {
+        gameDao.setFavorite(id, favorite)
+    }
+
+    suspend fun updateMetadata(id: Long, title: String, notes: String?) = withContext(Dispatchers.IO) {
+        gameDao.updateMetadata(id, title.trim().take(120), notes?.trim()?.take(4_000)?.ifBlank { null })
+    }
+
     suspend fun delete(id: Long) = withContext(Dispatchers.IO) { gameDao.deleteById(id) }
 
     private fun queryDisplayName(uri: Uri): String? = resolver.query(

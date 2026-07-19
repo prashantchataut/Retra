@@ -42,10 +42,22 @@ class AudioOutput @Inject constructor(
     private var track: AudioTrack? = null
     private var formatKey: Pair<Int, Int>? = null
     private var enabled = false
+    private var userEnabled = true
+    private var volume = 1f
     private var focusHeld = false
+
+    fun configure(enabled: Boolean, volume: Float) {
+        synchronized(lock) {
+            userEnabled = enabled
+            this.volume = volume.coerceIn(0f, 1f)
+            track?.setVolume(this.volume)
+            if (!userEnabled) pause(abandonFocus = true)
+        }
+    }
 
     fun start() {
         synchronized(lock) {
+            if (!userEnabled) return
             val result = audioManager.requestAudioFocus(focusRequest)
             focusHeld = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
             enabled = focusHeld
@@ -97,6 +109,7 @@ class AudioOutput @Inject constructor(
             .setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
             .build()
         check(created.state == AudioTrack.STATE_INITIALIZED) { "Android could not initialize game audio." }
+        created.setVolume(volume)
         track = created
         formatKey = key
         return created

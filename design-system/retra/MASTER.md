@@ -33,3 +33,11 @@ Retra Prism is token-driven. Indigo is brand/action, cyan is technical/live, vio
 - Cheat activation always surfaces ROM match, conflicts, risk, save-backup state, and achievement eligibility impact.
 - Multiplayer status distinguishes local architecture, signaling, transport, core-link support, and verified gameplay.
 - Social sharing defaults to privacy-safe metadata; never attach ROM/save contents.
+
+## 0.5 brand/application notes
+- Canonical mark: rounded cartridge-like field, abstract R, prism trail, and memory sparkle.
+- Onboarding is a narrative sequence, not a permission dump.
+- The You destination combines identity with settings so account status never displaces gameplay/library tabs.
+- Game cards accept bounded custom covers; deterministic token-based artwork remains the fallback.
+- Player chrome yields to the 240×160 frame, hides system bars, and keeps advanced actions inside one scrollable session sheet.
+- Google sign-in uses neutral explicit wording and a generic login glyph rather than a counterfeit Google logo.

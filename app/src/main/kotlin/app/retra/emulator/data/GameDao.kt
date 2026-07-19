@@ -21,6 +21,15 @@ interface GameDao {
     @Query("UPDATE games SET lastPlayedAtEpochMillis = :timestamp WHERE id = :id")
     suspend fun markPlayed(id: Long, timestamp: Long)
 
+    @Query("UPDATE games SET coverArtPath = :path WHERE id = :id")
+    suspend fun setCoverArt(id: Long, path: String?)
+
+    @Query("UPDATE games SET title = :title, notes = :notes WHERE id = :id")
+    suspend fun updateMetadata(id: Long, title: String, notes: String?)
+
+    @Query("UPDATE games SET favorite = :favorite WHERE id = :id")
+    suspend fun setFavorite(id: Long, favorite: Boolean)
+
     @Query("DELETE FROM games WHERE id = :id")
     suspend fun deleteById(id: Long)
 }

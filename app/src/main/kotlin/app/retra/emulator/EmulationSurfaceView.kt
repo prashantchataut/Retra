@@ -26,12 +26,21 @@ class EmulationSurfaceView @JvmOverloads constructor(
     private var bitmap: Bitmap? = null
     private var pendingFrame: VideoFrame? = null
     private var surfaceReady = false
+    private var integerScaling = true
+    private var smoothing = false
 
     init {
         holder.addCallback(this)
         keepScreenOn = true
         contentDescription = "Emulation video output"
         setBackgroundColor(Color.BLACK)
+    }
+
+    fun configure(integerScaling: Boolean, smoothing: Boolean) {
+        this.integerScaling = integerScaling
+        this.smoothing = smoothing
+        paint.isFilterBitmap = smoothing
+        drawLatestFrame()
     }
 
     fun submitFrame(frame: VideoFrame) {
@@ -78,16 +87,29 @@ class EmulationSurfaceView @JvmOverloads constructor(
     }
 
     private fun aspectFit(sourceWidth: Int, sourceHeight: Int, canvas: Canvas): RectF {
+        val canvasWidth = canvas.width.coerceAtLeast(1)
+        val canvasHeight = canvas.height.coerceAtLeast(1)
+        if (integerScaling) {
+            val fit = minOf(canvasWidth.toFloat() / sourceWidth, canvasHeight.toFloat() / sourceHeight)
+            if (fit >= 1f) {
+                val scale = kotlin.math.floor(fit).coerceAtLeast(1f)
+                val width = sourceWidth * scale
+                val height = sourceHeight * scale
+                val left = (canvasWidth - width) / 2f
+                val top = (canvasHeight - height) / 2f
+                return RectF(left, top, left + width, top + height)
+            }
+        }
         val sourceRatio = sourceWidth.toFloat() / sourceHeight
-        val targetRatio = canvas.width.toFloat() / canvas.height.coerceAtLeast(1)
+        val targetRatio = canvasWidth.toFloat() / canvasHeight
         return if (targetRatio > sourceRatio) {
-            val width = canvas.height * sourceRatio
-            val left = (canvas.width - width) / 2f
-            RectF(left, 0f, left + width, canvas.height.toFloat())
+            val width = canvasHeight * sourceRatio
+            val left = (canvasWidth - width) / 2f
+            RectF(left, 0f, left + width, canvasHeight.toFloat())
         } else {
-            val height = canvas.width / sourceRatio
-            val top = (canvas.height - height) / 2f
-            RectF(0f, top, canvas.width.toFloat(), top + height)
+            val height = canvasWidth / sourceRatio
+            val top = (canvasHeight - height) / 2f
+            RectF(0f, top, canvasWidth.toFloat(), top + height)
         }
     }
 }

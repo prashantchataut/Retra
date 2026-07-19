@@ -1,0 +1,1 @@
+PASS libretro gameplay adapter: ABI load, in-memory ROM, frame, input, audio, state, battery save, cheats

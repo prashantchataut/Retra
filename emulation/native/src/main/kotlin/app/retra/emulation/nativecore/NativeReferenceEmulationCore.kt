@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import app.retra.core.emulation.AtomicSaveStore
 import app.retra.core.emulation.InputSnapshot
+import app.retra.core.emulation.RewindBuffer
 import app.retra.core.emulation.SaveEnvelope
 import app.retra.core.emulation.SaveKind
 import app.retra.core.emulation.SessionCommand
@@ -49,13 +50,13 @@ class NativeReferenceEmulationCore(context: Context) : EmulationCore, AutoClosea
     override val descriptor = CoreDescriptor(
         id = "retra-reference-native",
         displayName = "Retra Native Reference Pipeline",
-        version = "0.4.0",
+        version = "0.5.0",
         tier = CoreTier.DIAGNOSTIC_PIPELINE,
         supportsBatterySaves = false,
         supportsSaveStates = true,
         supportsAudio = true,
         supportsCheats = false,
-        supportsRewind = false,
+        supportsRewind = true,
         legalNotice = "Diagnostic renderer only. A separately reviewed MPL-2.0 mGBA integration is required for GBA gameplay."
     )
     override val isAvailable: Boolean = true
@@ -73,6 +74,7 @@ class NativeReferenceEmulationCore(context: Context) : EmulationCore, AutoClosea
     private var profile = PerformanceProfile.BALANCED
     private var sequence = 0L
     private val closed = AtomicBoolean(false)
+    private val rewindBuffer = RewindBuffer(MAX_REWIND_BYTES)
 
     private val mutableSession = MutableStateFlow(SessionSnapshot())
     override val session: StateFlow<SessionSnapshot> = mutableSession
@@ -91,6 +93,7 @@ class NativeReferenceEmulationCore(context: Context) : EmulationCore, AutoClosea
         frameJob?.cancel()
         frameJob = null
         mutableFrame.value = null
+        clearRewind()
         gameHash = null
         mutableSession.value = SessionReducer.reduce(mutableSession.value, SessionCommand.BeginLoad(game.sha256))
         return runCatching {
@@ -137,6 +140,7 @@ class NativeReferenceEmulationCore(context: Context) : EmulationCore, AutoClosea
     override fun reset() {
         synchronized(nativeLock) { NativeBridge.nativeReset(nativeHandle) }
         sequence = 0
+        clearRewind()
         mutableSession.value = SessionReducer.reduce(mutableSession.value, SessionCommand.Reset)
         start()
     }
@@ -145,6 +149,7 @@ class NativeReferenceEmulationCore(context: Context) : EmulationCore, AutoClosea
         frameJob?.cancel()
         frameJob = null
         mutableFrame.value = null
+        clearRewind()
         mutableSession.value = SessionReducer.reduce(mutableSession.value, SessionCommand.Stop)
     }
 
@@ -188,6 +193,16 @@ class NativeReferenceEmulationCore(context: Context) : EmulationCore, AutoClosea
 
     override fun clearCheats(): Result<Unit> = Result.success(Unit)
 
+    override fun rewind(steps: Int): Result<Int> = runCatching {
+        require(steps in 1..120) { "Rewind steps must be between 1 and 120." }
+        requireNotNull(gameHash) { "No game is loaded." }
+        val target = rewindBuffer.rewind(steps)
+        check(synchronized(nativeLock) { NativeBridge.nativeDeserialize(nativeHandle, target) }) {
+            "The native pipeline rejected the rewind snapshot."
+        }
+        mutableSession.value = mutableSession.value.copy(phase = SessionPhase.PAUSED, errorMessage = null)
+        rewindBuffer.snapshotCount
+    }
 
     private fun restoreSuspendIfCompatible(hash: String): Boolean {
         val bytes = saveStore.read(statePath(hash, SaveKind.SUSPEND, -1)) ?: return false
@@ -260,6 +275,16 @@ class NativeReferenceEmulationCore(context: Context) : EmulationCore, AutoClosea
         }
     }
 
+    private fun captureRewindSnapshot() {
+        val state = synchronized(nativeLock) { NativeBridge.nativeSerialize(nativeHandle) }
+        if (state.isEmpty()) return
+        rewindBuffer.push(state)
+    }
+
+    private fun clearRewind() {
+        rewindBuffer.clear()
+    }
+
     private fun createDiagnosticAudio(frameSequence: Long, inputMask: Int): AudioPacket {
         val sampleRate = 48_000
         val frames = sampleRate / 60
@@ -296,6 +321,11 @@ class NativeReferenceEmulationCore(context: Context) : EmulationCore, AutoClosea
         val actualHash = digest.digest().joinToString("") { "%02x".format(it) }
         require(actualHash.equals(expectedHash, ignoreCase = true)) { "ROM hash changed since import." }
         return output.toByteArray()
+    }
+
+    private companion object {
+        const val REWIND_CAPTURE_INTERVAL_FRAMES = 30L
+        const val MAX_REWIND_BYTES = 32 * 1024 * 1024
     }
 
     override fun close() {

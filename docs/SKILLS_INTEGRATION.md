@@ -39,3 +39,11 @@ The previously included Android skills were also retained and applied:
 ## Paperclip agent boundary
 
 `paperclip-create-agent` was reviewed but not executed against a Paperclip API. No organization, credentials, reporting chain, or concrete agent-creation objective was available. Inventing those values would violate the skill’s preconditions.
+
+## 0.5 application
+
+- `ui-ux-pro-max`: explicit UX hierarchy, adaptive touch targets, action feedback, themed icon, reduced-motion/high-contrast settings, and a device-test checklist.
+- `design-guide`: one visual narrative from brand/onboarding through home, library, game details, player, and profile rather than disconnected feature screens.
+- `design-taste-frontend`: deliberate variance, limited gradients/glass, fewer repetitive cards, strong hero anchors, and readable dense technical surfaces.
+- `mobile-android-design`: Credential Manager, bottom navigation/rail adaptation, contextual controller capture, noisy-audio handling, Android launcher/splash resources, and platform storage behavior.
+- `paperclip-create-agent`: reviewed only; still not invoked because no Paperclip organization, manager, budget, or durable agent objective was provided.

@@ -2,39 +2,31 @@
 
 ## Current milestone
 
-**Retra 0.4.0 — community, verified internet imports, achievements, customization, and multiplayer architecture.**
+**Retra 0.5.0 — branded onboarding, optional Google identity, gameplay-ready player UX, rewind/screenshots, and customizable library.**
 
-The source now spans thirteen Gradle modules and reaches the gameplay-core boundary without misrepresenting a diagnostic renderer as a GBA emulator. The mGBA/libretro adapter is host-verified for ROM transfer, frames, input, PCM, state, battery memory, and cheats. Android selects gameplay only when a real reviewed shared library is loadable.
+## Stable architecture
 
-The user-facing platform now includes secure local and online libraries, custom/local/online Retra Codes, protected in-session cheat activation, Vault saves, IPS/UPS/BPS patching, local achievements, a private-first profile and share layer, broad customization, and bounded LAN multiplayer transport.
+- `:core:model` — durable product models.
+- `:core:rom` — GBA headers, hashing, catalog rules.
+- `:core:emulation` — state machine, envelopes, atomic storage, input, bounded rewind.
+- `:core:patching`, `:core:cheats`, `:core:achievements`, `:core:social`, `:core:multiplayer` — platform-neutral systems.
+- `:emulation:api` — UI-independent emulator contract.
+- `:emulation:native` — reference JNI pipeline and mGBA/libretro adapter.
+- `:app` — Compose UI, Room/DataStore, Credential Manager, downloads, artwork, audio, screenshots, lifecycle, and DI.
 
-## Verification snapshot
+## Exact continuation point
 
-- 35 platform-neutral checks passed.
-- Native reference-engine suite passed.
-- Libretro gameplay-adapter suite passed, including cheat reset/set.
-- Static project verification passed for modules, XML, TOML, icons, Room migrations, secure-content capabilities, achievements, social, multiplayer, requested skills, DI, and emulation contracts.
-- Shell syntax passed.
-- JNI bridge and libretro adapter compiled on the host with C++20 warnings treated as errors.
+1. Install a reviewed Android SDK/NDK/Gradle environment.
+2. Run `scripts/fetch-mgba-archive.sh` and `scripts/build-mgba-libretro-android.sh`.
+3. Build `:app:assembleDebug`; resolve real compiler/API differences before adding features.
+4. Run the device matrix in `NEXT_ACTIONS.md` and update this file with evidence.
+5. Configure a Google OAuth Web client ID and implement a server token-verification/session endpoint before enabling cloud privileges.
 
-## Environment blockers
+## Non-negotiable invariants
 
-This environment has no Android SDK/NDK, Gradle executable/wrapper JAR, resolved Android dependencies, Android emulator/device, or usable outbound DNS. No APK/AAB or Android mGBA shared library was produced. Device-only behavior remains unverified.
-
-## Critical truth boundaries
-
-- Social provider OAuth is not implemented because no provider credentials or redirect URIs exist; Retra stores user-entered public identity labels/links locally and supports the Android share sheet.
-- Internet multiplayer relay is an interface, not a hosted service.
-- LAN framing is implemented and loopback-tested, but actual GBA link play requires emulator-core link callbacks and synchronized clocks.
-- Achievements are local Retra achievements; no third-party achievement provider is claimed.
-- Raw memory-write cheats remain disabled pending reviewed width/endianness translation.
-
-## Resume point
-
-On a prepared Android workstation:
-
-1. Generate the Gradle wrapper, resolve dependencies, and repair any Android-only compile errors.
-2. Build the pinned mGBA Android library and verify legal notices and binary hashes.
-3. Run arm64 device tests for launch, video, audio, touch/gamepad input, saves, cheats, lifecycle, catalog downloads, Room migrations, and accessibility.
-4. Add real link-cable callbacks to the selected core before enabling multiplayer gameplay.
-5. Only then add credentialed OAuth, a production relay, cloud saves, or external achievement providers.
+- save integrity outranks visual features;
+- ROMs and native code are never downloaded silently;
+- legal remote content is explicit, licensed, bounded, and hash verified;
+- Google ID tokens are ephemeral and never treated as server verification;
+- diagnostic rendering is never called GBA emulation;
+- working local play remains available without an account or network.

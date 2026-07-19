@@ -12,6 +12,7 @@ kotlinc \
   "$ROOT/core/rom/src/main/kotlin/app/retra/core/rom/CatalogValidator.kt" \
   "$ROOT/core/emulation/src/main/kotlin/app/retra/core/emulation/EmulationModels.kt" \
   "$ROOT/core/emulation/src/main/kotlin/app/retra/core/emulation/AtomicSaveStore.kt" \
+  "$ROOT/core/emulation/src/main/kotlin/app/retra/core/emulation/RewindBuffer.kt" \
   "$ROOT/core/patching/src/main/kotlin/app/retra/core/patching/PatchEngine.kt" \
   "$ROOT/core/cheats/src/main/kotlin/app/retra/core/cheats/RetraCodes.kt" \
   "$ROOT/core/download/src/main/kotlin/app/retra/core/download/CatalogDownloadPolicy.kt" \

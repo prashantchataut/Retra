@@ -1,53 +1,41 @@
 # Architecture Decisions
 
-## AD-001 — Truthful core tiers
+## AD-001 — Emulator core remains independent
 
-Retra exposes `DIAGNOSTIC_PIPELINE` and `GBA_GAMEPLAY` as distinct capabilities. The app must never label synthetic frames as emulation. Gameplay is available only when a reviewed libretro-compatible mGBA shared library loads.
+Compose, accounts, catalogs, artwork, achievements, and cloud systems do not enter the native core. `EmulationCore` is the sole app-facing contract.
 
-## AD-002 — Core independence
+## AD-002 — mGBA is a build-time component
 
-Compose, catalogs, profiles, artwork, accounts, and networking do not leak into the native core. `:emulation:api` owns the replaceable contract; `:emulation:native` owns JNI and libretro integration.
+Retra uses pinned mGBA 0.10.5 through the libretro ABI. Native executable code is compiled and bundled; it is never downloaded at runtime. Missing symbols produce an explicit diagnostic fallback.
 
-## AD-003 — Bytes across the native boundary
+## AD-003 — Google identity uses Credential Manager
 
-The core receives verified ROM bytes and returns bounded frames/audio/state/save payloads. Untrusted catalog paths are not passed into native code.
+The client requests Google identity with a nonce, parses only the official credential type, stores no raw ID token, and grants no cloud trust without backend verification.
 
-## AD-004 — Save integrity before convenience
+## AD-004 — Offline play is unconditional
 
-State and battery data use versioned ROM/core-bound envelopes, payload hashes, safe names, temporary files, fsync, atomic replacement, and rotating backups. Cheats trigger a battery flush and protected pre-cheat state.
+Onboarding and account screens always offer offline use. Authentication cannot block local ROMs, saves, patches, cheats, achievements, or settings.
 
-## AD-005 — Explicit internet imports only
+## AD-005 — Rewind is bounded and non-persistent
 
-Retra does not scrape ROM sites. Users may add an explicit catalog or cheat-pack URL only with HTTPS and an expected SHA-256. Redirects remain on the same host; private/local targets and oversized responses are rejected.
+Native state snapshots are copied into a thread-safe 32 MiB ring. They are cleared on load/reset/stop and never replace battery saves or Vault states.
 
-## AD-006 — Declarative Retra Codes
+## AD-006 — Video uses SurfaceView
 
-Cheat packs are bounded UTF-8 data, not scripts. They are matched to exact ROM identity and analyzed for dependency/conflict errors. Libretro-compatible text codes are supported; raw memory writes remain gated until translation semantics are reviewed.
+The frame presenter reuses one mutable bitmap and supports aspect fit, integer scaling, and optional filtering without allocating a Compose bitmap each frame.
 
-## AD-007 — Legal catalog provenance
+## AD-007 — Custom artwork is app-private metadata
 
-Every downloadable game entry requires creator, source, license, distribution permission, size, checksum, and supported file type. Commercial games can be represented as metadata but are never downloaded by Retra.
+Imported artwork is bounded, decoded, downsampled, re-encoded, atomically committed, and stored outside the ROM. Title/notes/cover changes never alter ROM bytes or identity.
 
-## AD-008 — Private-first social layer
+## AD-008 — Automatic Android backup is disabled
 
-The app owns a local profile/friend code and creates privacy-safe share payloads. Provider labels and HTTPS public-profile URLs may be stored locally. OAuth is not simulated; it requires real credentials and provider-specific adapters.
+The manifest disables platform auto-backup so ROMs, saves, identity metadata, and private catalog content are not silently uploaded. Future cloud backup must be explicit and save-focused.
 
-## AD-009 — Local achievements first
+## AD-009 — Input capture is contextual
 
-Achievements are deterministic local rules driven by app events, with integrity policy separated from progress. External achievement providers are future adapters rather than hidden dependencies.
+Game controls consume controller/keyboard events only during gameplay or the explicit tester. Elsewhere, D-pad and controller events remain available to Android/Compose focus navigation.
 
-## AD-010 — Multiplayer is layered
+## AD-010 — Visual design is token-driven
 
-Compatibility, session state, packet codec, ordering, LAN transport, and future relay are separate. LAN transport is bounded and checksummed. The UI remains gated until a core exposes real link callbacks; network transport alone is not called multiplayer gameplay.
-
-## AD-011 — Customization uses semantic settings
-
-Themes and behavior use enums/ranged values persisted through DataStore. Settings must change real behavior: recommendations filter built-ins, density affects layout, touch opacity affects controls, and haptics affect presses.
-
-## AD-012 — Restrained visual language
-
-Retra Prism combines Material 3, nostalgic color, asymmetry, controlled glass, and controller-first ergonomics. Readability, 48dp targets, reduced motion/transparency, and high contrast outrank decorative effects.
-
-## AD-013 — Skills provenance is explicit
-
-The five requested `npx skills use` commands were executed but GitHub DNS failed. Command output is retained. Canonical instructions recovered through available retrieval were stored as offline snapshots and applied; they are not represented as successful clones.
+The original Retra Prism mark and Material 3 tokens drive onboarding, navigation, library, player, and profile. Glass and gradients are reserved for narrative anchors; dense technical screens remain opaque and readable.

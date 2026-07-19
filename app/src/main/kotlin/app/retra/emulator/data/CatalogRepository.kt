@@ -109,7 +109,7 @@ class CatalogRepository @Inject constructor(
                 connection.requestMethod = "GET"
                 connection.setRequestProperty("Accept", "application/json, text/json, text/plain")
                 connection.setRequestProperty("Accept-Encoding", "identity")
-                connection.setRequestProperty("User-Agent", "Retra/0.4.0 Android")
+                connection.setRequestProperty("User-Agent", "Retra/0.5.0 Android")
                 val status = connection.responseCode
                 if (status in REDIRECT_CODES) {
                     if (redirectIndex == MAX_MANIFEST_REDIRECTS) {

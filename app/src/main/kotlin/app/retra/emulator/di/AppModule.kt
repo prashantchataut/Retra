@@ -37,11 +37,18 @@ object AppModule {
             db.execSQL("ALTER TABLE games ADD COLUMN distributionPermission TEXT")
         }
     }
+    private val MIGRATION_3_4 = object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE games ADD COLUMN favorite INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE games ADD COLUMN notes TEXT")
+            db.execSQL("ALTER TABLE games ADD COLUMN coverArtPath TEXT")
+        }
+    }
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): RetraDatabase =
         Room.databaseBuilder(context, RetraDatabase::class.java, "retra.db")
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
             .build()
 
     @Provides

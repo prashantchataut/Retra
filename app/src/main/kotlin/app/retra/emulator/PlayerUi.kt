@@ -1,5 +1,6 @@
 package app.retra.emulator
 
+import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -28,7 +29,9 @@ import androidx.compose.material.icons.filled.Gamepad
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -45,7 +48,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -53,10 +58,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.retra.core.emulation.EmulatorButton
 import app.retra.core.emulation.SessionPhase
@@ -77,10 +86,18 @@ fun PlayerScreen(
     val packsByGame by viewModel.cheatPacks.collectAsStateWithLifecycle()
     val activeCheatIds by viewModel.activeCheatIds.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val activity = LocalContext.current as? Activity
+    DisposableEffect(activity) {
+        val controller = activity?.let { WindowCompat.getInsetsController(it.window, it.window.decorView) }
+        controller?.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        controller?.hide(WindowInsetsCompat.Type.systemBars())
+        onDispose { controller?.show(WindowInsetsCompat.Type.systemBars()) }
+    }
     val gamePacks = packsByGame[game.sha256.lowercase()].orEmpty()
     var menuOpen by remember { mutableStateOf(false) }
     var cheatsOpen by remember { mutableStateOf(false) }
     var speed by remember { mutableStateOf(1f) }
+    var selectedSlot by remember { mutableIntStateOf(0) }
 
     BackHandler {
         if (menuOpen) menuOpen = false else menuOpen = true
@@ -141,29 +158,52 @@ fun PlayerScreen(
                 }
             }
 
-            FrameSurface(frame = frame, modifier = Modifier.fillMaxWidth().weight(1f, fill = false))
+            FrameSurface(
+                frame = frame,
+                integerScaling = settings.integerScaling,
+                smoothing = settings.displaySmoothing,
+                modifier = Modifier.fillMaxWidth().weight(1f, fill = false)
+            )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("${metrics.presentedFps.toInt()} fps", style = MaterialTheme.typography.labelLarge)
-                Text("${metrics.speedPercent.toInt()}%", style = MaterialTheme.typography.labelLarge)
-                Text(session.phase.name.lowercase().replaceFirstChar(Char::titlecase), style = MaterialTheme.typography.labelLarge)
+            if (settings.showPerformanceOverlay) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("${metrics.presentedFps.toInt()} fps", style = MaterialTheme.typography.labelLarge)
+                    Text("${metrics.speedPercent.toInt()}%", style = MaterialTheme.typography.labelLarge)
+                    Text(session.phase.name.lowercase().replaceFirstChar(Char::titlecase), style = MaterialTheme.typography.labelLarge)
+                }
             }
 
-            PlayerControls(settings.touchControlOpacity, settings.hapticsEnabled, onPressed = viewModel::setButtonPressed)
+            if (settings.showTouchControls) {
+                PlayerControls(settings.touchControlOpacity, settings.hapticsEnabled, onPressed = viewModel::setButtonPressed)
+            } else {
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f)
+                ) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Gamepad, null)
+                        Text("Touch controls are hidden. Use a connected controller or enable them in You → Controls.")
+                    }
+                }
+            }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(1f, 2f, 4f).forEach { option ->
+                listOf(0.5f, 1f, 2f, 4f, settings.fastForwardSpeed).distinct().sorted().forEach { option ->
                     FilledTonalButton(
                         onClick = {
                             speed = option
                             viewModel.setSessionSpeed(option)
                         },
                         enabled = speed != option
-                    ) { Text("${option.toInt()}x") }
+                    ) { Text("${option.toString().removeSuffix(".0")}×") }
                 }
             }
         }
@@ -173,6 +213,9 @@ fun PlayerScreen(
         SessionMenu(
             isRunning = session.phase == SessionPhase.RUNNING,
             canSaveState = viewModel.coreDescriptor.supportsSaveStates,
+            selectedSlot = selectedSlot,
+            onSlotSelected = { selectedSlot = it },
+            canRewind = viewModel.coreDescriptor.supportsRewind,
             hasCheats = gamePacks.isNotEmpty(),
             activeCheatCount = activeCheatIds.size,
             onDismiss = { menuOpen = false },
@@ -181,11 +224,19 @@ fun PlayerScreen(
                 menuOpen = false
             },
             onSave = {
-                viewModel.saveState(0)
+                viewModel.saveState(selectedSlot)
                 menuOpen = false
             },
             onLoad = {
-                viewModel.loadState(0)
+                viewModel.loadState(selectedSlot)
+                menuOpen = false
+            },
+            onRewind = {
+                viewModel.rewindSession()
+                menuOpen = false
+            },
+            onScreenshot = {
+                viewModel.captureScreenshot()
                 menuOpen = false
             },
             onReset = {
@@ -214,7 +265,12 @@ fun PlayerScreen(
 }
 
 @Composable
-private fun FrameSurface(frame: VideoFrame?, modifier: Modifier = Modifier) {
+private fun FrameSurface(
+    frame: VideoFrame?,
+    integerScaling: Boolean,
+    smoothing: Boolean,
+    modifier: Modifier = Modifier
+) {
     Surface(
         modifier = modifier.aspectRatio(3f / 2f),
         shape = RoundedCornerShape(18.dp),
@@ -225,7 +281,10 @@ private fun FrameSurface(frame: VideoFrame?, modifier: Modifier = Modifier) {
             AndroidView(
                 factory = { context -> EmulationSurfaceView(context) },
                 modifier = Modifier.fillMaxSize(),
-                update = { surface -> frame?.let(surface::submitFrame) }
+                update = { surface ->
+                    surface.configure(integerScaling, smoothing)
+                    frame?.let(surface::submitFrame)
+                }
             )
             if (frame == null) {
                 Text("Waiting for the first native frame…", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -259,11 +318,20 @@ private fun PlayerControls(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        PressControl("L", EmulatorButton.L, Modifier.size(50.dp), controlOpacity, hapticsEnabled, onPressed)
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        PressControl("L", EmulatorButton.L, Modifier.size(48.dp), controlOpacity, hapticsEnabled, onPressed)
                         PressControl("Select", EmulatorButton.SELECT, Modifier.size(width = 68.dp, height = 36.dp), controlOpacity, hapticsEnabled, onPressed)
                         PressControl("Start", EmulatorButton.START, Modifier.size(width = 68.dp, height = 36.dp), controlOpacity, hapticsEnabled, onPressed)
-                        PressControl("R", EmulatorButton.R, Modifier.size(50.dp), controlOpacity, hapticsEnabled, onPressed)
+                        PressControl("R", EmulatorButton.R, Modifier.size(48.dp), controlOpacity, hapticsEnabled, onPressed)
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        PressControl("↶ Rewind", EmulatorButton.REWIND, Modifier.size(width = 110.dp, height = 38.dp), controlOpacity, hapticsEnabled, onPressed)
+                        PressControl("FF", EmulatorButton.FAST_FORWARD, Modifier.size(width = 76.dp, height = 38.dp), controlOpacity, hapticsEnabled, onPressed)
                     }
                 }
             }
@@ -280,8 +348,10 @@ private fun PlayerControls(
                         PressControl("Start", EmulatorButton.START, Modifier.size(width = 72.dp, height = 38.dp), controlOpacity, hapticsEnabled, onPressed)
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        PressControl("L", EmulatorButton.L, Modifier.size(58.dp), controlOpacity, hapticsEnabled, onPressed)
-                        PressControl("R", EmulatorButton.R, Modifier.size(58.dp), controlOpacity, hapticsEnabled, onPressed)
+                        PressControl("L", EmulatorButton.L, Modifier.size(54.dp), controlOpacity, hapticsEnabled, onPressed)
+                        PressControl("↶", EmulatorButton.REWIND, Modifier.size(48.dp), controlOpacity, hapticsEnabled, onPressed)
+                        PressControl("FF", EmulatorButton.FAST_FORWARD, Modifier.size(48.dp), controlOpacity, hapticsEnabled, onPressed)
+                        PressControl("R", EmulatorButton.R, Modifier.size(54.dp), controlOpacity, hapticsEnabled, onPressed)
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -348,12 +418,17 @@ private fun PressControl(
 private fun SessionMenu(
     isRunning: Boolean,
     canSaveState: Boolean,
+    selectedSlot: Int,
+    onSlotSelected: (Int) -> Unit,
+    canRewind: Boolean,
     hasCheats: Boolean,
     activeCheatCount: Int,
     onDismiss: () -> Unit,
     onTogglePause: () -> Unit,
     onSave: () -> Unit,
     onLoad: () -> Unit,
+    onRewind: () -> Unit,
+    onScreenshot: () -> Unit,
     onReset: () -> Unit,
     onCheats: () -> Unit,
     onExit: () -> Unit
@@ -362,21 +437,43 @@ private fun SessionMenu(
         onDismissRequest = onDismiss,
         title = { Text("Session controls") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = onTogglePause, modifier = Modifier.fillMaxWidth()) {
                     Icon(if (isRunning) Icons.Default.Pause else Icons.Default.PlayArrow, null)
                     Spacer(Modifier.size(8.dp))
                     Text(if (isRunning) "Pause" else "Resume")
                 }
+                Text("Save-state slot", style = MaterialTheme.typography.labelLarge)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    (0..4).forEach { slot ->
+                        FilledTonalButton(
+                            onClick = { onSlotSelected(slot) },
+                            enabled = canSaveState,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(if (slot == selectedSlot) "• $slot" else slot.toString())
+                        }
+                    }
+                }
                 Button(onClick = onSave, enabled = canSaveState, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Default.Save, null)
                     Spacer(Modifier.size(8.dp))
-                    Text("Quick save · Slot 0")
+                    Text("Save to slot $selectedSlot")
                 }
                 Button(onClick = onLoad, enabled = canSaveState, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Default.PlayArrow, null)
                     Spacer(Modifier.size(8.dp))
-                    Text("Quick load · Slot 0")
+                    Text("Load slot $selectedSlot")
+                }
+                Button(onClick = onRewind, enabled = canRewind, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Default.Replay, null)
+                    Spacer(Modifier.size(8.dp))
+                    Text("Rewind one snapshot")
+                }
+                Button(onClick = onScreenshot, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Default.PhotoCamera, null)
+                    Spacer(Modifier.size(8.dp))
+                    Text("Capture screenshot")
                 }
                 Button(onClick = onCheats, enabled = hasCheats, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Default.Code, null)

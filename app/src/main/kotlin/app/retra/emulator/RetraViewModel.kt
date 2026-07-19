@@ -1,5 +1,6 @@
 package app.retra.emulator
 
+import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -27,6 +28,7 @@ import app.retra.core.social.SharePrivacy
 import app.retra.core.social.SocialProvider
 import app.retra.core.social.SocialShareFactory
 import app.retra.emulator.data.AchievementRepository
+import app.retra.emulator.data.ArtworkRepository
 import app.retra.emulator.data.AchievementStatus
 import app.retra.emulator.data.CatalogDownloadOutcome
 import app.retra.emulator.data.CatalogDownloadRepository
@@ -40,10 +42,15 @@ import app.retra.emulator.data.MultiplayerRepository
 import app.retra.emulator.data.PatchOutcome
 import app.retra.emulator.data.PatchRepository
 import app.retra.emulator.data.SettingsRepository
+import app.retra.emulator.data.ScreenshotRepository
 import app.retra.emulator.data.SocialRepository
 import app.retra.emulator.data.StoredCheatPack
 import app.retra.emulator.data.StoredCatalog
 import app.retra.emulator.data.VaultRepository
+import app.retra.emulator.auth.AuthOperation
+import app.retra.emulator.auth.GoogleAuthRepository
+import app.retra.emulator.auth.GoogleSignInResult
+import app.retra.emulator.auth.RetraAccount
 import app.retra.emulation.api.ActiveCheat
 import app.retra.emulation.api.CoreTier
 import app.retra.emulation.api.EmulationCore
@@ -64,6 +71,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class RetraViewModel @Inject constructor(
     private val gameRepository: GameRepository,
+    private val artworkRepository: ArtworkRepository,
     private val settingsRepository: SettingsRepository,
     val catalogRepository: CatalogRepository,
     private val catalogDownloadRepository: CatalogDownloadRepository,
@@ -73,6 +81,8 @@ class RetraViewModel @Inject constructor(
     private val achievementRepository: AchievementRepository,
     private val socialRepository: SocialRepository,
     private val multiplayerRepository: MultiplayerRepository,
+    private val googleAuthRepository: GoogleAuthRepository,
+    private val screenshotRepository: ScreenshotRepository,
     private val audioOutput: AudioOutput,
     private val emulationCore: EmulationCore
 ) : ViewModel() {
@@ -96,6 +106,11 @@ class RetraViewModel @Inject constructor(
     val socialProfile = socialRepository.profile
     val socialConnections = socialRepository.connections
     val multiplayerSession = multiplayerRepository.session
+    val account: StateFlow<RetraAccount?> = googleAuthRepository.account
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    val googleAuthConfigured: Boolean get() = googleAuthRepository.isConfigured
+    private val mutableAuthOperation = MutableStateFlow(AuthOperation.IDLE)
+    val authOperation: StateFlow<AuthOperation> = mutableAuthOperation
     val coreDescriptor = emulationCore.descriptor
     val coreAvailable: Boolean get() = emulationCore.isAvailable
     val gameplayAvailable: Boolean get() = emulationCore.descriptor.tier == CoreTier.GBA_GAMEPLAY
@@ -107,11 +122,22 @@ class RetraViewModel @Inject constructor(
 
     private val inputLock = Any()
     private val pressedButtons = linkedSetOf<EmulatorButton>()
+    private val mutableControllerInput = MutableStateFlow<Set<EmulatorButton>>(emptySet())
+    val controllerInput: StateFlow<Set<EmulatorButton>> = mutableControllerInput
+    private val mutableControllerTestEnabled = MutableStateFlow(false)
+    val controllerTestEnabled: StateFlow<Boolean> = mutableControllerTestEnabled
     private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 24)
     val messages = _messages.asSharedFlow()
     private var sessionStartedAtEpochMillis: Long? = null
+    private var selectedSessionSpeed = 1f
+    private var pausedByHost = false
 
     init {
+        viewModelScope.launch {
+            settingsRepository.settings.collect { value ->
+                audioOutput.configure(value.audioEnabled, value.masterVolume)
+            }
+        }
         viewModelScope.launch {
             emulationCore.audioPackets.collect { packet ->
                 runCatching { audioOutput.write(packet) }
@@ -121,6 +147,37 @@ class RetraViewModel @Inject constructor(
     }
 
     fun finishOnboarding() = viewModelScope.launch { settingsRepository.setOnboardingComplete(true) }
+
+    fun signInWithGoogle(context: Context) = viewModelScope.launch {
+        if (mutableAuthOperation.value != AuthOperation.IDLE) return@launch
+        mutableAuthOperation.value = AuthOperation.SIGNING_IN
+        try {
+            when (val result = googleAuthRepository.signIn(context)) {
+                is GoogleSignInResult.Connected -> {
+                    // The raw ID token is deliberately not persisted. A production Retra backend must
+                    // validate it and the nonce before enabling cloud or social account privileges.
+                    _messages.emit("Google account connected on this device. Server verification is still required for cloud services.")
+                }
+                GoogleSignInResult.Cancelled -> _messages.emit("Google sign-in was cancelled.")
+                GoogleSignInResult.NoCredential -> _messages.emit("No eligible Google credential was available on this device.")
+                GoogleSignInResult.MissingConfiguration -> _messages.emit("Google sign-in needs RETRA_GOOGLE_WEB_CLIENT_ID in the build configuration.")
+                is GoogleSignInResult.Failed -> _messages.emit(result.message)
+            }
+        } finally {
+            mutableAuthOperation.value = AuthOperation.IDLE
+        }
+    }
+
+    fun signOutGoogle(context: Context) = viewModelScope.launch {
+        if (mutableAuthOperation.value != AuthOperation.IDLE) return@launch
+        mutableAuthOperation.value = AuthOperation.SIGNING_OUT
+        try {
+            googleAuthRepository.signOut(context)
+            _messages.emit("Disconnected the Google account from this Retra installation.")
+        } finally {
+            mutableAuthOperation.value = AuthOperation.IDLE
+        }
+    }
 
     fun importFile(uri: Uri) = viewModelScope.launch {
         when (val result = gameRepository.importFile(uri)) {
@@ -202,8 +259,10 @@ class RetraViewModel @Inject constructor(
                 selectedGame.value = null
                 activeCheatIds.value = emptySet()
                 sessionStartedAtEpochMillis = System.currentTimeMillis()
+                selectedSessionSpeed = 1f
+                emulationCore.setEmulationSpeed(selectedSessionSpeed)
                 emulationCore.start()
-                if (emulationCore.descriptor.supportsAudio) audioOutput.start()
+                if (emulationCore.descriptor.supportsAudio && settings.value.audioEnabled) audioOutput.start()
                 recordAchievement(AchievementEventType.GAME_STARTED, uniqueKey = game.sha256, game = game)
                 _messages.emit(
                     when {
@@ -239,7 +298,7 @@ class RetraViewModel @Inject constructor(
             SessionPhase.PAUSED, SessionPhase.SUSPENDED, SessionPhase.READY -> {
                 sessionStartedAtEpochMillis = System.currentTimeMillis()
                 emulationCore.resume()
-                if (emulationCore.descriptor.supportsAudio) audioOutput.start()
+                if (emulationCore.descriptor.supportsAudio && settings.value.audioEnabled) audioOutput.start()
             }
             else -> Unit
         }
@@ -248,6 +307,34 @@ class RetraViewModel @Inject constructor(
     fun resetGame() {
         emulationCore.reset()
         _messages.tryEmit("Session reset.")
+    }
+
+    fun rewindSession(steps: Int = 1) {
+        audioOutput.pause()
+        emulationCore.rewind(steps)
+            .onSuccess { remaining ->
+                _messages.tryEmit("Rewound the session. $remaining snapshots remain in memory.")
+            }
+            .onFailure { error ->
+                _messages.tryEmit(error.message ?: "Rewind is not available yet.")
+                if (session.value.phase == SessionPhase.RUNNING && emulationCore.descriptor.supportsAudio && settings.value.audioEnabled) {
+                    audioOutput.start()
+                }
+            }
+    }
+
+    fun captureScreenshot() = viewModelScope.launch {
+        val game = activeGame.value ?: run {
+            _messages.emit("Launch a game before taking a screenshot.")
+            return@launch
+        }
+        val frame = latestFrame.value ?: run {
+            _messages.emit("The emulator has not produced a frame yet.")
+            return@launch
+        }
+        screenshotRepository.save(game.title, frame)
+            .onSuccess { result -> _messages.emit("Saved ${result.displayName} to ${result.location}.") }
+            .onFailure { error -> _messages.emit(error.message ?: "Screenshot capture failed.") }
     }
 
     fun saveState(slotNumber: Int = 0) {
@@ -267,13 +354,28 @@ class RetraViewModel @Inject constructor(
     }
 
     fun setSessionSpeed(multiplier: Float) {
-        emulationCore.setEmulationSpeed(multiplier)
+        selectedSessionSpeed = multiplier.coerceIn(0.25f, 16f)
+        emulationCore.setEmulationSpeed(selectedSessionSpeed)
     }
 
     fun setButtonPressed(button: EmulatorButton, pressed: Boolean) {
+        when (button) {
+            EmulatorButton.FAST_FORWARD -> {
+                emulationCore.setEmulationSpeed(if (pressed) settings.value.fastForwardSpeed else selectedSessionSpeed)
+                return
+            }
+            EmulatorButton.REWIND -> {
+                if (pressed) rewindSession()
+                return
+            }
+            EmulatorButton.MENU -> return
+            else -> Unit
+        }
         synchronized(inputLock) {
             if (pressed) pressedButtons += button else pressedButtons -= button
-            emulationCore.setInputState(EmulatorInputState(pressedButtons.toSet()))
+            val snapshot = pressedButtons.toSet()
+            mutableControllerInput.value = snapshot
+            emulationCore.setInputState(EmulatorInputState(snapshot))
         }
     }
 
@@ -283,25 +385,52 @@ class RetraViewModel @Inject constructor(
             updateButton(EmulatorButton.RIGHT, horizontal > 0.45f)
             updateButton(EmulatorButton.UP, vertical < -0.45f)
             updateButton(EmulatorButton.DOWN, vertical > 0.45f)
-            emulationCore.setInputState(EmulatorInputState(pressedButtons.toSet()))
+            val snapshot = pressedButtons.toSet()
+            mutableControllerInput.value = snapshot
+            emulationCore.setInputState(EmulatorInputState(snapshot))
         }
     }
 
     fun onHostBackgrounded() {
-        if (activeGame.value != null) {
-            recordElapsedPlaytime(activeGame.value)
-            audioOutput.pause()
+        if (activeGame.value == null) return
+        pausedByHost = session.value.phase == SessionPhase.RUNNING
+        recordElapsedPlaytime(activeGame.value)
+        clearInput()
+        audioOutput.pause()
+        if (settings.value.autoSuspendOnBackground) {
             emulationCore.suspendSession()
             vaultRepository.refresh()
+        } else if (pausedByHost) {
+            emulationCore.pause()
+            emulationCore.saveBattery()
         }
     }
 
     fun onHostForegrounded() {
-        if (activeGame.value != null && session.value.phase == SessionPhase.SUSPENDED) {
+        if (activeGame.value != null && pausedByHost && session.value.phase in setOf(SessionPhase.SUSPENDED, SessionPhase.PAUSED)) {
+            pausedByHost = false
             sessionStartedAtEpochMillis = System.currentTimeMillis()
             emulationCore.resume()
-            if (emulationCore.descriptor.supportsAudio) audioOutput.start()
+            if (emulationCore.descriptor.supportsAudio && settings.value.audioEnabled) audioOutput.start()
         }
+    }
+
+    fun onAudioBecomingNoisy() {
+        if (!settings.value.pauseOnHeadphoneDisconnect || activeGame.value == null || session.value.phase != SessionPhase.RUNNING) return
+        recordElapsedPlaytime(activeGame.value)
+        emulationCore.pause()
+        audioOutput.pause()
+        _messages.tryEmit("Paused because the audio output disconnected.")
+    }
+
+    fun onControllerDisconnected() {
+        clearInput()
+        if (activeGame.value != null) _messages.tryEmit("Controller disconnected; held inputs were cleared.")
+    }
+
+    fun setControllerTestEnabled(enabled: Boolean) {
+        mutableControllerTestEnabled.value = enabled
+        if (!enabled && activeGame.value == null) clearInput()
     }
 
     fun deleteVaultRecord(record: VaultSaveRecord) {
@@ -449,7 +578,44 @@ class RetraViewModel @Inject constructor(
 
     fun resetMultiplayer() = multiplayerRepository.reset()
 
+    fun toggleFavorite(game: GameRecord) = viewModelScope.launch {
+        gameRepository.setFavorite(game.id, !game.favorite)
+        selectedGame.value = game.copy(favorite = !game.favorite)
+        _messages.emit(if (game.favorite) "Removed ${game.title} from favorites." else "Added ${game.title} to favorites.")
+    }
+
+    fun updateGameMetadata(game: GameRecord, title: String, notes: String?) = viewModelScope.launch {
+        val normalizedTitle = title.trim().take(120)
+        if (normalizedTitle.isBlank()) {
+            _messages.emit("A game title cannot be blank.")
+            return@launch
+        }
+        val normalizedNotes = notes?.trim()?.take(4_000)?.ifBlank { null }
+        gameRepository.updateMetadata(game.id, normalizedTitle, normalizedNotes)
+        selectedGame.value = game.copy(title = normalizedTitle, notes = normalizedNotes)
+        _messages.emit("Updated the library details for $normalizedTitle.")
+    }
+
+    fun importCoverArt(game: GameRecord, uri: Uri) = viewModelScope.launch {
+        artworkRepository.importCoverArt(game.id, game.sha256, uri)
+            .onSuccess { path ->
+                selectedGame.value = game.copy(coverArtPath = path)
+                _messages.emit("Updated the cover art for ${game.title}.")
+            }
+            .onFailure { error -> _messages.emit(error.message ?: "Cover art could not be imported.") }
+    }
+
+    fun removeCoverArt(game: GameRecord) = viewModelScope.launch {
+        if (artworkRepository.removeCoverArt(game.id, game.coverArtPath)) {
+            selectedGame.value = game.copy(coverArtPath = null)
+            _messages.emit("Removed the custom cover art for ${game.title}.")
+        } else {
+            _messages.emit("The custom cover art could not be removed.")
+        }
+    }
+
     fun deleteGame(game: GameRecord) = viewModelScope.launch {
+        artworkRepository.deleteFile(game.coverArtPath)
         gameRepository.delete(game.id)
         selectedGame.value = null
         _messages.emit("Removed ${game.title} from the Retra library. The source file was not deleted.")
@@ -471,6 +637,14 @@ class RetraViewModel @Inject constructor(
     fun setHighContrast(value: Boolean) = viewModelScope.launch { settingsRepository.setHighContrast(value) }
     fun setShowOnlineRecommendations(value: Boolean) = viewModelScope.launch { settingsRepository.setShowOnlineRecommendations(value) }
     fun setShowStatistics(value: Boolean) = viewModelScope.launch { settingsRepository.setShowStatistics(value) }
+    fun setIntegerScaling(value: Boolean) = viewModelScope.launch { settingsRepository.setIntegerScaling(value) }
+    fun setDisplaySmoothing(value: Boolean) = viewModelScope.launch { settingsRepository.setDisplaySmoothing(value) }
+    fun setShowPerformanceOverlay(value: Boolean) = viewModelScope.launch { settingsRepository.setShowPerformanceOverlay(value) }
+    fun setShowTouchControls(value: Boolean) = viewModelScope.launch { settingsRepository.setShowTouchControls(value) }
+    fun setAudioEnabled(value: Boolean) = viewModelScope.launch { settingsRepository.setAudioEnabled(value) }
+    fun setMasterVolume(value: Float) = viewModelScope.launch { settingsRepository.setMasterVolume(value) }
+    fun setAutoSuspendOnBackground(value: Boolean) = viewModelScope.launch { settingsRepository.setAutoSuspendOnBackground(value) }
+    fun setPauseOnHeadphoneDisconnect(value: Boolean) = viewModelScope.launch { settingsRepository.setPauseOnHeadphoneDisconnect(value) }
     fun setFastForwardSpeed(value: Float) = viewModelScope.launch {
         settingsRepository.setFastForwardSpeed(value)
         emulationCore.setEmulationSpeed(value)
@@ -518,6 +692,7 @@ class RetraViewModel @Inject constructor(
     private fun clearInput() {
         synchronized(inputLock) {
             pressedButtons.clear()
+            mutableControllerInput.value = emptySet()
             emulationCore.setInputState(EmulatorInputState(emptySet()))
         }
     }

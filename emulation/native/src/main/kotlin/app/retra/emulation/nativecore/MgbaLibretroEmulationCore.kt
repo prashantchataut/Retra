@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import app.retra.core.emulation.AtomicSaveStore
 import app.retra.core.emulation.InputSnapshot
+import app.retra.core.emulation.RewindBuffer
 import app.retra.core.emulation.SaveEnvelope
 import app.retra.core.emulation.SaveKind
 import app.retra.core.emulation.SessionCommand
@@ -56,7 +57,7 @@ class MgbaLibretroEmulationCore(context: Context) : EmulationCore, AutoCloseable
         supportsSaveStates = true,
         supportsAudio = true,
         supportsCheats = true,
-        supportsRewind = false,
+        supportsRewind = true,
         legalNotice = "mGBA is distributed under MPL-2.0. Retra requires the corresponding bundled source notices and source offer."
     )
 
@@ -73,6 +74,7 @@ class MgbaLibretroEmulationCore(context: Context) : EmulationCore, AutoCloseable
     private var sequence = 0L
     private var lastBatteryFlushMillis = 0L
     private val closed = AtomicBoolean(false)
+    private val rewindBuffer = RewindBuffer(MAX_REWIND_BYTES)
 
     override val isAvailable: Boolean get() = nativeHandle != 0L && !closed.get()
     override val unavailableReason: String?
@@ -150,6 +152,7 @@ class MgbaLibretroEmulationCore(context: Context) : EmulationCore, AutoCloseable
         if (!isAvailable) return
         synchronized(nativeLock) { MgbaBridge.nativeReset(nativeHandle) }
         sequence = 0
+        clearRewind()
         mutableSession.value = SessionReducer.reduce(mutableSession.value, SessionCommand.Reset)
         start()
     }
@@ -159,6 +162,7 @@ class MgbaLibretroEmulationCore(context: Context) : EmulationCore, AutoCloseable
         frameJob?.cancel()
         frameJob = null
         mutableFrame.value = null
+        clearRewind()
         mutableSession.value = SessionReducer.reduce(mutableSession.value, SessionCommand.Stop)
     }
 
@@ -231,6 +235,17 @@ class MgbaLibretroEmulationCore(context: Context) : EmulationCore, AutoCloseable
         synchronized(nativeLock) { MgbaBridge.nativeClearCheats(nativeHandle) }
     }
 
+    override fun rewind(steps: Int): Result<Int> = runCatching {
+        require(steps in 1..120) { "Rewind steps must be between 1 and 120." }
+        requireNotNull(gameHash) { "No game is loaded." }
+        val target = rewindBuffer.rewind(steps)
+        check(synchronized(nativeLock) { MgbaBridge.nativeDeserialize(nativeHandle, target) }) {
+            "mGBA rejected the rewind snapshot."
+        }
+        mutableSession.value = mutableSession.value.copy(phase = SessionPhase.PAUSED, errorMessage = null)
+        rewindBuffer.snapshotCount
+    }
+
     private fun restoreBatteryOrThrow(hash: String) {
         val encoded = saveStore.read(statePath(hash, SaveKind.BATTERY, -1)) ?: return
         val envelope = SaveEnvelope.decode(encoded)
@@ -294,6 +309,7 @@ class MgbaLibretroEmulationCore(context: Context) : EmulationCore, AutoCloseable
                     nativeResult.pixels.size == nativeResult.width * nativeResult.height
                 ) {
                     sequence += 1
+                    if (sequence % REWIND_CAPTURE_INTERVAL_FRAMES == 0L) captureRewindSnapshot()
                     mutableFrame.value = VideoFrame(
                         nativeResult.width,
                         nativeResult.height,
@@ -333,6 +349,16 @@ class MgbaLibretroEmulationCore(context: Context) : EmulationCore, AutoCloseable
                 if (remainingNanos > 0) delay(remainingNanos / 1_000_000L)
             }
         }
+    }
+
+    private fun captureRewindSnapshot() {
+        val state = synchronized(nativeLock) { MgbaBridge.nativeSerialize(nativeHandle) }
+        if (state.isEmpty()) return
+        rewindBuffer.push(state)
+    }
+
+    private fun clearRewind() {
+        rewindBuffer.clear()
     }
 
     private fun readAndVerifyRom(uri: Uri, expectedHash: String): ByteArray {
@@ -379,5 +405,7 @@ class MgbaLibretroEmulationCore(context: Context) : EmulationCore, AutoCloseable
         const val MAX_ROM_BYTES = 64 * 1024 * 1024
         const val BATTERY_FLUSH_INTERVAL_MILLIS = 30_000L
         const val PRE_CHEAT_BACKUP_SLOT = 99
+        const val REWIND_CAPTURE_INTERVAL_FRAMES = 30L
+        const val MAX_REWIND_BYTES = 32 * 1024 * 1024
     }
 }

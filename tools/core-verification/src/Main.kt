@@ -29,6 +29,7 @@ import app.retra.core.cheats.RetraCodesParser
 import app.retra.core.emulation.EmulatorButton
 import app.retra.core.emulation.InputSnapshot
 import app.retra.core.emulation.SaveEnvelope
+import app.retra.core.emulation.RewindBuffer
 import app.retra.core.emulation.SaveKind
 import app.retra.core.emulation.SessionCommand
 import app.retra.core.emulation.SessionPhase
@@ -161,6 +162,22 @@ fun main() {
         } finally {
             root.deleteRecursively()
         }
+    }
+
+    test("rewind buffer is bounded and steps backward") {
+        val buffer = RewindBuffer(maximumBytes = 9)
+        check(buffer.push(byteArrayOf(1, 1, 1)))
+        check(buffer.push(byteArrayOf(2, 2, 2)))
+        check(buffer.push(byteArrayOf(3, 3, 3)))
+        check(buffer.push(byteArrayOf(4, 4, 4)))
+        check(buffer.byteCount <= 9)
+        check(buffer.snapshotCount == 3)
+        val restored = buffer.rewind(1)
+        check(restored.contentEquals(byteArrayOf(3, 3, 3)))
+        restored[0] = 99
+        check(buffer.rewind(1).contentEquals(byteArrayOf(2, 2, 2)))
+        buffer.clear()
+        check(buffer.snapshotCount == 0 && buffer.byteCount == 0)
     }
 
 

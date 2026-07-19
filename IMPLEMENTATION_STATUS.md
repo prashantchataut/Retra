@@ -1,40 +1,28 @@
 # Implementation Status
 
-| Area | Status | Evidence / limitation |
-|---|---|---|
-| Retra Prism adaptive UI | Implemented in source | Phone/tablet navigation, Community, player, Vault, settings; not Android-built here |
-| Deep appearance customization | Implemented in source | Theme, palette, glass, corners, font scale, contrast, motion, transparency, density |
-| Behavior customization | Implemented in source | Startup, stats, recommendations, touch opacity, haptics, speed, performance, privacy |
-| SAF ROM import/folder scan | Implemented in source | Persisted grants, bounded reads; device test pending |
-| GBA parsing/hash/duplicates | Implemented and host-tested | Core verification |
-| Room library/migrations | Implemented in source | Explicit migrations and no destructive fallback; Android build pending |
-| Local and HTTPS catalogs | Implemented and host-policy-tested | Strict JSON, exact hash, local-target/cross-host blocking, atomic storage |
-| Legal game downloader | Implemented and host-policy-tested | HTTPS, response/length/hash/header/provenance checks; device network test pending |
-| Custom cheat creation | Implemented in source | Exact ROM-bound declarative entries |
-| Local/online cheat-pack import | Implemented and host-tested | Expected SHA-256, strict parser, size/redirect/private-host controls |
-| Cheat conflict/dependency analysis | Implemented and host-tested | Exact ROM matching and raw collision detection |
-| Libretro cheat activation | Implemented and adapter-tested | Protected pre-cheat save; real Android mGBA test pending |
-| Raw memory-write cheats | Intentionally disabled | Width/endianness translation requires review |
-| Native diagnostic engine | Implemented and host-tested | Load/frame/input/state/reset/corruption |
-| mGBA/libretro adapter | Implemented and host-tested | Real Android mGBA binary not bundled |
-| Automatic gameplay/fallback selection | Implemented in source | Gameplay tier only when shared library loads |
-| Touch controls and haptics | Implemented in source | Haptics toggle now affects press feedback; device test pending |
-| Physical controller mapping | Implemented in source | Android device/controller validation pending |
-| Video and PCM presentation | Implemented in source | SurfaceView and AudioTrack paths; device test pending |
-| Save envelopes/atomic backups | Implemented and host-tested | ROM/core identity, checksum, fsync, rotation |
-| Quick save/load/suspend/Vault | Implemented in source | Device lifecycle/crash injection pending |
-| Battery-save bridge | Implemented and adapter-tested | Real mGBA persistence test pending |
-| IPS/UPS/BPS patching | Implemented and host-tested | CRC/bounds/provenance and original preservation |
-| Local achievements | Implemented and host-tested | Counters, unique progress, integrity gates, persistence/UI |
-| Third-party achievements | Not started | Requires authorized provider/API |
-| Retra profile/friend code | Implemented in source | Local persistent identity |
-| Android social sharing | Implemented in source | Share-sheet achievement/invite payloads; device test pending |
-| Provider public-profile links | Implemented in source | Local labels/HTTPS links, not OAuth |
-| Provider OAuth | Interface boundary | Requires credentials, redirect URIs, provider review |
-| Multiplayer compatibility/protocol | Implemented and host-tested | Exact identities, CRC packets, ordered buffer |
-| LAN transport | Implemented and loopback-tested | Trusted-LAN bounded framing |
-| Real GBA link gameplay | Gated | Requires core link callbacks and timing model |
-| Internet relay | Interface only | Requires a deployed authenticated service |
-| Cloud sync | Not started | Requires provider, encryption, conflicts, account lifecycle |
-| Rewind | Not started | Requires deterministic core snapshots and memory budget |
-| Android APK/AAB | Blocked | No SDK/NDK/Gradle/dependencies/device in this environment |
+| Capability | Status |
+|---|---|
+| Retra Prism logo / adaptive icon / monochrome icon / splash | Implemented in source; rendered assets inspected |
+| Multi-step onboarding | Implemented; Android UI test updated, device test pending |
+| Google Credential Manager sign-in | Implemented in source; credentials/backend/device required |
+| Offline profile and local social identity | Implemented |
+| ROM file/folder import, header parse, SHA-256, duplicates | Implemented |
+| Library search, favorites, notes, titles, cover art | Implemented; device/memory validation pending |
+| Legal catalog import/download | Implemented; live provider required |
+| IPS / UPS / BPS patching | Implemented and host-tested |
+| Custom/internet Retra Codes | Implemented and host-tested |
+| mGBA/libretro frontend | Implemented and host-tested against a mock core |
+| Bundled Android mGBA ABI libraries | Not included; reproducible fetch/build path prepared |
+| Video presentation / integer scaling / smoothing | Implemented in source; device validation pending |
+| Audio streaming / focus / volume / disconnect pause | Implemented in source; device validation pending |
+| Touch / keyboard / Bluetooth / USB input | Implemented in source; device matrix pending |
+| Controller tester / disconnect clearing | Implemented in source |
+| Battery saves / states / suspend / atomic envelopes | Implemented; gameplay core/device validation pending |
+| Five state slots | Implemented |
+| Bounded rewind | Implemented; pure buffer host-tested, device performance pending |
+| Screenshots | Implemented; Android storage validation pending |
+| Fast-forward / slow motion | Implemented; timing/audio validation pending |
+| Achievements | Local implementation and host tests complete |
+| Social sharing/profile | Local/private-first implementation complete; provider OAuth absent |
+| Multiplayer transport/compatibility | Host-tested foundation; real GBA link callbacks absent |
+| APK/AAB | Not produced in this environment |

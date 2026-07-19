@@ -2,11 +2,13 @@
 
 ## Current state
 
-Retra contains a complete libretro-facing adapter and a fake-core ABI test. The real mGBA source and Android shared objects are intentionally excluded because this environment could not fetch or build them.
+Retra contains a complete libretro-facing adapter and a fake-core ABI test. The real mGBA source and Android shared objects are intentionally excluded from the repository archive. Two pinned fetch paths and a reviewed Android build/staging script are provided; the core is selected only when the expected shared object is bundled for the current ABI.
 
 ## Fetch and lock
 
 ```bash
+./scripts/fetch-mgba-archive.sh
+# or
 ./scripts/fetch-mgba.sh
 ```
 

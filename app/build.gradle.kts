@@ -1,3 +1,9 @@
+val googleWebClientId = providers.gradleProperty("RETRA_GOOGLE_WEB_CLIENT_ID")
+    .orElse(providers.environmentVariable("RETRA_GOOGLE_WEB_CLIENT_ID"))
+    .getOrElse("")
+    .replace("\\", "\\\\")
+    .replace("\"", "\\\"")
+
 
 plugins {
     alias(libs.plugins.android.application)
@@ -14,8 +20,9 @@ android {
         applicationId = "app.retra.emulator"
         minSdk = 26
         targetSdk = 37
-        versionCode = 4
-        versionName = "0.4.0"
+        versionCode = 5
+        versionName = "0.5.0"
+        buildConfigField("String", "RETRA_GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
@@ -37,6 +44,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     packaging {
@@ -86,6 +94,9 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.documentfile)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.google.identity.googleid)
 
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)

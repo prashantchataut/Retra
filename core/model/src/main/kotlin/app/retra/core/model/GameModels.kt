@@ -81,7 +81,10 @@ data class GameRecord(
     val creator: String? = null,
     val sourceUrl: String? = null,
     val license: String? = null,
-    val distributionPermission: String? = null
+    val distributionPermission: String? = null,
+    val favorite: Boolean = false,
+    val notes: String? = null,
+    val coverArtPath: String? = null
 )
 
 data class CatalogEntry(
@@ -130,5 +133,13 @@ data class AppSettings(
     val hapticsEnabled: Boolean = true,
     val highContrast: Boolean = false,
     val showOnlineRecommendations: Boolean = true,
-    val showStatistics: Boolean = true
+    val showStatistics: Boolean = true,
+    val integerScaling: Boolean = true,
+    val displaySmoothing: Boolean = false,
+    val showPerformanceOverlay: Boolean = false,
+    val showTouchControls: Boolean = true,
+    val audioEnabled: Boolean = true,
+    val masterVolume: Float = 1f,
+    val autoSuspendOnBackground: Boolean = true,
+    val pauseOnHeadphoneDisconnect: Boolean = true
 )

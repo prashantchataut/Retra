@@ -32,7 +32,10 @@ data class GameEntity(
     val creator: String? = null,
     val sourceUrl: String? = null,
     val license: String? = null,
-    val distributionPermission: String? = null
+    val distributionPermission: String? = null,
+    val favorite: Boolean = false,
+    val notes: String? = null,
+    val coverArtPath: String? = null
 ) {
     fun toRecord(): GameRecord = GameRecord(
         id = id,
@@ -56,6 +59,9 @@ data class GameEntity(
         creator = creator,
         sourceUrl = sourceUrl,
         license = license,
-        distributionPermission = distributionPermission
+        distributionPermission = distributionPermission,
+        favorite = favorite,
+        notes = notes,
+        coverArtPath = coverArtPath
     )
 }

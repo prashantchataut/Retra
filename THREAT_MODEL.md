@@ -52,3 +52,33 @@
 - Social OAuth/token storage, relay authentication, matchmaking abuse controls, and cloud encryption are not implemented.
 - LAN transport has no gameplay connection until a link-capable core and synchronization model exist.
 - Local achievements can be modified by a sufficiently privileged user and must not be marketed as tamper-proof.
+
+## 0.5 additions
+
+### Google identity
+
+Threats: replayed ID tokens, wrong audience, forged client claims, persisted bearer tokens, account confusion, and treating a device credential as server trust.
+
+Controls: cryptographic nonce, official credential type parsing, Web client ID audience, no raw token persistence, local trust level, credential-state clearing, and an explicit backend-verification gate. The future backend must verify signature, issuer, audience, expiry, nonce, revocation/account state, and issue its own short-lived session.
+
+### Custom artwork
+
+Threats: oversized images, decompression memory pressure, malformed codecs, path injection, and artwork replacing ROM identity.
+
+Controls: ContentResolver-only import, 12 MiB source cap, dimension cap, bounded downsampling, platform decoder, app-private destination, deterministic SHA-based filename, atomic temporary commit, and a separate database path. Artwork never enters ROM hashing or emulation.
+
+### Screenshots
+
+Threats: incomplete MediaStore entries, storage failure, accidental sensitive sharing, and corrupt image output.
+
+Controls: explicit user action, PNG encoding, pending MediaStore transaction on Android 10+, cleanup on failure, app-specific storage on older Android, and no automatic upload/share.
+
+### Rewind
+
+Threats: memory exhaustion, mutated native buffers, incompatible persistent states, and misuse in integrity modes.
+
+Controls: copied snapshots, 32 MiB maximum, thread-safe queue, minimum-history checks, memory-only lifetime, reset/load/stop clearing, and separation from Vault. Future Pure Run rules must disable rewind explicitly.
+
+### Automatic backup
+
+Android automatic backup is disabled to prevent silent cloud transfer of ROMs, saves, artwork, private catalogs, and local identity metadata. Any future backup must be explicit, encrypted, user-scoped, conflict-aware, and ROM-excluding by default.

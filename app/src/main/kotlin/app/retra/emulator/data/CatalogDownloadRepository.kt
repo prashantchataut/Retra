@@ -138,7 +138,7 @@ class CatalogDownloadRepository @Inject constructor(
                 connection.requestMethod = "GET"
                 connection.setRequestProperty("Accept", "application/octet-stream, application/x-gba-rom")
                 connection.setRequestProperty("Accept-Encoding", "identity")
-                connection.setRequestProperty("User-Agent", "Retra/0.4.0 Android")
+                connection.setRequestProperty("User-Agent", "Retra/0.5.0 Android")
                 val code = connection.responseCode
                 if (code in REDIRECT_CODES) {
                     if (redirectIndex >= CatalogDownloadPolicy.MAX_REDIRECTS) {

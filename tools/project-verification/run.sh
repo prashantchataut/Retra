@@ -119,6 +119,62 @@ for skill in skills:
     if not (root / ".agents/skills" / skill / "SKILL.md").is_file():
         raise SystemExit(f"Requested skill snapshot missing: {skill}")
 
+
+branding = (root / "branding/retra-logo.svg")
+if not branding.is_file() or "abstract R" not in branding.read_text():
+    raise SystemExit("Retra brand source is missing or undocumented")
+for asset in [
+    "app/src/main/res/drawable-nodpi/retra_logo.png",
+    "app/src/main/res/drawable/ic_retra_foreground.xml",
+    "app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
+    "app/src/main/kotlin/app/retra/emulator/OnboardingUi.kt",
+    "app/src/main/kotlin/app/retra/emulator/ProfileUi.kt",
+    "app/src/main/kotlin/app/retra/emulator/auth/GoogleAuthRepository.kt",
+]:
+    if not (root / asset).is_file():
+        raise SystemExit(f"Brand/onboarding/account asset missing: {asset}")
+auth = (root / "app/src/main/kotlin/app/retra/emulator/auth/GoogleAuthRepository.kt").read_text()
+for token in ["GetSignInWithGoogleOption", "setNonce", "GoogleIdTokenCredential.createFrom", "clearCredentialState", "idToken", "tokenFingerprint"]:
+    if token not in auth:
+        raise SystemExit(f"Google identity capability missing: {token}")
+settings_model = (root / "core/model/src/main/kotlin/app/retra/core/model/GameModels.kt").read_text()
+for token in ["integerScaling", "displaySmoothing", "showTouchControls", "audioEnabled", "masterVolume", "autoSuspendOnBackground"]:
+    if token not in settings_model:
+        raise SystemExit(f"Functional emulator setting missing: {token}")
+player = (root / "app/src/main/kotlin/app/retra/emulator/PlayerUi.kt").read_text()
+surface = (root / "app/src/main/kotlin/app/retra/emulator/EmulationSurfaceView.kt").read_text()
+for token in ["showPerformanceOverlay", "showTouchControls", "integerScaling", "displaySmoothing"]:
+    if token not in player:
+        raise SystemExit(f"Player does not consume emulator setting: {token}")
+for token in ["configure", "integerScaling", "isFilterBitmap", "floor"]:
+    if token not in surface:
+        raise SystemExit(f"Video presenter capability missing: {token}")
+if not (root / "scripts/fetch-mgba-archive.sh").is_file():
+    raise SystemExit("Pinned mGBA archive fetch script is missing")
+rewind = (root / "core/emulation/src/main/kotlin/app/retra/core/emulation/RewindBuffer.kt").read_text()
+for token in ["maximumBytes", "snapshotCount", "copyOf", "Not enough rewind history"]:
+    if token not in rewind:
+        raise SystemExit(f"Rewind buffer capability missing: {token}")
+for core in [
+    root / "emulation/native/src/main/kotlin/app/retra/emulation/nativecore/MgbaLibretroEmulationCore.kt",
+    root / "emulation/native/src/main/kotlin/app/retra/emulation/nativecore/NativeReferenceEmulationCore.kt",
+]:
+    text = core.read_text()
+    for token in ["supportsRewind = true", "RewindBuffer", "captureRewindSnapshot", "override fun rewind"]:
+        if token not in text:
+            raise SystemExit(f"Rewind integration missing from {core.name}: {token}")
+screenshot = (root / "app/src/main/kotlin/app/retra/emulator/data/ScreenshotRepository.kt").read_text()
+for token in ["MediaStore", "IS_PENDING", "Bitmap.CompressFormat.PNG", "fd.sync()"]:
+    if token not in screenshot:
+        raise SystemExit(f"Screenshot capability missing: {token}")
+artwork = (root / "app/src/main/kotlin/app/retra/emulator/data/ArtworkRepository.kt").read_text()
+for token in ["MAX_SOURCE_BYTES", "BitmapFactory", "compress", "renameTo", "setCoverArt"]:
+    if token not in artwork:
+        raise SystemExit(f"Artwork capability missing: {token}")
+for token in ["favorite", "notes", "coverArtPath"]:
+    if token not in (root / "core/model/src/main/kotlin/app/retra/core/model/GameModels.kt").read_text():
+        raise SystemExit(f"Custom library metadata missing: {token}")
+
 api = (root / "emulation/api/src/main/kotlin/app/retra/emulation/api/EmulationCore.kt").read_text()
 for contract in ["CoreTier", "latestFrame", "suspendSession", "saveState", "loadState"]:
     if contract not in api:

@@ -43,4 +43,5 @@ class UnavailableEmulationCore(
     override fun loadState(slot: SaveSlot): Result<Unit> = Result.failure(IllegalStateException(unavailableReason))
     override fun applyCheats(cheats: List<ActiveCheat>): Result<Unit> = Result.failure(IllegalStateException(unavailableReason))
     override fun clearCheats(): Result<Unit> = Result.failure(IllegalStateException(unavailableReason))
+    override fun rewind(steps: Int): Result<Int> = Result.failure(IllegalStateException(unavailableReason))
 }

@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Gamepad
 import androidx.compose.material.icons.filled.Home
@@ -57,8 +58,11 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.AlertDialog
@@ -144,7 +148,7 @@ private enum class Destination(val label: String, val icon: ImageVector) {
     LIBRARY("Library", Icons.Default.LibraryBooks),
     DISCOVER("Discover", Icons.Default.Search),
     VAULT("Vault", Icons.Default.Save),
-    SETTINGS("Settings", Icons.Default.Settings)
+    SETTINGS("You", Icons.Default.AccountCircle)
 }
 
 @Composable
@@ -157,6 +161,9 @@ fun RetraRoot(viewModel: RetraViewModel = viewModel()) {
     val cheatPacksByGame by viewModel.cheatPacks.collectAsStateWithLifecycle()
     val catalogDownloads by viewModel.catalogDownloads.collectAsStateWithLifecycle()
     val catalogSources by viewModel.catalogSources.collectAsStateWithLifecycle()
+    val account by viewModel.account.collectAsStateWithLifecycle()
+    val authOperation by viewModel.authOperation.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     RetraTheme(settings) {
         val snackbarHostState = remember { SnackbarHostState() }
@@ -165,7 +172,16 @@ fun RetraRoot(viewModel: RetraViewModel = viewModel()) {
         }
 
         if (!settings.onboardingComplete) {
-            OnboardingScreen(onContinue = viewModel::finishOnboarding)
+            OnboardingScreen(
+                settings = settings,
+                account = account,
+                authOperation = authOperation,
+                googleConfigured = viewModel.googleAuthConfigured,
+                onThemeChanged = viewModel::setThemeMode,
+                onAccentChanged = viewModel::setAccentPalette,
+                onGoogleSignIn = { viewModel.signInWithGoogle(context) },
+                onComplete = viewModel::finishOnboarding
+            )
         } else if (activeGame != null) {
             PlayerScreen(game = activeGame!!, viewModel = viewModel, onExit = viewModel::closePlayer)
         } else if (selectedGame != null) {
@@ -183,6 +199,10 @@ fun RetraRoot(viewModel: RetraViewModel = viewModel()) {
                 onCreateCustomCheat = { name, format, codes -> viewModel.createCustomCheat(selectedGame!!, name, format, codes) },
                 onDownloadCheatPack = { url, hash -> viewModel.downloadCheatPack(selectedGame!!, url, hash) },
                 onDeleteCheatPack = viewModel::deleteCheatPack,
+                onToggleFavorite = { viewModel.toggleFavorite(selectedGame!!) },
+                onUpdateMetadata = { title, notes -> viewModel.updateGameMetadata(selectedGame!!, title, notes) },
+                onImportCoverArt = { uri -> viewModel.importCoverArt(selectedGame!!, uri) },
+                onRemoveCoverArt = { viewModel.removeCoverArt(selectedGame!!) },
                 onDelete = { viewModel.deleteGame(selectedGame!!) },
                 snackbarHostState = snackbarHostState
             )
@@ -227,88 +247,6 @@ fun RetraRoot(viewModel: RetraViewModel = viewModel()) {
                 onDeleteVaultRecord = viewModel::deleteVaultRecord
             )
         }
-    }
-}
-
-@Composable
-fun OnboardingScreen(onContinue: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.radialGradient(
-                    colors = listOf(RetraIndigo.copy(alpha = 0.34f), MaterialTheme.colorScheme.background),
-                    radius = 1200f
-                )
-            )
-            .padding(28.dp)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().align(Alignment.Center),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(18.dp)
-        ) {
-            LogoMark()
-            Text("Retra", style = MaterialTheme.typography.displaySmall)
-            Text(
-                "Relive the games that made you.",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.secondary
-            )
-            Text(
-                "A private, modern home for your own Game Boy Advance backups, legal homebrew, saves, controls, and memories.",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.fillMaxWidth(0.82f)
-            )
-            FeatureRow(Icons.Default.FolderOpen, "Import your own .gba files through Android's secure file picker")
-            FeatureRow(Icons.Default.Security, "Hashes, duplicate detection, size limits, and header validation")
-            FeatureRow(Icons.Default.Palette, "Retra Prism themes and adaptive phone/tablet navigation")
-            Button(onClick = onContinue, modifier = Modifier.fillMaxWidth(0.72f)) {
-                Text("Enter Retra")
-            }
-            Text(
-                "Retra does not include commercial games or proprietary BIOS files.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-private fun FeatureRow(icon: ImageVector, text: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(0.86f),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Box(
-            modifier = Modifier.size(42.dp).clip(CircleShape).background(RetraIndigo.copy(alpha = 0.18f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(icon, null, tint = PrismCyan)
-        }
-        Text(text, style = MaterialTheme.typography.bodyMedium)
-    }
-}
-
-@Composable
-private fun LogoMark() {
-    Box(
-        modifier = Modifier
-            .size(92.dp)
-            .clip(RoundedCornerShape(26.dp))
-            .background(Brush.linearGradient(listOf(RetraIndigo, MemoryViolet, PrismCyan))),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("R", style = MaterialTheme.typography.displaySmall, color = Color.White, fontWeight = FontWeight.Black)
-        Box(
-            modifier = Modifier
-                .size(14.dp)
-                .align(Alignment.TopEnd)
-                .background(AdventureGold, CircleShape)
-        )
     }
 }
 
@@ -472,7 +410,12 @@ private fun MainScaffold(
         modifier = modifier,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(destination.label) },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        RetraLogoTile(size = 34.dp)
+                        Text(destination.label)
+                    }
+                },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.Transparent),
             )
         },
@@ -530,13 +473,7 @@ private fun MainScaffold(
 
 @Composable
 private fun LogoMarkSmall() {
-    Box(
-        modifier = Modifier.padding(12.dp).size(48.dp).clip(RoundedCornerShape(14.dp))
-            .background(Brush.linearGradient(listOf(RetraIndigo, PrismCyan))),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("R", color = Color.White, fontWeight = FontWeight.Black, style = MaterialTheme.typography.titleLarge)
-    }
+    RetraLogoTile(modifier = Modifier.padding(10.dp), size = 52.dp)
 }
 
 @Composable
@@ -562,8 +499,15 @@ private fun HomeScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                     StatCard("Games", games.size.toString(), Icons.Default.Gamepad, Modifier.weight(1f))
                     StatCard("Core", if (coreAvailable) "Native" else "Pending", Icons.Default.Memory, Modifier.weight(1f))
-                    StatCard("Vault", "Safe", Icons.Default.VerifiedUser, Modifier.weight(1f))
+                    StatCard("Favorites", games.count(GameRecord::favorite).toString(), Icons.Default.Star, Modifier.weight(1f))
                 }
+            }
+        }
+        val favorites = games.filter(GameRecord::favorite)
+        if (favorites.isNotEmpty()) {
+            item { SectionTitle("Favorites") }
+            items(favorites.take(4), key = { "favorite:${it.id}" }) { game ->
+                GameListRow(game, onGameSelected)
             }
         }
         item { SectionTitle("Recently added") }
@@ -596,10 +540,13 @@ private fun HeroCard(
             ).padding(24.dp)
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                StatusPill(
-                    text = if (game == null) "YOUR LIBRARY" else "CONTINUE PLAYING",
-                    icon = Icons.Default.AutoAwesome
-                )
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    StatusPill(
+                        text = if (game == null) "YOUR LIBRARY" else "CONTINUE PLAYING",
+                        icon = Icons.Default.AutoAwesome
+                    )
+                    RetraLogoTile(size = 58.dp)
+                }
                 Text(game?.title ?: "Bring your memories home", style = MaterialTheme.typography.headlineLarge)
                 Text(
                     if (game == null) "Import a personal GBA backup and Retra will verify its header, calculate its SHA-256, and add it to your private library."
@@ -648,22 +595,53 @@ private fun LibraryScreen(
         ContentDensity.BALANCED -> 10.dp
         ContentDensity.COMPACT -> 6.dp
     }
+    var query by rememberSaveable { mutableStateOf("") }
+    val visibleGames = remember(games, query) {
+        val normalized = query.trim().lowercase()
+        if (normalized.isBlank()) games else games.filter { game ->
+            listOf(game.title, game.displayName, game.gameCode, game.makerCode)
+                .any { it.lowercase().contains(normalized) }
+        }
+    }
     Column(Modifier.fillMaxSize()) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = edgePadding, vertical = itemSpacing),
-            horizontalArrangement = Arrangement.spacedBy(itemSpacing)
+            horizontalArrangement = Arrangement.spacedBy(itemSpacing),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Button(onClick = onImportFile) { Icon(Icons.Default.Add, null); Spacer(Modifier.width(6.dp)); Text("File") }
             FilledTonalButton(onClick = onImportFolder) { Icon(Icons.Default.FolderOpen, null); Spacer(Modifier.width(6.dp)); Text("Folder") }
         }
+        if (games.isNotEmpty()) {
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it.take(80) },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = edgePadding),
+                singleLine = true,
+                leadingIcon = { Icon(Icons.Default.Search, null) },
+                placeholder = { Text("Search title, game code, or file") },
+                label = { Text("Find in library") }
+            )
+            Spacer(Modifier.height(itemSpacing))
+        }
         if (games.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(edgePadding), contentAlignment = Alignment.Center) { EmptyLibraryCard(onImportFile) }
+        } else if (visibleGames.isEmpty()) {
+            Box(Modifier.fillMaxSize().padding(edgePadding), contentAlignment = Alignment.Center) {
+                Card {
+                    Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Default.Search, null, modifier = Modifier.size(38.dp))
+                        Text("No matching games", style = MaterialTheme.typography.titleLarge)
+                        Text("Try a different title, game code, or file name.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
         } else when (layout) {
             LibraryLayout.DETAILED_LIST -> LazyColumn(
                 contentPadding = PaddingValues(edgePadding),
                 verticalArrangement = Arrangement.spacedBy(itemSpacing)
             ) {
-                items(games, key = { it.id }) { GameListRow(it, onGameSelected) }
+                items(visibleGames, key = { it.id }) { GameListRow(it, onGameSelected) }
             }
             LibraryLayout.LARGE_GRID, LibraryLayout.COMPACT_GRID -> LazyVerticalGrid(
                 columns = GridCells.Adaptive(if (layout == LibraryLayout.LARGE_GRID) 172.dp else 132.dp),
@@ -671,7 +649,7 @@ private fun LibraryScreen(
                 horizontalArrangement = Arrangement.spacedBy(itemSpacing),
                 verticalArrangement = Arrangement.spacedBy(itemSpacing)
             ) {
-                items(games, key = { it.id }) { GameGridCard(it, onGameSelected) }
+                items(visibleGames, key = { it.id }) { GameGridCard(it, onGameSelected) }
             }
         }
     }
@@ -683,12 +661,16 @@ private fun GameGridCard(game: GameRecord, onGameSelected: (GameRecord) -> Unit)
         modifier = Modifier.fillMaxWidth().clickable { onGameSelected(game) },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f))
     ) {
-        Box(
-            modifier = Modifier.fillMaxWidth().aspectRatio(0.86f)
-                .background(Brush.linearGradient(listOf(RetraIndigo.copy(alpha = 0.55f), MemoryViolet.copy(alpha = 0.18f)))),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(game.title.take(1).uppercase(), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Black)
+        Box(modifier = Modifier.fillMaxWidth().aspectRatio(0.86f)) {
+            GameArtwork(game = game, modifier = Modifier.fillMaxSize())
+            if (game.favorite) {
+                Icon(
+                    Icons.Default.Star,
+                    contentDescription = "Favorite",
+                    tint = AdventureGold,
+                    modifier = Modifier.align(Alignment.TopEnd).padding(10.dp)
+                )
+            }
         }
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(game.title, maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleMedium)
@@ -701,14 +683,15 @@ private fun GameGridCard(game: GameRecord, onGameSelected: (GameRecord) -> Unit)
 private fun GameListRow(game: GameRecord, onGameSelected: (GameRecord) -> Unit) {
     Card(modifier = Modifier.fillMaxWidth().clickable { onGameSelected(game) }) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            Box(
-                Modifier.size(56.dp).clip(RoundedCornerShape(14.dp)).background(RetraIndigo.copy(alpha = 0.22f)),
-                contentAlignment = Alignment.Center
-            ) { Text(game.title.take(1).uppercase(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black) }
+            GameArtwork(
+                game = game,
+                modifier = Modifier.size(56.dp).clip(RoundedCornerShape(14.dp))
+            )
             Column(Modifier.weight(1f)) {
                 Text(game.title, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text("${formatBytes(game.sizeBytes)} • ${game.gameCode.ifBlank { "No game code" }}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+            if (game.favorite) Icon(Icons.Default.Star, contentDescription = "Favorite", tint = AdventureGold)
             Icon(Icons.Default.PlayArrow, contentDescription = "Open ${game.title}")
         }
     }
@@ -976,6 +959,7 @@ private fun SettingsScreen(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
+        ProfileOverviewCard(viewModel)
         SettingsSection("Appearance", Icons.Default.Palette) {
             Text("Theme", style = MaterialTheme.typography.titleMedium)
             FlowChips(ThemeMode.entries, settings.themeMode, { it.name.humanize() }, onThemeChanged)
@@ -1002,11 +986,23 @@ private fun SettingsScreen(
             ToggleSetting("Show library statistics", settings.showStatistics, viewModel::setShowStatistics)
             ToggleSetting("Show legal online recommendations", settings.showOnlineRecommendations, viewModel::setShowOnlineRecommendations)
         }
+        SettingsSection("Display & audio", Icons.Default.Memory) {
+            ToggleSetting("Integer pixel scaling", settings.integerScaling, viewModel::setIntegerScaling)
+            ToggleSetting("Smooth display filtering", settings.displaySmoothing, viewModel::setDisplaySmoothing)
+            ToggleSetting("Show performance overlay", settings.showPerformanceOverlay, viewModel::setShowPerformanceOverlay)
+            ToggleSetting("Game audio", settings.audioEnabled, viewModel::setAudioEnabled)
+            Text("Master volume: ${(settings.masterVolume * 100).toInt()}%")
+            Slider(settings.masterVolume, viewModel::setMasterVolume, valueRange = 0f..1f, enabled = settings.audioEnabled)
+            Text("Integer scaling preserves sharp source pixels when the available surface is large enough. Smoothing is optional and disabled by default.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
         SettingsSection("Controls", Icons.Default.Gamepad) {
+            ToggleSetting("Show touch controls", settings.showTouchControls, viewModel::setShowTouchControls)
             Text("Touch-control opacity: ${(settings.touchControlOpacity * 100).toInt()}%")
-            Slider(settings.touchControlOpacity, viewModel::setTouchControlOpacity, valueRange = 0.25f..1f)
+            Slider(settings.touchControlOpacity, viewModel::setTouchControlOpacity, valueRange = 0.25f..1f, enabled = settings.showTouchControls)
             ToggleSetting("Haptic feedback", settings.hapticsEnabled, viewModel::setHapticsEnabled)
-            Text("Portrait, landscape, and per-game layout editors are represented by stable settings boundaries; drag-to-position editing remains a device-validation task.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            ToggleSetting("Create suspend state in background", settings.autoSuspendOnBackground, viewModel::setAutoSuspendOnBackground)
+            ToggleSetting("Pause when headphones disconnect", settings.pauseOnHeadphoneDisconnect, viewModel::setPauseOnHeadphoneDisconnect)
+            ControllerInputTester(viewModel)
         }
         SettingsSection("Retra Boost", Icons.Default.Speed) {
             Text("Performance profile", style = MaterialTheme.typography.titleMedium)
@@ -1090,10 +1086,17 @@ private fun GameDetailsScreen(
     onCreateCustomCheat: (String, CheatFormat, String) -> Unit,
     onDownloadCheatPack: (String, String) -> Unit,
     onDeleteCheatPack: (StoredCheatPack) -> Unit,
+    onToggleFavorite: () -> Unit,
+    onUpdateMetadata: (String, String?) -> Unit,
+    onImportCoverArt: (Uri) -> Unit,
+    onRemoveCoverArt: () -> Unit,
     onDelete: () -> Unit,
     snackbarHostState: SnackbarHostState
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
+    var metadataDialog by rememberSaveable { mutableStateOf(false) }
+    var editedTitle by rememberSaveable(game.id, game.title) { mutableStateOf(game.title) }
+    var editedNotes by rememberSaveable(game.id, game.notes) { mutableStateOf(game.notes.orEmpty()) }
     var customCheatDialog by rememberSaveable { mutableStateOf(false) }
     var onlinePackDialog by rememberSaveable { mutableStateOf(false) }
     var customName by rememberSaveable { mutableStateOf("") }
@@ -1107,12 +1110,23 @@ private fun GameDetailsScreen(
     val cheatPackPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri?.let(onImportCheatPack)
     }
+    val artworkPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+        uri?.let(onImportCoverArt)
+    }
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text(game.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } },
-                actions = { IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Default.DeleteOutline, "Remove from library") } }
+                actions = {
+                    IconButton(onClick = { metadataDialog = true }) {
+                        Icon(Icons.Default.Edit, "Edit library details")
+                    }
+                    IconButton(onClick = onToggleFavorite) {
+                        Icon(if (game.favorite) Icons.Default.Star else Icons.Default.StarBorder, if (game.favorite) "Remove favorite" else "Add favorite")
+                    }
+                    IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Default.DeleteOutline, "Remove from library") }
+                }
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -1123,17 +1137,26 @@ private fun GameDetailsScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                Box(
-                    Modifier.fillMaxWidth().aspectRatio(1.65f).clip(RoundedCornerShape(28.dp))
-                        .background(Brush.linearGradient(listOf(RetraIndigo, MemoryViolet, PrismCyan))),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(game.title.take(1).uppercase(), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Black, color = Color.White)
-                }
+                GameArtwork(
+                    game = game,
+                    modifier = Modifier.fillMaxWidth().aspectRatio(1.65f).clip(RoundedCornerShape(28.dp))
+                )
             }
             item {
                 Text(game.title, style = MaterialTheme.typography.headlineLarge)
                 Text(game.displayName, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                game.notes?.takeIf(String::isNotBlank)?.let { notes ->
+                    Surface(
+                        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                        shape = RoundedCornerShape(18.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f)
+                    ) {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Your notes", style = MaterialTheme.typography.labelLarge)
+                            Text(notes, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
             }
             item {
                 Button(onClick = onPlay, enabled = coreAvailable, modifier = Modifier.fillMaxWidth()) {
@@ -1160,6 +1183,18 @@ private fun GameDetailsScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { artworkPicker.launch(arrayOf("image/png", "image/jpeg", "image/webp")) },
+                        modifier = Modifier.weight(1f)
+                    ) { Text(if (game.coverArtPath == null) "Add cover art" else "Replace cover art") }
+                    if (game.coverArtPath != null) {
+                        OutlinedButton(onClick = onRemoveCoverArt, modifier = Modifier.weight(1f)) { Text("Remove cover") }
+                    }
+                }
             }
             item {
                 Card {
@@ -1271,6 +1306,42 @@ private fun GameDetailsScreen(
             }
         }
     }
+    if (metadataDialog) {
+        AlertDialog(
+            onDismissRequest = { metadataDialog = false },
+            title = { Text("Edit library details") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = editedTitle,
+                        onValueChange = { editedTitle = it.take(120) },
+                        label = { Text("Display title") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = editedNotes,
+                        onValueChange = { editedNotes = it.take(4_000) },
+                        label = { Text("Personal notes") },
+                        minLines = 3,
+                        maxLines = 7,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text("Editing library metadata never changes the ROM file or its verified SHA-256.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onUpdateMetadata(editedTitle, editedNotes)
+                        metadataDialog = false
+                    },
+                    enabled = editedTitle.isNotBlank()
+                ) { Text("Save") }
+            },
+            dismissButton = { OutlinedButton(onClick = { metadataDialog = false }) { Text("Cancel") } }
+        )
+    }
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
@@ -1380,6 +1451,17 @@ private fun StatusPill(text: String, icon: ImageVector? = null) {
 @Composable
 private fun SectionTitle(title: String) { Text(title, style = MaterialTheme.typography.titleLarge) }
 
+internal fun gameArtworkBrush(game: GameRecord): Brush {
+    val seed = game.sha256.take(8).toLongOrNull(16) ?: game.title.hashCode().toLong()
+    val palettes = listOf(
+        listOf(RetraIndigo.copy(alpha = 0.82f), MemoryViolet.copy(alpha = 0.32f)),
+        listOf(PrismCyan.copy(alpha = 0.58f), RetraIndigo.copy(alpha = 0.28f)),
+        listOf(SaveMint.copy(alpha = 0.52f), PrismCyan.copy(alpha = 0.22f)),
+        listOf(AdventureGold.copy(alpha = 0.48f), MemoryViolet.copy(alpha = 0.24f))
+    )
+    return Brush.linearGradient(palettes[kotlin.math.abs(seed % palettes.size).toInt()])
+}
+
 private fun formatBytes(bytes: Long): String = when {
     bytes >= 1024L * 1024L -> "%.1f MiB".format(bytes / (1024.0 * 1024.0))
     bytes >= 1024L -> "%.1f KiB".format(bytes / 1024.0)
@@ -1393,5 +1475,16 @@ private fun Float.formatOne(): String = "%.1f".format(this)
 @Preview(showBackground = true, widthDp = 390, heightDp = 844)
 @Composable
 private fun OnboardingPreview() {
-    RetraTheme(ThemeMode.DARK, false) { OnboardingScreen {} }
+    RetraTheme(ThemeMode.DARK, false) {
+        OnboardingScreen(
+            settings = AppSettings(themeMode = ThemeMode.DARK),
+            account = null,
+            authOperation = app.retra.emulator.auth.AuthOperation.IDLE,
+            googleConfigured = false,
+            onThemeChanged = {},
+            onAccentChanged = {},
+            onGoogleSignIn = {},
+            onComplete = {}
+        )
+    }
 }
