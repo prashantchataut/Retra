@@ -1,0 +1,36 @@
+PASS: valid GBA header parsing
+PASS: invalid fixed byte rejection
+PASS: SHA-256 known vector
+PASS: case-insensitive duplicate detection
+PASS: authorized HTTPS catalog validation
+PASS: unsafe HTTP catalog rejection
+PASS: missing distribution permission rejection
+PASS: input bitmask press and release
+PASS: session reducer legal lifecycle
+PASS: save envelope round trip
+PASS: save envelope corruption rejection
+PASS: atomic save and rotating backup
+PASS: save path traversal rejection
+PASS: IPS literal and RLE patch application
+PASS: UPS patch CRC and XOR application
+PASS: BPS TargetRead patch application
+PASS: patch corruption rejection
+PASS: Retra Codes declarative pack parsing
+PASS: Retra Codes exact ROM matching
+PASS: Retra Codes raw-write conflict detection
+PASS: Retra Codes rejects executable text
+PASS: catalog download HTTPS and response policy
+PASS: catalog download rejects cross-host redirects
+PASS: catalog download rejects metadata length mismatch
+PASS: restricted JSON catalog manifest parsing
+PASS: catalog JSON rejects unknown executable fields
+PASS: catalog JSON rejects duplicate keys
+PASS: catalog download blocks local network targets
+PASS: catalog download rejects unsafe entry IDs
+PASS: achievement counter unlock and integrity gate
+PASS: achievement unique progress ignores duplicates
+PASS: social friend code and privacy-safe share
+PASS: multiplayer compatibility exact identity
+PASS: multiplayer packet CRC and ordered buffer
+PASS: multiplayer LAN transport loopback framing
+RESULT: 35 passed, 0 failed

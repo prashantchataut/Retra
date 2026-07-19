@@ -1,0 +1,3 @@
+Failed to clone https://github.com/getpaperclipai/paperclip.git: Cloning into '/tmp/skills-lEs78R'...
+fatal: unable to access 'https://github.com/getpaperclipai/paperclip.git/': Could not resolve host: github.com
+

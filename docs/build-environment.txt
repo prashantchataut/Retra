@@ -1,0 +1,23 @@
+$ date -u
+Sun Jul 19 06:37:17 UTC 2026
+$ java -version
+openjdk version "21.0.10" 2026-01-20
+OpenJDK Runtime Environment (build 21.0.10+7-Debian-1deb13u1)
+OpenJDK 64-Bit Server VM (build 21.0.10+7-Debian-1deb13u1, mixed mode, sharing)
+$ kotlinc -version
+info: kotlinc-jvm 1.9.0 (JRE 21.0.10+7-Debian-1deb13u1)
+$ gradle -v
+BLOCKED: gradle command is not installed
+$ sdkmanager --version
+BLOCKED: Android sdkmanager is not installed
+$ adb version
+BLOCKED: adb is not installed
+$ ./tools/core-verification/run.sh
+PASS: valid GBA header parsing
+PASS: invalid fixed byte rejection
+PASS: SHA-256 known vector
+PASS: case-insensitive duplicate detection
+PASS: authorized HTTPS catalog validation
+PASS: unsafe HTTP catalog rejection
+PASS: missing distribution permission rejection
+RESULT: 7 passed, 0 failed

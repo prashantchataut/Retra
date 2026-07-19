@@ -1,0 +1,3 @@
+Failed to clone https://github.com/wshobson/agents.git: Cloning into '/tmp/skills-IeuPzw'...
+fatal: unable to access 'https://github.com/wshobson/agents.git/': Could not resolve host: github.com
+

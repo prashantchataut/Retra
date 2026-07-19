@@ -1,0 +1,4 @@
+npm warn exec The following package was not found and will be installed: skills@1.5.18
+Failed to clone https://github.com/nextlevelbuilder/ui-ux-pro-max-skill.git: Cloning into '/tmp/skills-b93sxB'...
+fatal: unable to access 'https://github.com/nextlevelbuilder/ui-ux-pro-max-skill.git/': Could not resolve host: github.com
+

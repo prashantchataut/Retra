@@ -1,0 +1,8 @@
+Retra 0.4.0 verification snapshot
+- 35/35 platform-neutral checks passed
+- Native reference engine passed
+- Libretro gameplay adapter passed, including cheat delivery
+- Project structure/security/achievements/social/multiplayer/skills static checks passed
+- Shell syntax passed
+- JNI and libretro adapter host compilation passed with -Werror
+- Android build not executed: SDK/NDK/Gradle/dependencies/device unavailable

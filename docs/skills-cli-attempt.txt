@@ -1,0 +1,27 @@
+
+███████╗██╗  ██╗██╗██╗     ██╗     ███████╗
+██╔════╝██║ ██╔╝██║██║     ██║     ██╔════╝
+███████╗█████╔╝ ██║██║     ██║     ███████╗
+╚════██║██╔═██╗ ██║██║     ██║     ╚════██║
+███████║██║  ██╗██║███████╗███████╗███████║
+╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝
+
+┌   skills 
+│
+│  Tip: use the --yes (-y) and --global (-g) flags to install without prompts.
+│
+◇  Source: https://github.com/android/skills.git
+│
+◒  Cloning repository…...│
+■  Failed to clone repository
+│
+│  Failed to clone https://github.com/android/skills.git: Cloning into '/tmp/skills-2hkNxX'...
+│
+│  fatal: unable to access 'https://github.com/android/skills.git/': Could not resolve host: github.com
+│
+│  
+│
+└  Installation failed
+
+
+■  Canceled
