@@ -413,7 +413,7 @@ class RetraViewModel @Inject constructor(
             emulationCore.suspendSession()
             vaultRepository.refresh()
             if (settings.value.notificationsEnabled) {
-                activeGame.value?.title?.let(notificationCoordinator::notifySuspendSaved)
+                activeGame.value?.title?.let(notifications::notifySuspendSaved)
             }
         } else if (pausedByHost) {
             emulationCore.pause()
