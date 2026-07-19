@@ -1,13 +1,11 @@
 package app.retra.emulator.data
 
 import android.content.Context
+import android.net.Uri
 import app.retra.core.download.CatalogDownloadPolicy
 import app.retra.core.download.DownloadResponseMetadata
 import app.retra.core.download.UnsafeDownloadException
 import app.retra.core.model.CatalogEntry
-import app.retra.core.model.GameRecord
-import app.retra.core.rom.GbaRomParser
-import app.retra.core.rom.InvalidRomException
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.io.FileInputStream
@@ -15,8 +13,6 @@ import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URI
 import java.security.MessageDigest
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 import javax.inject.Inject
 import javax.inject.Singleton
 import javax.net.ssl.HttpsURLConnection
@@ -38,19 +34,25 @@ data class CatalogDownloadProgress(
 )
 
 sealed interface CatalogDownloadOutcome {
-    data class Imported(val game: GameRecord) : CatalogDownloadOutcome
+    data class Imported(val game: app.retra.core.model.GameRecord) : CatalogDownloadOutcome
     data class Duplicate(val title: String) : CatalogDownloadOutcome
+    data class Batch(
+        val imported: Int,
+        val duplicates: Int,
+        val rejected: Int,
+        val pendingPatches: List<PendingPatch>
+    ) : CatalogDownloadOutcome
+    data class PatchDetected(val pending: PendingPatch) : CatalogDownloadOutcome
     data class Rejected(val reason: String) : CatalogDownloadOutcome
 }
 
 @Singleton
 class CatalogDownloadRepository @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val gameDao: GameDao
+    private val gameRepository: GameRepository
 ) {
     private val mutableProgress = MutableStateFlow<Map<String, CatalogDownloadProgress>>(emptyMap())
     val progress: StateFlow<Map<String, CatalogDownloadProgress>> = mutableProgress
-    private val destinationRoot = File(context.filesDir, "catalog-roms")
     private val temporaryRoot = File(context.cacheDir, "catalog-downloads")
 
     suspend fun download(entry: CatalogEntry): CatalogDownloadOutcome = withContext(Dispatchers.IO) {
@@ -62,8 +64,8 @@ class CatalogDownloadRepository @Inject constructor(
         }
         update(progressKey, CatalogDownloadPhase.CONNECTING, total = entry.fileSize)
         temporaryRoot.mkdirs()
-        val temporary = File(temporaryRoot, ".${sanitizeFileName(entry.id)}-${System.nanoTime()}.part")
-        var uncommittedDestination: File? = null
+        val extension = origin.path.substringAfterLast('.', "bin").lowercase()
+        val temporary = File(temporaryRoot, "${sanitizeFileName(entry.id)}-${System.nanoTime()}.$extension")
         try {
             streamDownload(entry, origin, temporary, progressKey)
             update(progressKey, CatalogDownloadPhase.VERIFYING, temporary.length(), entry.fileSize)
@@ -72,55 +74,38 @@ class CatalogDownloadRepository @Inject constructor(
             if (!actualHash.equals(entry.sha256, ignoreCase = true)) {
                 throw UnsafeDownloadException("Downloaded SHA-256 does not match the catalog metadata.")
             }
-            val header = try {
-                GbaRomParser.parse(temporary.readBytes())
-            } catch (error: InvalidRomException) {
-                throw UnsafeDownloadException("Downloaded content is not a valid GBA ROM: ${error.message ?: "invalid header"}")
-            }
-            if (gameDao.countBySha256(actualHash) > 0) {
-                update(progressKey, CatalogDownloadPhase.COMPLETE, temporary.length(), entry.fileSize, "Already in library")
-                return@withContext CatalogDownloadOutcome.Duplicate(header.title)
-            }
-
             update(progressKey, CatalogDownloadPhase.IMPORTING, temporary.length(), entry.fileSize)
-            destinationRoot.mkdirs()
-            val destination = File(destinationRoot, "$actualHash.gba")
-            moveAtomically(temporary, destination)
-            uncommittedDestination = destination
-            val entity = GameEntity(
-                uri = destination.toURI().toString(),
-                displayName = sanitizeFileName(entry.title) + ".gba",
-                title = header.title.ifBlank { entry.title },
-                gameCode = header.gameCode,
-                makerCode = header.makerCode,
-                softwareVersion = header.softwareVersion,
-                sha256 = actualHash,
-                sizeBytes = destination.length(),
-                importedAtEpochMillis = System.currentTimeMillis(),
-                compatibility = entry.compatibility.name,
-                origin = "LEGAL_CATALOG",
-                creator = entry.creator,
-                sourceUrl = entry.downloadUrl,
-                license = entry.license,
-                distributionPermission = entry.distributionPermission
-            )
-            val id = runCatching { gameDao.insert(entity) }.getOrElse { error ->
-                if (gameDao.countBySha256(actualHash) > 0) {
-                    // Another importer committed the same immutable content. Keep the hash-named file;
-                    // deleting it could break the winning row if both converged on this destination.
-                    uncommittedDestination = null
-                    return@withContext CatalogDownloadOutcome.Duplicate(entity.title)
-                }
-                throw error
+            val outcome = when (val imported = gameRepository.importVerifiedCatalogFile(Uri.fromFile(temporary), entry)) {
+                is ImportOutcome.Imported -> CatalogDownloadOutcome.Imported(imported.game)
+                is ImportOutcome.Duplicate -> CatalogDownloadOutcome.Duplicate(imported.title)
+                is ImportOutcome.Batch -> CatalogDownloadOutcome.Batch(
+                    imported.imported,
+                    imported.duplicates,
+                    imported.rejected,
+                    imported.pendingPatches
+                )
+                is ImportOutcome.PatchDetected -> CatalogDownloadOutcome.PatchDetected(imported.pending)
+                is ImportOutcome.Rejected -> CatalogDownloadOutcome.Rejected(imported.reason)
             }
-            uncommittedDestination = null
-            update(progressKey, CatalogDownloadPhase.COMPLETE, destination.length(), entry.fileSize, "Imported")
-            CatalogDownloadOutcome.Imported(entity.copy(id = id).toRecord())
+            val message = when (outcome) {
+                is CatalogDownloadOutcome.Imported -> "Imported"
+                is CatalogDownloadOutcome.Duplicate -> "Already in library"
+                is CatalogDownloadOutcome.Batch -> "Archive processed"
+                is CatalogDownloadOutcome.PatchDetected -> "Patch ready"
+                is CatalogDownloadOutcome.Rejected -> outcome.reason
+            }
+            update(
+                progressKey,
+                if (outcome is CatalogDownloadOutcome.Rejected) CatalogDownloadPhase.FAILED else CatalogDownloadPhase.COMPLETE,
+                temporary.length(),
+                entry.fileSize,
+                message
+            )
+            outcome
         } catch (error: Exception) {
             reject(progressKey, error.message ?: "Catalog download failed.")
         } finally {
             if (temporary.exists()) temporary.delete()
-            uncommittedDestination?.delete()
         }
     }
 
@@ -136,9 +121,13 @@ class CatalogDownloadRepository @Inject constructor(
                 connection.connectTimeout = 15_000
                 connection.readTimeout = 30_000
                 connection.requestMethod = "GET"
-                connection.setRequestProperty("Accept", "application/octet-stream, application/x-gba-rom")
+                connection.setRequestProperty(
+                    "Accept",
+                    "application/octet-stream, application/x-gba-rom, application/zip, " +
+                        "application/x-zip-compressed, application/x-ups-patch, application/x-ips-patch, application/x-bps-patch"
+                )
                 connection.setRequestProperty("Accept-Encoding", "identity")
-                connection.setRequestProperty("User-Agent", "Retra/0.6.0 Android")
+                connection.setRequestProperty("User-Agent", "Retra/0.7 Android")
                 val code = connection.responseCode
                 if (code in REDIRECT_CODES) {
                     if (redirectIndex >= CatalogDownloadPolicy.MAX_REDIRECTS) {
@@ -222,19 +211,6 @@ class CatalogDownloadRepository @Inject constructor(
             }
         }
         return digest.digest().toHex()
-    }
-
-    private fun moveAtomically(source: File, destination: File) {
-        try {
-            Files.move(
-                source.toPath(),
-                destination.toPath(),
-                StandardCopyOption.REPLACE_EXISTING,
-                StandardCopyOption.ATOMIC_MOVE
-            )
-        } catch (_: Exception) {
-            Files.move(source.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING)
-        }
     }
 
     private fun sanitizeFileName(value: String): String = value

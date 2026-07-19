@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream
 import java.util.zip.CRC32
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class PatchEngineTest {
@@ -47,6 +48,34 @@ class PatchEngineTest {
         return body.toByteArray().let { beforePatchCrc ->
             beforePatchCrc + little32(crc32(beforePatchCrc))
         }
+    }
+
+    @Test
+    fun inspectsUpsDescriptorWithoutApplying() {
+        val source = ByteArray(0x400) { it.toByte() }
+        val target = source.copyOf().also { it[0] = 0x11 }
+        val patch = upsXorFirstByte(source, target)
+        val descriptor = PatchEngine.inspect(patch)
+        assertEquals(PatchFormat.UPS, descriptor.format)
+        assertEquals(source.size.toLong(), descriptor.sourceSizeBytes)
+        assertEquals(target.size.toLong(), descriptor.targetSizeBytes)
+        assertEquals(true, descriptor.patchIntegrityValid)
+        assertEquals(PatchEngine.crc32Of(source), descriptor.sourceCrc32)
+        assertEquals(PatchEngine.crc32Of(target), descriptor.targetCrc32)
+    }
+
+    private fun upsXorFirstByte(source: ByteArray, target: ByteArray): ByteArray {
+        val body = ByteArrayOutputStream().apply {
+            write("UPS1".encodeToByteArray())
+            writeVariable(source.size.toLong())
+            writeVariable(target.size.toLong())
+            writeVariable(0) // relative offset 0
+            write(source[0].toInt() xor target[0].toInt())
+            write(0) // terminator
+            writeLittle32(crc32(source))
+            writeLittle32(crc32(target))
+        }
+        return body.toByteArray().let { beforePatchCrc -> beforePatchCrc + little32(crc32(beforePatchCrc)) }
     }
 
     private fun ByteArrayOutputStream.writeVariable(initial: Long) {

@@ -9,3 +9,16 @@ captures/
 .cxx/
 .DS_Store
 .kotlin/
+
+# Fetched/generated mGBA integration artifacts (reproduced via scripts/, never committed)
+third_party/mgba/upstream/
+third_party/mgba/.fetch/
+third_party/mgba/android-build/
+third_party/mgba/notices/
+third_party/mgba/SOURCE_LOCK.txt
+third_party/mgba/ANDROID_BUILD_LOCK.txt
+third_party/mgba/ANDROID_BINARY_HASHES.txt
+emulation/native/src/main/jniLibs/
+
+# CI build lock marker
+ANDROID_BUILD_LOCK.txt

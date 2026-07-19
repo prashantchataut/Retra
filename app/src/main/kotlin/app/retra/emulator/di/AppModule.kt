@@ -44,11 +44,20 @@ object AppModule {
             db.execSQL("ALTER TABLE games ADD COLUMN coverArtPath TEXT")
         }
     }
+    private val MIGRATION_4_5 = object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE games ADD COLUMN crc32 INTEGER")
+            db.execSQL("ALTER TABLE games ADD COLUMN managedPath TEXT")
+            db.execSQL("ALTER TABLE games ADD COLUMN collectionsCsv TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE games ADD COLUMN tagsCsv TEXT NOT NULL DEFAULT ''")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_games_crc32 ON games(crc32)")
+        }
+    }
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): RetraDatabase =
         Room.databaseBuilder(context, RetraDatabase::class.java, "retra.db")
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
             .build()
 
     @Provides

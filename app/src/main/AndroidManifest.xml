@@ -27,6 +27,36 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:mimeType="application/octet-stream" />
+                <data android:mimeType="application/x-gba-rom" />
+                <data android:mimeType="application/vnd.gba-rom" />
+                <data android:mimeType="application/zip" />
+                <data android:mimeType="application/x-zip-compressed" />
+                <data android:mimeType="application/x-ups-patch" />
+                <data android:mimeType="application/x-ips-patch" />
+                <data android:mimeType="application/x-bps-patch" />
+                <data android:pathPattern=".*\\.gba" />
+                <data android:pathPattern=".*\\.zip" />
+                <data android:pathPattern=".*\\.ups" />
+                <data android:pathPattern=".*\\.ips" />
+                <data android:pathPattern=".*\\.bps" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/octet-stream" />
+                <data android:mimeType="application/x-gba-rom" />
+                <data android:mimeType="application/vnd.gba-rom" />
+                <data android:mimeType="application/zip" />
+                <data android:mimeType="application/x-zip-compressed" />
+                <data android:mimeType="application/x-ups-patch" />
+                <data android:mimeType="application/x-ips-patch" />
+                <data android:mimeType="application/x-bps-patch" />
+            </intent-filter>
         </activity>
     </application>
 </manifest>

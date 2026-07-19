@@ -72,7 +72,7 @@ fun RetraBackdrop(
                     .offset(x = (-120).dp, y = 130.dp)
                     .size(320.dp)
                     .blur(110.dp, BlurredEdgeTreatment.Unbounded)
-                    .background(colors.secondary.copy(alpha = alpha * 0.7f), CircleShape)
+                    .background(colors.primary.copy(alpha = alpha * 0.45f), CircleShape)
             )
         }
         content()

@@ -20,6 +20,18 @@ data class PatchApplicationResult(
     val outputSha256: String
 )
 
+data class PatchDescriptor(
+    val format: PatchFormat,
+    val patchSizeBytes: Int,
+    val sourceSizeBytes: Long?,
+    val targetSizeBytes: Long?,
+    val sourceCrc32: Long?,
+    val targetCrc32: Long?,
+    val patchCrc32: Long?,
+    val patchIntegrityValid: Boolean,
+    val patchSha256: String
+)
+
 object PatchEngine {
     const val MAX_SOURCE_SIZE_BYTES: Int = 64 * 1024 * 1024
     const val MAX_PATCH_SIZE_BYTES: Int = 32 * 1024 * 1024
@@ -32,6 +44,53 @@ object PatchEngine {
         patch.startsWithAscii("BPS1") -> PatchFormat.BPS
         else -> throw InvalidPatchException("Unsupported patch signature. Retra accepts IPS, UPS, and BPS files.")
     }
+
+    fun inspect(patch: ByteArray): PatchDescriptor {
+        if (patch.size > MAX_PATCH_SIZE_BYTES) {
+            throw InvalidPatchException("Patch exceeds Retra's 32 MiB safety limit.")
+        }
+        val format = detect(patch)
+        return when (format) {
+            PatchFormat.IPS -> PatchDescriptor(
+                format = format,
+                patchSizeBytes = patch.size,
+                sourceSizeBytes = null,
+                targetSizeBytes = null,
+                sourceCrc32 = null,
+                targetCrc32 = null,
+                patchCrc32 = null,
+                patchIntegrityValid = true,
+                patchSha256 = Sha256.of(patch)
+            )
+            PatchFormat.UPS, PatchFormat.BPS -> {
+                if (patch.size < 4 + FOOTER_SIZE) throw InvalidPatchException("Patch is truncated.")
+                val patchCrcValid = runCatching {
+                    validatePatchCrc(patch)
+                    true
+                }.getOrDefault(false)
+                val cursor = Cursor(patch, 4, patch.size - FOOTER_SIZE)
+                val sourceSize = cursor.readVariableInteger()
+                val targetSize = cursor.readVariableInteger()
+                if (format == PatchFormat.BPS) {
+                    val metadataSize = cursor.readVariableInteger().toBoundedInt("BPS metadata size")
+                    if (metadataSize > cursor.remaining) throw InvalidPatchException("BPS metadata is truncated.")
+                }
+                PatchDescriptor(
+                    format = format,
+                    patchSizeBytes = patch.size,
+                    sourceSizeBytes = sourceSize,
+                    targetSizeBytes = targetSize,
+                    sourceCrc32 = patch.readUnsigned32LittleEndian(patch.size - 12),
+                    targetCrc32 = patch.readUnsigned32LittleEndian(patch.size - 8),
+                    patchCrc32 = patch.readUnsigned32LittleEndian(patch.size - 4),
+                    patchIntegrityValid = patchCrcValid,
+                    patchSha256 = Sha256.of(patch)
+                )
+            }
+        }
+    }
+
+    fun crc32Of(bytes: ByteArray): Long = crc32(bytes)
 
     fun apply(source: ByteArray, patch: ByteArray): PatchApplicationResult {
         requireBounded(source, patch)

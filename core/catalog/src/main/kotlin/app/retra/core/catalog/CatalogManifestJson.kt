@@ -1,6 +1,7 @@
 package app.retra.core.catalog
 
 import app.retra.core.download.CatalogDownloadPolicy
+import app.retra.core.model.CatalogContentKind
 import app.retra.core.model.CatalogEntry
 import app.retra.core.model.CatalogManifest
 import app.retra.core.model.CompatibilityStatus
@@ -24,7 +25,8 @@ object CatalogManifestJson {
     )
     private val gameFields = setOf(
         "id", "title", "description", "creator", "version", "downloadUrl", "sha256", "fileSize",
-        "license", "distributionPermission", "artworkUrl", "tags", "compatibility"
+        "license", "distributionPermission", "artworkUrl", "tags", "compatibility",
+        "contentKind", "sourcePageUrl"
     )
 
     fun parse(bytes: ByteArray): CatalogManifest {
@@ -61,6 +63,7 @@ object CatalogManifestJson {
             )
         }
         manifest.games.forEach { entry ->
+            if (entry.contentKind == CatalogContentKind.EXTERNAL) return@forEach
             runCatching { CatalogDownloadPolicy.validateEntry(entry) }.getOrElse { error ->
                 throw InvalidCatalogManifestException("${entry.id}: ${error.message ?: "unsafe download metadata"}")
             }
@@ -76,6 +79,13 @@ object CatalogManifestJson {
         val compatibilityName = objectValue.requiredString("compatibility").uppercase()
         val compatibility = runCatching { CompatibilityStatus.valueOf(compatibilityName) }
             .getOrElse { throw InvalidCatalogManifestException("games[$index].compatibility is unsupported.") }
+        val contentKindName = objectValue.optionalString("contentKind")?.uppercase() ?: CatalogContentKind.GAME.name
+        val contentKind = runCatching { CatalogContentKind.valueOf(contentKindName) }
+            .getOrElse { throw InvalidCatalogManifestException("games[$index].contentKind is unsupported.") }
+        val sourcePageUrl = objectValue.optionalString("sourcePageUrl")?.bounded("games[$index].sourcePageUrl", 2_048)
+        if (contentKind == CatalogContentKind.EXTERNAL && sourcePageUrl.isNullOrBlank()) {
+            throw InvalidCatalogManifestException("games[$index].sourcePageUrl is required for EXTERNAL entries.")
+        }
         return CatalogEntry(
             id = objectValue.requiredString("id").bounded("games[$index].id", 80),
             title = objectValue.requiredString("title").bounded("games[$index].title", 200),
@@ -92,7 +102,9 @@ object CatalogManifestJson {
             tags = tags.mapIndexed { tagIndex, tag ->
                 tag.asString("games[$index].tags[$tagIndex]").bounded("games[$index].tags[$tagIndex]", 64)
             },
-            compatibility = compatibility
+            compatibility = compatibility,
+            contentKind = contentKind,
+            sourcePageUrl = sourcePageUrl
         )
     }
 

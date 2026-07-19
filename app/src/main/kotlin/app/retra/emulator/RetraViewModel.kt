@@ -36,9 +36,12 @@ import app.retra.emulator.data.CatalogImportOutcome
 import app.retra.emulator.data.CatalogRepository
 import app.retra.emulator.data.CheatPackImportOutcome
 import app.retra.emulator.data.CheatRepository
+import app.retra.emulator.data.CuratedReleaseRepository
 import app.retra.emulator.data.GameRepository
 import app.retra.emulator.data.ImportOutcome
+import app.retra.emulator.data.KnownPatchHints
 import app.retra.emulator.data.MultiplayerRepository
+import app.retra.emulator.data.PendingPatch
 import app.retra.emulator.data.PatchOutcome
 import app.retra.emulator.data.PatchRepository
 import app.retra.emulator.data.SettingsRepository
@@ -75,6 +78,7 @@ class RetraViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     val catalogRepository: CatalogRepository,
     private val catalogDownloadRepository: CatalogDownloadRepository,
+    private val curatedReleaseRepository: CuratedReleaseRepository,
     private val vaultRepository: VaultRepository,
     private val patchRepository: PatchRepository,
     private val cheatRepository: CheatRepository,
@@ -104,6 +108,12 @@ class RetraViewModel @Inject constructor(
     val cheatPacks = cheatRepository.packs
     val catalogDownloads = catalogDownloadRepository.progress
     val catalogSources = catalogRepository.catalogs
+    val curatedReleases = curatedReleaseRepository.state
+    private val mutablePendingPatch = MutableStateFlow<PendingPatch?>(null)
+    val pendingPatch: StateFlow<PendingPatch?> = mutablePendingPatch
+    private val mutableCompatiblePatchGames = MutableStateFlow<List<GameRecord>>(emptyList())
+    val compatibleBases: StateFlow<List<GameRecord>> = mutableCompatiblePatchGames
+    val compatiblePatchGames: StateFlow<List<GameRecord>> = mutableCompatiblePatchGames
     val achievements = achievementRepository.statuses
     val socialProfile = socialRepository.profile
     val socialConnections = socialRepository.connections
@@ -183,29 +193,63 @@ class RetraViewModel @Inject constructor(
     }
 
     fun importFile(uri: Uri) = viewModelScope.launch {
-        when (val result = gameRepository.importFile(uri)) {
+        handleImportOutcome(gameRepository.importFile(uri))
+    }
+
+    private suspend fun handleImportOutcome(result: ImportOutcome) {
+        when (result) {
             is ImportOutcome.Imported -> {
                 feedbackEngine.emit(FeedbackCue.CONFIRM)
                 _messages.emit("Imported ${result.game.title}.")
                 recordAchievement(AchievementEventType.GAME_IMPORTED, uniqueKey = result.game.sha256, game = result.game)
             }
             is ImportOutcome.Duplicate -> _messages.emit("${result.title} is already in the library.")
+            is ImportOutcome.Batch -> {
+                if (result.imported > 0) {
+                    recordAchievement(AchievementEventType.GAME_IMPORTED, amount = result.imported.toLong())
+                }
+                result.pendingPatches.firstOrNull()?.let { showPendingPatch(it) }
+                _messages.emit(
+                    "Archive: ${result.imported} imported, ${result.duplicates} duplicates, ${result.rejected} rejected" +
+                        if (result.pendingPatches.isEmpty()) "." else "; ${result.pendingPatches.size} patch${if (result.pendingPatches.size == 1) "" else "es"} ready."
+                )
+            }
+            is ImportOutcome.PatchDetected -> {
+                showPendingPatch(result.pending)
+                _messages.emit("Patch ${result.pending.displayName} is ready. Choose a compatible base game.")
+            }
             is ImportOutcome.Rejected -> _messages.emit(result.reason)
         }
+    }
+
+    private suspend fun showPendingPatch(pending: PendingPatch) {
+        mutablePendingPatch.value = pending
+        mutableCompatiblePatchGames.value = patchRepository.compatibleGames(pending.descriptor, games.value)
     }
 
     fun importFolder(uri: Uri) = viewModelScope.launch {
         val result = gameRepository.importFolder(uri)
         if (result.imported > 0) recordAchievement(AchievementEventType.GAME_IMPORTED, amount = result.imported.toLong())
+        result.pendingPatches.firstOrNull()?.let { showPendingPatch(it) }
         _messages.emit(
             "Folder scan: ${result.imported} imported, ${result.duplicates} duplicates, ${result.rejected} rejected" +
+                (if (result.pendingPatches.isNotEmpty()) "; ${result.pendingPatches.size} patches ready" else "") +
                 if (result.limitReached) "; safety limit reached." else "."
         )
     }
 
     fun downloadCatalogEntry(entry: app.retra.core.model.CatalogEntry) = viewModelScope.launch {
-        if (!catalogRepository.isDownloadable(entry)) {
-            _messages.emit("This entry is not eligible for download. Import a reviewed manifest with valid HTTPS, hash, size, and licensing metadata.")
+        if (entry.contentKind == app.retra.core.model.CatalogContentKind.EXTERNAL) {
+            _messages.emit("External creator links open in the browser instead of downloading in-app.")
+            return@launch
+        }
+        val downloadable = catalogRepository.isDownloadable(entry) || runCatching {
+            app.retra.core.download.CatalogDownloadPolicy.validateEntry(entry)
+            val host = java.net.URI(entry.downloadUrl).host.orEmpty()
+            host.isNotBlank() && !host.endsWith(".example", ignoreCase = true) && entry.sha256.any { it != '0' }
+        }.getOrDefault(false)
+        if (!downloadable) {
+            _messages.emit("This entry is not eligible for in-app download. Open the official creator page or import a reviewed SHA-256-pinned manifest.")
             return@launch
         }
         when (val outcome = catalogDownloadRepository.download(entry)) {
@@ -219,8 +263,17 @@ class RetraViewModel @Inject constructor(
                 _messages.emit("Downloaded, verified, and imported ${outcome.game.title}.")
             }
             is CatalogDownloadOutcome.Duplicate -> _messages.emit("${outcome.title} is already in the library.")
+            is CatalogDownloadOutcome.Batch -> handleImportOutcome(
+                ImportOutcome.Batch(outcome.imported, outcome.duplicates, outcome.rejected, outcome.pendingPatches)
+            )
+            is CatalogDownloadOutcome.PatchDetected -> handleImportOutcome(ImportOutcome.PatchDetected(outcome.pending))
             is CatalogDownloadOutcome.Rejected -> _messages.emit(outcome.reason)
         }
+    }
+
+    fun refreshCuratedReleases() = viewModelScope.launch {
+        curatedReleaseRepository.refresh()
+        curatedReleaseRepository.state.value.lastError?.let(_messages::emit)
     }
 
     fun importCatalog(uri: Uri) = viewModelScope.launch {
@@ -466,6 +519,34 @@ class RetraViewModel @Inject constructor(
         }
     }
 
+    fun applyPendingPatch(base: GameRecord) = viewModelScope.launch {
+        val pending = mutablePendingPatch.value ?: return@launch
+        val preferredTitle = KnownPatchHints.match(pending.descriptor)?.resultTitle
+        when (val outcome = patchRepository.apply(base, pending.uri, preferredTitle)) {
+            is PatchOutcome.Applied -> {
+                gameRepository.discardPendingPatch(pending)
+                mutablePendingPatch.value = null
+                mutableCompatiblePatchGames.value = emptyList()
+                selectedGame.value = outcome.game
+                recordAchievement(AchievementEventType.PATCH_APPLIED, uniqueKey = outcome.game.patchSha256, game = outcome.game)
+                _messages.emit("Applied ${outcome.format.name} patch and added ${outcome.game.title}.")
+            }
+            is PatchOutcome.Duplicate -> {
+                gameRepository.discardPendingPatch(pending)
+                mutablePendingPatch.value = null
+                mutableCompatiblePatchGames.value = emptyList()
+                _messages.emit("That patched result is already in the library as ${outcome.existingTitle}.")
+            }
+            is PatchOutcome.Rejected -> _messages.emit(outcome.reason)
+        }
+    }
+
+    fun dismissPendingPatch() = viewModelScope.launch {
+        mutablePendingPatch.value?.let(gameRepository::discardPendingPatch)
+        mutablePendingPatch.value = null
+        mutableCompatiblePatchGames.value = emptyList()
+    }
+
     fun importCheatPack(game: GameRecord, uri: Uri) = viewModelScope.launch {
         emitCheatImport(game, cheatRepository.import(game, uri))
     }
@@ -605,6 +686,14 @@ class RetraViewModel @Inject constructor(
         _messages.emit(if (game.favorite) "Removed ${game.title} from favorites." else "Added ${game.title} to favorites.")
     }
 
+    fun updateGameOrganization(game: GameRecord, collections: List<String>, tags: List<String>) = viewModelScope.launch {
+        val cleanedCollections = collections.map { it.trim() }.filter { it.isNotEmpty() }.distinct().take(24)
+        val cleanedTags = tags.map { it.trim() }.filter { it.isNotEmpty() }.distinct().take(32)
+        gameRepository.updateOrganization(game.id, cleanedCollections, cleanedTags)
+        selectedGame.value = game.copy(collections = cleanedCollections, tags = cleanedTags)
+        _messages.emit("Updated collections and tags for ${game.title}.")
+    }
+
     fun updateGameMetadata(game: GameRecord, title: String, notes: String?) = viewModelScope.launch {
         val normalizedTitle = title.trim().take(120)
         if (normalizedTitle.isBlank()) {
@@ -615,6 +704,18 @@ class RetraViewModel @Inject constructor(
         gameRepository.updateMetadata(game.id, normalizedTitle, normalizedNotes)
         selectedGame.value = game.copy(title = normalizedTitle, notes = normalizedNotes)
         _messages.emit("Updated the library details for $normalizedTitle.")
+    }
+
+    fun setCollections(game: GameRecord, collections: List<String>) = viewModelScope.launch {
+        val normalized = collections.map(String::trim).filter(String::isNotBlank).distinct().take(32)
+        gameRepository.updateOrganization(game.id, normalized, game.tags)
+        selectedGame.value = game.copy(collections = normalized)
+    }
+
+    fun setTags(game: GameRecord, tags: List<String>) = viewModelScope.launch {
+        val normalized = tags.map(String::trim).filter(String::isNotBlank).distinct().take(32)
+        gameRepository.updateOrganization(game.id, game.collections, normalized)
+        selectedGame.value = game.copy(tags = normalized)
     }
 
     fun importCoverArt(game: GameRecord, uri: Uri) = viewModelScope.launch {
@@ -637,9 +738,18 @@ class RetraViewModel @Inject constructor(
 
     fun deleteGame(game: GameRecord) = viewModelScope.launch {
         artworkRepository.deleteFile(game.coverArtPath)
-        gameRepository.delete(game.id)
-        selectedGame.value = null
-        _messages.emit("Removed ${game.title} from the Retra library. The source file was not deleted.")
+        val result = gameRepository.delete(game.id)
+        if (result.removedFromLibrary) selectedGame.value = null
+        _messages.emit(
+            when {
+                !result.removedFromLibrary -> "${game.title} could not be removed from the library."
+                result.hadManagedFile && result.managedFileDeleted ->
+                    "Removed ${game.title} and its Retra-managed ROM file."
+                result.hadManagedFile ->
+                    "Removed ${game.title}, but its managed ROM file could not be deleted."
+                else -> "Removed ${game.title} from the library. The external source file was not deleted."
+            }
+        )
     }
 
     fun setThemeMode(value: ThemeMode) = viewModelScope.launch { settingsRepository.setThemeMode(value) }

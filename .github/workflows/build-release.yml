@@ -14,10 +14,14 @@ concurrency:
   group: retra-release-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  NDK_VERSION: "28.2.13676358"
+  CMAKE_VERSION: "3.22.1"
+
 jobs:
   release:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
 
     steps:
       - name: Checkout source
@@ -36,11 +40,74 @@ jobs:
         with:
           gradle-version: "9.5.0"
 
-      - name: Build release APK
-        run: |
-          gradle --no-daemon --stacktrace :app:assembleRelease
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
 
-      - name: Name APK after commit
+      - name: Install Android SDK components
+        run: |
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          sdkmanager \
+            "platform-tools" \
+            "platforms;android-37" \
+            "build-tools;36.0.0" \
+            "ndk;${NDK_VERSION}" \
+            "cmake;${CMAKE_VERSION}"
+
+      - name: Export native toolchain paths
+        run: |
+          echo "ANDROID_NDK_HOME=${ANDROID_SDK_ROOT}/ndk/${NDK_VERSION}" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_ROOT=${ANDROID_SDK_ROOT}/ndk/${NDK_VERSION}" >> "$GITHUB_ENV"
+          echo "${ANDROID_SDK_ROOT}/cmake/${CMAKE_VERSION}/bin" >> "$GITHUB_PATH"
+
+      - name: Install native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build
+
+      - name: Make project scripts executable
+        run: chmod +x scripts/*.sh tools/*/run.sh
+
+      - name: Fetch pinned mGBA source
+        id: mgba_fetch
+        continue-on-error: true
+        run: ./scripts/fetch-mgba-archive.sh
+
+      - name: Build and stage mGBA libretro core
+        id: mgba_build
+        if: steps.mgba_fetch.outcome == 'success'
+        continue-on-error: true
+        env:
+          ABIS: "arm64-v8a armeabi-v7a x86_64"
+        run: ./scripts/build-mgba-libretro-android.sh
+
+      - name: Host verification suites (best-effort)
+        continue-on-error: true
+        run: |
+          set +e
+          if ! command -v kotlinc >/dev/null 2>&1 && command -v snap >/dev/null 2>&1; then
+            sudo snap install kotlin --classic || true
+          fi
+          ./tools/native-verification/run.sh   || echo "::warning::native-verification did not pass"
+          ./tools/libretro-verification/run.sh || echo "::warning::libretro-verification did not pass"
+          if command -v kotlinc >/dev/null 2>&1; then
+            ./tools/core-verification/run.sh   || echo "::warning::core-verification did not pass"
+          else
+            echo "::warning::kotlinc unavailable; skipping core-verification"
+          fi
+          SKIP_EXECUTION_SUITES=1 ./tools/project-verification/run.sh \
+            || echo "::warning::project-verification did not pass"
+          exit 0
+
+      - name: Unit tests and release assembly
+        run: |
+          gradle --no-daemon --stacktrace :app:test :app:assembleRelease
+
+      - name: Android lint (best-effort)
+        continue-on-error: true
+        run: |
+          gradle --no-daemon --stacktrace :app:lint
+
+      - name: Name APK and collect hashes
         id: package
         shell: bash
         run: |
@@ -52,11 +119,18 @@ jobs:
             exit 1
           fi
           cp "$SOURCE_APK" "$APK_NAME"
+          sha256sum "$APK_NAME" > "$APK_NAME.sha256"
           echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
           echo "apk_name=$APK_NAME" >> "$GITHUB_OUTPUT"
-          sha256sum "$APK_NAME" > "$APK_NAME.sha256"
+          HASHES="third_party/mgba/ANDROID_BINARY_HASHES.txt"
+          if [ -f "$HASHES" ]; then
+            cp "$HASHES" ANDROID_BINARY_HASHES.txt
+            echo "has_hashes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_hashes=false" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Upload workflow artifact
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: Retra-${{ steps.package.outputs.short_sha }}
@@ -66,16 +140,44 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Upload mGBA binary hashes artifact
+        if: steps.package.outputs.has_hashes == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Retra-${{ steps.package.outputs.short_sha }}-mgba-hashes
+          path: ANDROID_BINARY_HASHES.txt
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
           APK_NAME: ${{ steps.package.outputs.apk_name }}
           SHORT_SHA: ${{ steps.package.outputs.short_sha }}
+          HAS_HASHES: ${{ steps.package.outputs.has_hashes }}
+          MGBA_BUILD: ${{ steps.mgba_build.outcome }}
+        shell: bash
         run: |
           TAG="build-${SHORT_SHA}-${GITHUB_RUN_NUMBER}"
-          gh release create "$TAG" \
-            "$APK_NAME" \
-            "$APK_NAME.sha256" \
+          ASSETS=("$APK_NAME" "$APK_NAME.sha256")
+          if [ "$HAS_HASHES" = "true" ]; then
+            ASSETS+=("ANDROID_BINARY_HASHES.txt")
+          fi
+          if [ "$MGBA_BUILD" = "success" ]; then
+            CORE_LINE="The pinned mGBA 0.10.5 libretro core was built from source and staged into this APK; per-ABI hashes are attached as ANDROID_BINARY_HASHES.txt."
+          else
+            CORE_LINE="The mGBA libretro core was not staged in this run, so gameplay falls back to the diagnostic reference core."
+          fi
+          {
+            echo "Automated Retra 0.7.0 Android release for commit ${GITHUB_SHA}."
+            echo
+            echo "This APK is **debug-signed** with the public Android debug keystore for personal / open-source **sideload testing only**. It is **not** intended for Play Store distribution. Replace the signing config with a private upload key before any store submission. Uninstall any previously installed Retra build with a different signature before installing."
+            echo
+            echo "${CORE_LINE}"
+            echo
+            echo "Verify the download with the attached .sha256 before installing."
+          } > release-notes.md
+          gh release create "$TAG" "${ASSETS[@]}" \
             --target "$GITHUB_SHA" \
-            --title "Retra ${SHORT_SHA}" \
-            --notes "Automated Android release for commit ${GITHUB_SHA}. Signed with the public Android debug keystore for personal/open-source sideload testing. Uninstall any previously unsigned Retra build before installing. Not for Play Store distribution."
+            --title "Retra 0.7.0 (${SHORT_SHA})" \
+            --notes-file release-notes.md

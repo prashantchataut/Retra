@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -24,14 +25,9 @@ import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Gamepad
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Login
-import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -43,24 +39,19 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import app.retra.core.model.AccentPalette
 import app.retra.core.model.AppSettings
-import app.retra.core.model.ThemeMode
 import app.retra.emulator.auth.AuthOperation
 import app.retra.emulator.auth.RetraAccount
 
-private const val ONBOARDING_STEPS = 5
+private const val ONBOARDING_STEPS = 3
 
 @Composable
 fun OnboardingScreen(
@@ -68,15 +59,11 @@ fun OnboardingScreen(
     account: RetraAccount?,
     authOperation: AuthOperation,
     googleConfigured: Boolean,
-    onThemeChanged: (ThemeMode) -> Unit,
-    onAccentChanged: (AccentPalette) -> Unit,
     onGoogleSignIn: () -> Unit,
     onComplete: () -> Unit
 ) {
     var step by rememberSaveable { mutableIntStateOf(0) }
-    BoxWithConstraints(
-        Modifier.fillMaxSize()
-    ) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
         val wide = maxWidth >= 760.dp
         if (wide) {
             Row(
@@ -91,8 +78,6 @@ fun OnboardingScreen(
                     account = account,
                     authOperation = authOperation,
                     googleConfigured = googleConfigured,
-                    onThemeChanged = onThemeChanged,
-                    onAccentChanged = onAccentChanged,
                     onGoogleSignIn = onGoogleSignIn,
                     onBack = { step = (step - 1).coerceAtLeast(0) },
                     onNext = { if (step == ONBOARDING_STEPS - 1) onComplete() else step++ },
@@ -123,8 +108,6 @@ fun OnboardingScreen(
                     account = account,
                     authOperation = authOperation,
                     googleConfigured = googleConfigured,
-                    onThemeChanged = onThemeChanged,
-                    onAccentChanged = onAccentChanged,
                     onGoogleSignIn = onGoogleSignIn,
                     onBack = { step = (step - 1).coerceAtLeast(0) },
                     onNext = { if (step == ONBOARDING_STEPS - 1) onComplete() else step++ },
@@ -154,14 +137,14 @@ private fun OnboardingBrandPanel(modifier: Modifier = Modifier) {
             Text(
                 "A private, premium home for your retro library.",
                 style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.secondary,
+                color = MaterialTheme.colorScheme.primary,
                 textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(28.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 MiniPill(Icons.Default.Gamepad, "Play")
                 MiniPill(Icons.Default.Save, "Protect")
-                MiniPill(Icons.Default.Palette, "Personalize")
+                MiniPill(Icons.Default.Security, "Private")
             }
         }
     }
@@ -184,8 +167,6 @@ private fun OnboardingCard(
     account: RetraAccount?,
     authOperation: AuthOperation,
     googleConfigured: Boolean,
-    onThemeChanged: (ThemeMode) -> Unit,
-    onAccentChanged: (AccentPalette) -> Unit,
     onGoogleSignIn: () -> Unit,
     onBack: () -> Unit,
     onNext: () -> Unit,
@@ -217,8 +198,6 @@ private fun OnboardingCard(
                     when (current) {
                         0 -> WelcomeStep()
                         1 -> LibraryStep()
-                        2 -> PlayerStep()
-                        3 -> PersonalizeStep(settings, onThemeChanged, onAccentChanged)
                         else -> AccountStep(account, authOperation, googleConfigured, onGoogleSignIn, onCompleteOffline)
                     }
                 }
@@ -231,7 +210,7 @@ private fun OnboardingCard(
                             feedback(FeedbackCue.TAP)
                             onBack()
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                     ) { Text("Back") }
                 }
                 Button(
@@ -239,7 +218,7 @@ private fun OnboardingCard(
                         feedback(if (step == ONBOARDING_STEPS - 1) FeedbackCue.CONFIRM else FeedbackCue.TAP)
                         onNext()
                     },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                 ) {
                     Text(if (step == ONBOARDING_STEPS - 1) "Enter Retra" else "Continue")
                 }
@@ -251,46 +230,23 @@ private fun OnboardingCard(
 @Composable
 private fun WelcomeStep() {
     StepHeading(
-        "Your games, remembered well",
-        "Retra is built for fast access, reliable saves, low-latency controls, and a library that feels personal instead of like a file browser."
+        "What Retra is",
+        "Retra is a private Game Boy Advance home: fast library access, reliable saves, and controller-first play — without turning your collection into a file browser."
     )
     FeatureLine(Icons.Default.Security, "Private by default", "ROMs stay on your device unless you explicitly choose a personal backup provider.")
     FeatureLine(Icons.Default.Gamepad, "Built for play", "Touch, Bluetooth, USB controllers, keyboard input, fast-forward, and suspend/resume are first-class flows.")
-    FeatureLine(Icons.Default.Palette, "Made yours", "Theme, density, controls, library layout, and per-game behavior can evolve without compromising readability.")
+    FeatureLine(Icons.Default.Save, "Saves you can trust", "Versioned, checksummed envelopes protect battery saves and states across sessions.")
 }
 
 @Composable
 private fun LibraryStep() {
-    StepHeading("Bring your own library", "Import personal backups through Android's Storage Access Framework or add legal, checksum-verified homebrew catalogs.")
-    FeatureLine(Icons.Default.FolderOpen, "Verified imports", "Retra parses the GBA header, computes SHA-256, rejects duplicates, and never silently edits the source ROM.")
-    FeatureLine(Icons.Default.Lock, "Legal online catalogs", "Downloads require HTTPS, a declared license, distribution permission, size limits, and an exact checksum.")
+    StepHeading(
+        "What files Retra imports",
+        "Bring your own backups through Android's Storage Access Framework, or add legal, checksum-verified homebrew catalogs."
+    )
+    FeatureLine(Icons.Default.FolderOpen, "Verified imports", "Retra accepts .gba and .zip libraries, parses the GBA header, computes SHA-256, and never silently edits the source ROM.")
     FeatureLine(Icons.Default.Code, "Patches, not pirated copies", "IPS, UPS, and BPS patches are applied locally to a compatible base ROM and stored as separate library entries.")
-}
-
-@Composable
-private fun PlayerStep() {
-    StepHeading("Play without risking your saves", "The player isolates the emulator core from UI and online services, then wraps battery saves and states in versioned, checksummed envelopes.")
-    FeatureLine(Icons.Default.Save, "Retra Vault", "Atomic writes, rotating backups, suspend states, ROM identity, core version, and corruption rejection protect progress.")
-    FeatureLine(Icons.Default.Speed, "Retra Boost", "Fast-forward is clearly separated from display refresh and presentation smoothing. Accuracy remains the default.")
-    FeatureLine(Icons.Default.Gamepad, "Controller-first", "Gamepads, touch controls, D-pad hats, analog fallback, haptics, and controller-only navigation share one input model.")
-}
-
-@Composable
-private fun PersonalizeStep(settings: AppSettings, onThemeChanged: (ThemeMode) -> Unit, onAccentChanged: (AccentPalette) -> Unit) {
-    StepHeading("Choose your Retra", "Start with a calm preset. Every choice can be changed later from the You tab.")
-    Text("Theme", style = MaterialTheme.typography.titleMedium)
-    ChoiceGrid(ThemeMode.entries, settings.themeMode, { it.name.lowercase().replaceFirstChar(Char::titlecase) }, onThemeChanged)
-    Text("Accent", style = MaterialTheme.typography.titleMedium)
-    ChoiceGrid(AccentPalette.entries, settings.accentPalette, { it.name.lowercase().replace('_', ' ').replaceFirstChar(Char::titlecase) }, onAccentChanged)
-    Surface(shape = RoundedCornerShape(22.dp), color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f)) {
-        Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            RetraLogoTile(size = 58.dp)
-            Column(Modifier.weight(1f)) {
-                Text("Live preview", style = MaterialTheme.typography.titleMedium)
-                Text("The design system updates immediately without restarting Retra.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-    }
+    FeatureLine(Icons.Default.Lock, "Legal online catalogs", "Downloads require HTTPS, a declared license, distribution permission, size limits, and an exact checksum.")
 }
 
 @Composable
@@ -301,7 +257,10 @@ private fun AccountStep(
     onGoogleSignIn: () -> Unit,
     onCompleteOffline: () -> Unit
 ) {
-    StepHeading("Keep Retra personal", "An account is optional. Local play, saves, patches, cheats, and achievements work without signing in.")
+    StepHeading(
+        "Optional Google identity",
+        "An account is optional. Local play, saves, patches, cheats, and achievements work without signing in."
+    )
     if (account != null) {
         Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.76f)) {
             Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -311,9 +270,9 @@ private fun AccountStep(
                 Column(Modifier.weight(1f)) {
                     Text(account.displayName ?: "Google account", style = MaterialTheme.typography.titleMedium)
                     Text(account.email, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("Connected on this device", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+                    Text("Connected on this device", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                 }
-                Icon(Icons.Default.CloudDone, null, tint = MaterialTheme.colorScheme.secondary)
+                Icon(Icons.Default.CloudDone, null, tint = MaterialTheme.colorScheme.primary)
             }
         }
         Text("Cloud features remain disabled until a Retra backend verifies the Google ID token and nonce.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -321,7 +280,7 @@ private fun AccountStep(
         FilledTonalButton(
             onClick = onGoogleSignIn,
             enabled = googleConfigured && operation == AuthOperation.IDLE,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
         ) {
             Icon(Icons.Default.Login, null)
             Spacer(Modifier.size(10.dp))
@@ -330,7 +289,9 @@ private fun AccountStep(
         if (!googleConfigured) {
             Text("Google sign-in is ready in source but this build needs RETRA_GOOGLE_WEB_CLIENT_ID.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
         }
-        OutlinedButton(onClick = onCompleteOffline, modifier = Modifier.fillMaxWidth()) { Text("Use Retra offline") }
+        OutlinedButton(onClick = onCompleteOffline, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+            Text("Use Retra offline")
+        }
     }
     FeatureLine(Icons.Default.Lock, "No ROM uploads", "Signing in never uploads ROM files. Cloud backup must remain opt-in and save-focused.")
 }
@@ -345,46 +306,13 @@ private fun StepHeading(title: String, body: String) {
 private fun FeatureLine(icon: ImageVector, title: String, body: String) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.Top) {
         Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
-            Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) { Icon(icon, null, tint = MaterialTheme.colorScheme.secondary) }
+            Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
+            }
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(title, style = MaterialTheme.typography.titleMedium)
             Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-}
-
-@Composable
-private fun <T> ChoiceRow(values: List<T>, selected: T, label: (T) -> String, onSelected: (T) -> Unit) {
-    val feedback = LocalRetraFeedback.current
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        values.forEach { value ->
-            FilterChip(
-                selected = value == selected,
-                onClick = { feedback(FeedbackCue.TAP); onSelected(value) },
-                label = { Text(label(value)) },
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
-
-@Composable
-private fun <T> ChoiceGrid(values: List<T>, selected: T, label: (T) -> String, onSelected: (T) -> Unit) {
-    val feedback = LocalRetraFeedback.current
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        values.chunked(2).forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { value ->
-                    FilterChip(
-                        selected = value == selected,
-                        onClick = { feedback(FeedbackCue.TAP); onSelected(value) },
-                        label = { Text(label(value)) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                if (row.size == 1) Spacer(Modifier.weight(1f))
-            }
         }
     }
 }

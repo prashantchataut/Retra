@@ -23,14 +23,13 @@ class OnboardingScreenTest {
                     account = null,
                     authOperation = AuthOperation.IDLE,
                     googleConfigured = false,
-                    onThemeChanged = {},
-                    onAccentChanged = {},
                     onGoogleSignIn = {},
                     onComplete = {}
                 )
             }
         }
         composeRule.onNodeWithText("Retra").assertIsDisplayed()
+        composeRule.onNodeWithText("What Retra is").assertIsDisplayed()
         composeRule.onNodeWithText("Private by default").assertIsDisplayed()
     }
 }

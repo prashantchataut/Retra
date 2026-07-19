@@ -23,69 +23,85 @@ import app.retra.core.model.AccentPalette
 import app.retra.core.model.AppSettings
 import app.retra.core.model.ThemeMode
 
-val VoidBlack = Color(0xFF07080D)
-val MidnightNavy = Color(0xFF10131A)
-val RetraIndigo = Color(0xFF6E63F0)
-val PrismCyan = Color(0xFF3DD0F5)
-val MemoryViolet = Color(0xFFA78BFA)
-val SaveMint = Color(0xFF4AD9A8)
-val AdventureGold = Color(0xFFF0B84D)
-val ErrorCoral = Color(0xFFFF6B7A)
-val CloudWhite = Color(0xFFF4F5FA)
-val SoftCloud = Color(0xFFF2F3F8)
-val DeepInk = Color(0xFF14151F)
-val MutedInk = Color(0xFF5C5F70)
+val VoidBlack = Color(0xFF0B0C10)
+val Graphite = Color(0xFF16181F)
+val RetraIndigo = Color(0xFF5B54E8)
+val SoftViolet = Color(0xFF8B7FD9)
+val SaveMint = Color(0xFF3CB88A)
+val AdventureGold = Color(0xFFD4A84B)
+val ErrorCoral = Color(0xFFE85A6B)
+val CloudWhite = Color(0xFFF5F5F7)
+val SoftCloud = Color(0xFFF0F1F4)
+val DeepInk = Color(0xFF14151A)
+val MutedInk = Color(0xFF5A5D68)
+
+// Retained aliases for status/artwork accents used outside the brand accent system.
+val PrismCyan = Color(0xFF4A9EAD)
+val MemoryViolet = SoftViolet
 
 private val DarkBase = darkColorScheme(
     primary = RetraIndigo,
     onPrimary = CloudWhite,
-    primaryContainer = Color(0xFF2C245F),
-    onPrimaryContainer = Color(0xFFE7E1FF),
-    secondary = PrismCyan,
-    onSecondary = Color(0xFF003642),
-    secondaryContainer = Color(0xFF004E5D),
-    onSecondaryContainer = Color(0xFFB1ECFF),
-    tertiary = MemoryViolet,
+    primaryContainer = Color(0xFF2A2758),
+    onPrimaryContainer = Color(0xFFE4E1FF),
+    secondary = Color(0xFF9AA0B0),
+    onSecondary = Color(0xFF15171E),
+    secondaryContainer = Color(0xFF2A2D38),
+    onSecondaryContainer = Color(0xFFD5D8E2),
+    tertiary = SoftViolet,
     background = VoidBlack,
     onBackground = CloudWhite,
-    surface = MidnightNavy,
+    surface = Graphite,
     onSurface = CloudWhite,
-    surfaceVariant = Color(0xFF191E28),
-    onSurfaceVariant = Color(0xFFC7C9D7),
-    outline = Color(0xFF8F93A6),
+    surfaceVariant = Color(0xFF1E212A),
+    onSurfaceVariant = Color(0xFFB8BBC6),
+    outline = Color(0xFF858996),
     error = ErrorCoral
 )
 
 private val LightBase = lightColorScheme(
-    primary = Color(0xFF594AC9),
+    primary = Color(0xFF4A44C7),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFE7E1FF),
-    onPrimaryContainer = Color(0xFF19005E),
-    secondary = Color(0xFF00677B),
+    primaryContainer = Color(0xFFE4E1FF),
+    onPrimaryContainer = Color(0xFF16005C),
+    secondary = Color(0xFF5A5D68),
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFB1ECFF),
-    onSecondaryContainer = Color(0xFF001F27),
-    tertiary = Color(0xFF6B4E9B),
-    background = Color(0xFFF3F4F7),
+    secondaryContainer = Color(0xFFE4E6ED),
+    onSecondaryContainer = Color(0xFF1A1C24),
+    tertiary = Color(0xFF6B5FA8),
+    background = SoftCloud,
     onBackground = DeepInk,
     surface = Color.White,
     onSurface = DeepInk,
-    surfaceVariant = Color(0xFFE8EAF0),
+    surfaceVariant = Color(0xFFE8EAEE),
     onSurfaceVariant = MutedInk,
-    outline = Color(0xFF747585),
+    outline = Color(0xFF6F7280),
     error = Color(0xFFBA1A1A)
 )
 
 private data class Palette(val primary: Color, val secondary: Color, val tertiary: Color)
 
 private fun palette(value: AccentPalette, dark: Boolean): Palette = when (value) {
-    AccentPalette.RETRA_PRISM -> Palette(if (dark) RetraIndigo else Color(0xFF594AC9), if (dark) PrismCyan else Color(0xFF00677B), MemoryViolet)
-    AccentPalette.AURORA -> Palette(Color(0xFF46D6B1), Color(0xFF70B7FF), Color(0xFFB98CFF))
-    AccentPalette.EMERALD_CARTRIDGE -> Palette(Color(0xFF36C88A), Color(0xFF87D45A), Color(0xFFE0B94C))
-    AccentPalette.SUNSET_GOLD -> Palette(Color(0xFFFFA640), Color(0xFFFF6E7E), Color(0xFFB98CFF))
-    AccentPalette.ATOMIC_PURPLE -> Palette(Color(0xFFA56BFF), Color(0xFFFF74C8), Color(0xFF58D8FF))
-    AccentPalette.GLACIER -> Palette(Color(0xFF5CA9FF), Color(0xFF55E2DD), Color(0xFFB3C7FF))
-    AccentPalette.CLASSIC_GRAY -> Palette(Color(0xFF85889A), Color(0xFFA8ACB8), Color(0xFFD4B96C))
+    AccentPalette.RETRA_INDIGO -> Palette(
+        primary = if (dark) RetraIndigo else Color(0xFF4A44C7),
+        secondary = if (dark) Color(0xFF9AA0B0) else Color(0xFF5A5D68),
+        tertiary = SoftViolet
+    )
+    AccentPalette.GRAPHITE -> Palette(
+        primary = if (dark) Color(0xFF9AA0B0) else Color(0xFF4A4E5A),
+        secondary = if (dark) Color(0xFF6E7382) else Color(0xFF6F7280),
+        tertiary = if (dark) Color(0xFFB8BBC6) else Color(0xFF858996)
+    )
+    AccentPalette.SOFT_VIOLET -> Palette(
+        primary = if (dark) SoftViolet else Color(0xFF6B5FA8),
+        secondary = if (dark) Color(0xFFA89FD4) else Color(0xFF7A7198),
+        tertiary = RetraIndigo
+    )
+    AccentPalette.CLASSIC_GRAY -> Palette(
+        primary = if (dark) Color(0xFF85889A) else Color(0xFF5C5F70),
+        secondary = if (dark) Color(0xFFA8ACB8) else Color(0xFF747585),
+        tertiary = Color(0xFFB8A46C)
+    )
 }
 
 private fun themedColors(base: ColorScheme, accent: Palette, highContrast: Boolean): ColorScheme = base.copy(

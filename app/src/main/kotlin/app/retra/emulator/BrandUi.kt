@@ -19,9 +19,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import app.retra.emulator.ui.theme.MemoryViolet
-import app.retra.emulator.ui.theme.PrismCyan
+import app.retra.emulator.ui.theme.Graphite
 import app.retra.emulator.ui.theme.RetraIndigo
+import app.retra.emulator.ui.theme.VoidBlack
 
 @Composable
 fun RetraLogo(
@@ -52,9 +52,9 @@ fun RetraLogoTile(
             .background(
                 Brush.linearGradient(
                     listOf(
-                        RetraIndigo.copy(alpha = 0.38f),
-                        MemoryViolet.copy(alpha = 0.16f),
-                        PrismCyan.copy(alpha = 0.14f)
+                        VoidBlack,
+                        Graphite,
+                        RetraIndigo.copy(alpha = 0.22f)
                     )
                 )
             )
@@ -67,9 +67,8 @@ fun RetraLogoTile(
 
 fun retraAuroraBrush(): Brush = Brush.radialGradient(
     colors = listOf(
-        RetraIndigo.copy(alpha = 0.28f),
-        MemoryViolet.copy(alpha = 0.10f),
-        PrismCyan.copy(alpha = 0.08f),
+        RetraIndigo.copy(alpha = 0.20f),
+        Graphite.copy(alpha = 0.12f),
         Color.Transparent
     ),
     radius = 1200f

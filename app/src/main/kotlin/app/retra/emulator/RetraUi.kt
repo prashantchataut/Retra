@@ -1,6 +1,7 @@
 
 package app.retra.emulator
 
+import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -47,20 +48,22 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Gamepad
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Star
@@ -80,10 +83,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -93,7 +93,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -124,6 +125,7 @@ import app.retra.core.emulation.VaultSaveRecord
 import app.retra.core.cheats.CheatFormat
 import app.retra.core.model.AccentPalette
 import app.retra.core.model.AppSettings
+import app.retra.core.model.CatalogContentKind
 import app.retra.core.model.ContentDensity
 import app.retra.core.model.CatalogEntry
 import app.retra.core.model.GameRecord
@@ -137,11 +139,12 @@ import app.retra.emulator.data.CatalogDownloadProgress
 import app.retra.emulator.data.StoredCheatPack
 import app.retra.emulator.data.StoredCatalog
 import app.retra.emulator.ui.theme.AdventureGold
-import app.retra.emulator.ui.theme.MemoryViolet
-import app.retra.emulator.ui.theme.PrismCyan
+import app.retra.emulator.ui.theme.Graphite
 import app.retra.emulator.ui.theme.RetraIndigo
 import app.retra.emulator.ui.theme.RetraTheme
 import app.retra.emulator.ui.theme.SaveMint
+import app.retra.emulator.ui.theme.SoftViolet
+import app.retra.emulator.data.PendingPatch
 import java.text.DateFormat
 import java.util.Date
 import kotlinx.coroutines.launch
@@ -150,19 +153,29 @@ private enum class Destination(val label: String, val icon: ImageVector) {
     HOME("Home", Icons.Default.Home),
     LIBRARY("Library", Icons.Default.LibraryBooks),
     DISCOVER("Discover", Icons.Default.Search),
-    VAULT("Vault", Icons.Default.Save),
-    SETTINGS("You", Icons.Default.AccountCircle)
+    SETTINGS("Settings", Icons.Default.Settings)
 }
 
 private enum class SettingsCategory(val label: String, val icon: ImageVector) {
     APPEARANCE("Appearance", Icons.Default.Palette),
     LIBRARY("Library", Icons.Default.LibraryBooks),
+    VAULT("Vault", Icons.Default.Save),
+    COMMUNITY("Community", Icons.Default.Groups),
     PLAYER("Player", Icons.Default.Memory),
     FEEDBACK("Feel", Icons.Default.VolumeUp),
     NOTIFICATIONS("Alerts", Icons.Default.Notifications),
     CONTROLS("Controls", Icons.Default.Gamepad),
     BOOST("Boost", Icons.Default.Speed),
     PRIVACY("Privacy", Icons.Default.Security)
+}
+
+private enum class LibraryFilter(val label: String) {
+    ALL("All"),
+    FAVORITES("Favorites"),
+    RECENT("Recent"),
+    UNPLAYED("Unplayed"),
+    PATCHED("Patched"),
+    HOMEBREW("Homebrew")
 }
 
 @Composable
@@ -177,6 +190,8 @@ fun RetraRoot(viewModel: RetraViewModel = viewModel()) {
     val catalogSources by viewModel.catalogSources.collectAsStateWithLifecycle()
     val account by viewModel.account.collectAsStateWithLifecycle()
     val authOperation by viewModel.authOperation.collectAsStateWithLifecycle()
+    val pendingPatch by viewModel.pendingPatch.collectAsStateWithLifecycle()
+    val compatibleBases by viewModel.compatibleBases.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     RetraTheme(settings) {
@@ -196,8 +211,6 @@ fun RetraRoot(viewModel: RetraViewModel = viewModel()) {
                 account = account,
                 authOperation = authOperation,
                 googleConfigured = viewModel.googleAuthConfigured,
-                onThemeChanged = viewModel::setThemeMode,
-                onAccentChanged = viewModel::setAccentPalette,
                 onGoogleSignIn = { viewModel.signInWithGoogle(context) },
                 onComplete = viewModel::finishOnboarding
             )
@@ -220,6 +233,7 @@ fun RetraRoot(viewModel: RetraViewModel = viewModel()) {
                 onDeleteCheatPack = viewModel::deleteCheatPack,
                 onToggleFavorite = { viewModel.toggleFavorite(selectedGame!!) },
                 onUpdateMetadata = { title, notes -> viewModel.updateGameMetadata(selectedGame!!, title, notes) },
+                onUpdateOrganization = { collections, tags -> viewModel.updateGameOrganization(selectedGame!!, collections, tags) },
                 onImportCoverArt = { uri -> viewModel.importCoverArt(selectedGame!!, uri) },
                 onRemoveCoverArt = { viewModel.removeCoverArt(selectedGame!!) },
                 onDelete = { viewModel.deleteGame(selectedGame!!) },
@@ -235,37 +249,47 @@ fun RetraRoot(viewModel: RetraViewModel = viewModel()) {
             val openCatalog = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
                 uri?.let(viewModel::importCatalog)
             }
-            MainShell(
-                viewModel = viewModel,
-                games = games,
-                settings = settings,
-                catalogSources = catalogSources,
-                catalogValidation = viewModel.catalogRepository.validation,
-                catalogDownloads = catalogDownloads,
-                downloadableCatalogHashes = catalogSources
-                    .flatMap { it.manifest.games }
-                    .filter(viewModel.catalogRepository::isDownloadable)
-                    .mapTo(mutableSetOf()) { it.sha256.lowercase() },
-                coreAvailable = viewModel.coreAvailable,
-                coreStatus = viewModel.coreStatus,
-                vaultRecords = vaultRecords,
-                snackbarHostState = snackbarHostState,
-                onImportFile = { openFile.launch(arrayOf("application/octet-stream", "*/*")) },
-                onImportFolder = { openFolder.launch(null) },
-                onImportCatalog = { openCatalog.launch(arrayOf("application/json", "text/json", "text/plain", "*/*")) },
-                onGameSelected = viewModel::selectGame,
-                onThemeChanged = viewModel::setThemeMode,
-                onLayoutChanged = viewModel::setLibraryLayout,
-                onDynamicColorChanged = viewModel::setDynamicColor,
-                onReduceMotionChanged = viewModel::setReduceMotion,
-                onReduceTransparencyChanged = viewModel::setReduceTransparency,
-                onFastForwardChanged = viewModel::setFastForwardSpeed,
-                onPerformanceChanged = viewModel::setPerformanceProfile,
-                onDownloadCatalogEntry = viewModel::downloadCatalogEntry,
-                onDeleteCatalog = viewModel::deleteCatalog,
-                onDeleteVaultRecord = viewModel::deleteVaultRecord
-            )
+            Box(Modifier.fillMaxSize()) {
+                MainShell(
+                    viewModel = viewModel,
+                    games = games,
+                    settings = settings,
+                    catalogSources = catalogSources,
+                    catalogValidation = viewModel.catalogRepository.validation,
+                    catalogDownloads = catalogDownloads,
+                    downloadableCatalogHashes = catalogSources
+                        .flatMap { it.manifest.games }
+                        .filter(viewModel.catalogRepository::isDownloadable)
+                        .mapTo(mutableSetOf()) { it.sha256.lowercase() },
+                    coreAvailable = viewModel.coreAvailable,
+                    coreStatus = viewModel.coreStatus,
+                    vaultRecords = vaultRecords,
+                    snackbarHostState = snackbarHostState,
+                    onImportFile = { openFile.launch(arrayOf("application/octet-stream", "*/*")) },
+                    onImportFolder = { openFolder.launch(null) },
+                    onImportCatalog = { openCatalog.launch(arrayOf("application/json", "text/json", "text/plain", "*/*")) },
+                    onGameSelected = viewModel::selectGame,
+                    onThemeChanged = viewModel::setThemeMode,
+                    onLayoutChanged = viewModel::setLibraryLayout,
+                    onDynamicColorChanged = viewModel::setDynamicColor,
+                    onReduceMotionChanged = viewModel::setReduceMotion,
+                    onReduceTransparencyChanged = viewModel::setReduceTransparency,
+                    onFastForwardChanged = viewModel::setFastForwardSpeed,
+                    onPerformanceChanged = viewModel::setPerformanceProfile,
+                    onDownloadCatalogEntry = viewModel::downloadCatalogEntry,
+                    onDeleteCatalog = viewModel::deleteCatalog,
+                    onDeleteVaultRecord = viewModel::deleteVaultRecord
+                )
+                if (pendingPatch != null) {
+                    PendingPatchSheet(
+                        pending = pendingPatch!!,
+                        compatibleBases = compatibleBases,
+                        onDismiss = viewModel::dismissPendingPatch,
+                        onApply = viewModel::applyPendingPatch
+                    )
                 }
+            }
+        }
             }
         }
     }
@@ -306,7 +330,10 @@ private fun MainShell(
         StartupDestination.CONTINUE_PLAYING -> if (games.isEmpty()) Destination.LIBRARY else Destination.HOME
     }
     var destinationName by rememberSaveable { mutableStateOf(initialDestination.name) }
-    val destination = Destination.valueOf(destinationName)
+    val destination = runCatching { Destination.valueOf(destinationName) }.getOrElse {
+        destinationName = Destination.HOME.name
+        Destination.HOME
+    }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val useRail = maxWidth >= 720.dp
@@ -445,38 +472,50 @@ private fun MainScaffold(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
-        RetraAnimatedContent(
-            targetState = destination,
-            reduceMotion = settings.reduceMotion,
-            label = "destination",
-            modifier = Modifier.fillMaxSize().consumeWindowInsets(innerPadding).padding(innerPadding)
-        ) { target ->
-            when (target) {
-                Destination.HOME -> HomeScreen(games, settings, coreAvailable, coreStatus, onImportFile, onGameSelected)
-                Destination.LIBRARY -> LibraryScreen(games, settings.libraryLayout, settings.contentDensity, onImportFile, onImportFolder, onGameSelected)
-                Destination.DISCOVER -> DiscoverScreen(
-                    catalogSources,
-                    catalogValidation,
-                    catalogDownloads,
-                    downloadableCatalogHashes,
-                    onImportCatalog,
-                    onDownloadCatalogEntry,
-                    onDeleteCatalog,
-                    settings.showOnlineRecommendations,
-                    viewModel
-                )
-                Destination.VAULT -> VaultScreen(games, vaultRecords, onDeleteVaultRecord)
-                Destination.SETTINGS -> SettingsScreen(
-                    settings,
-                    onThemeChanged,
-                    onLayoutChanged,
-                    onDynamicColorChanged,
-                    onReduceMotionChanged,
-                    onReduceTransparencyChanged,
-                    onFastForwardChanged,
-                    onPerformanceChanged,
-                    viewModel
-                )
+        Box(
+            Modifier
+                .fillMaxSize()
+                .consumeWindowInsets(innerPadding)
+                .padding(innerPadding),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            RetraAnimatedContent(
+                targetState = destination,
+                reduceMotion = settings.reduceMotion,
+                label = "destination",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .widthIn(max = 900.dp)
+            ) { target ->
+                when (target) {
+                    Destination.HOME -> HomeScreen(games, settings, coreAvailable, coreStatus, onImportFile, onGameSelected)
+                    Destination.LIBRARY -> LibraryScreen(games, settings.libraryLayout, settings.contentDensity, onImportFile, onImportFolder, onGameSelected)
+                    Destination.DISCOVER -> DiscoverScreen(
+                        catalogSources,
+                        catalogValidation,
+                        catalogDownloads,
+                        downloadableCatalogHashes,
+                        onImportCatalog,
+                        onDownloadCatalogEntry,
+                        onDeleteCatalog,
+                        settings.showOnlineRecommendations,
+                        viewModel
+                    )
+                    Destination.SETTINGS -> SettingsScreen(
+                        settings,
+                        games,
+                        vaultRecords,
+                        onThemeChanged,
+                        onLayoutChanged,
+                        onDynamicColorChanged,
+                        onReduceMotionChanged,
+                        onReduceTransparencyChanged,
+                        onFastForwardChanged,
+                        onPerformanceChanged,
+                        onDeleteVaultRecord,
+                        viewModel
+                    )
+                }
             }
         }
     }
@@ -618,6 +657,7 @@ private fun PremiumNavigationRail(
                     GlassPill(
                         modifier = Modifier
                             .width(78.dp)
+                            .heightIn(min = 48.dp)
                             .clip(RoundedCornerShape(18.dp))
                             .clickable { onSelected(item) },
                         selected = selected == item
@@ -785,12 +825,41 @@ private fun LibraryScreen(
         ContentDensity.COMPACT -> 6.dp
     }
     var query by rememberSaveable { mutableStateOf("") }
-    val visibleGames = remember(games, query) {
+    var filterName by rememberSaveable { mutableStateOf(LibraryFilter.ALL.name) }
+    val filter = LibraryFilter.valueOf(filterName)
+    val visibleGames = remember(games, query, filter) {
         val normalized = query.trim().lowercase()
-        if (normalized.isBlank()) games else games.filter { game ->
-            listOf(game.title, game.displayName, game.gameCode, game.makerCode)
-                .any { it.lowercase().contains(normalized) }
-        }
+        games.asSequence()
+            .filter { game ->
+                when (filter) {
+                    LibraryFilter.ALL -> true
+                    LibraryFilter.FAVORITES -> game.favorite
+                    LibraryFilter.RECENT -> game.lastPlayedAtEpochMillis != null
+                    LibraryFilter.UNPLAYED -> game.lastPlayedAtEpochMillis == null
+                    LibraryFilter.PATCHED -> game.origin == "LOCAL_PATCH" || !game.patchSha256.isNullOrBlank() ||
+                        game.tags.any { it.equals("patched", ignoreCase = true) }
+                    LibraryFilter.HOMEBREW -> game.origin == "LEGAL_CATALOG" ||
+                        game.tags.any { it.equals("homebrew", ignoreCase = true) }
+                }
+            }
+            .filter { game ->
+                if (normalized.isBlank()) true else {
+                    buildList {
+                        add(game.title)
+                        add(game.displayName)
+                        add(game.gameCode)
+                        addAll(game.tags)
+                        addAll(game.collections)
+                    }.any { it.lowercase().contains(normalized) }
+                }
+            }
+            .sortedByDescending { game ->
+                when (filter) {
+                    LibraryFilter.RECENT -> game.lastPlayedAtEpochMillis ?: 0L
+                    else -> game.importedAtEpochMillis
+                }
+            }
+            .toList()
     }
     Column(Modifier.fillMaxSize()) {
         Row(
@@ -808,9 +877,22 @@ private fun LibraryScreen(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = edgePadding),
                 singleLine = true,
                 leadingIcon = { Icon(Icons.Default.Search, null) },
-                placeholder = { Text("Search title, game code, or file") },
+                placeholder = { Text("Search title, tags, or collections") },
                 label = { Text("Find in library") }
             )
+            Spacer(Modifier.height(itemSpacing))
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = edgePadding),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(LibraryFilter.entries, key = { it.name }) { item ->
+                    FilterChip(
+                        selected = filter == item,
+                        onClick = { filterName = item.name },
+                        label = { Text(item.label) }
+                    )
+                }
+            }
             Spacer(Modifier.height(itemSpacing))
         }
         if (games.isEmpty()) {
@@ -821,7 +903,7 @@ private fun LibraryScreen(
                     Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Icon(Icons.Default.Search, null, modifier = Modifier.size(38.dp))
                         Text("No matching games", style = MaterialTheme.typography.titleLarge)
-                        Text("Try a different title, game code, or file name.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Try a different title, tag, collection, or filter.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -959,14 +1041,103 @@ private fun DiscoverScreen(
     viewModel: RetraViewModel
 ) {
     val feedback = LocalRetraFeedback.current
+    val context = LocalContext.current
+    val curated by viewModel.curatedReleases.collectAsStateWithLifecycle()
     val visibleCatalogs = if (showOnlineRecommendations) catalogs else catalogs.filterNot(StoredCatalog::builtIn)
+    LaunchedEffect(Unit) { viewModel.refreshCuratedReleases() }
+    fun openExternal(url: String) {
+        runCatching {
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        }
+    }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
+        item {
+            GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 24.dp, contentPadding = PaddingValues(17.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Retra Curated", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Pinned community and homebrew destinations. Retra never bundles commercial ROMs.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    viewModel.catalogRepository.curatedLinks.forEach { link ->
+                        OutlinedButton(
+                            onClick = {
+                                feedback(FeedbackCue.CONFIRM)
+                                openExternal(link.sourcePageUrl)
+                            },
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                        ) {
+                            Icon(Icons.Default.OpenInNew, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text(link.title)
+                        }
+                    }
+                }
+            }
+        }
+        item {
+            GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 24.dp, contentPadding = PaddingValues(17.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Official creator releases", style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                "One-tap download appears only when GitHub publishes a SHA-256 digest. Otherwise open the creator page.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        IconButton(
+                            onClick = {
+                                feedback(FeedbackCue.TAP)
+                                viewModel.refreshCuratedReleases()
+                            },
+                            enabled = !curated.refreshing
+                        ) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Refresh official releases")
+                        }
+                    }
+                    curated.links.forEach { link ->
+                        OutlinedButton(
+                            onClick = {
+                                feedback(FeedbackCue.CONFIRM)
+                                openExternal(link.sourcePageUrl)
+                            },
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                        ) {
+                            Icon(Icons.Default.OpenInNew, null)
+                            Spacer(Modifier.width(8.dp))
+                            Text(link.title)
+                        }
+                    }
+                    if (curated.refreshing) {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    }
+                    curated.lastError?.let {
+                        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                    }
+                    curated.downloadableEntries.forEach { entry ->
+                        CatalogCard(
+                            entry = entry,
+                            progress = downloads[entry.sha256.lowercase()],
+                            downloadable = true,
+                            onDownload = onDownload,
+                            onOpenSource = { openExternal(it) }
+                        )
+                    }
+                }
+            }
+        }
         item { OnlineCatalogImportCard(viewModel) }
-        item { CommunityHub(viewModel) }
         item {
             GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 24.dp, contentPadding = PaddingValues(17.dp)) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -975,9 +1146,9 @@ private fun DiscoverScreen(
                             Icon(Icons.Default.Security, null, tint = SaveMint, modifier = Modifier.padding(9.dp).size(20.dp))
                         }
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text("Reviewed legal catalogs", style = MaterialTheme.typography.titleMedium)
+                            Text("SHA-256 pinned custom manifests", style = MaterialTheme.typography.titleMedium)
                             Text(
-                                "Public-domain, open-source, licensed homebrew, demos, and synthetic test content only.",
+                                "Import reviewed public-domain, open-source, licensed homebrew, demos, and synthetic fixtures only.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -988,7 +1159,7 @@ private fun DiscoverScreen(
                             feedback(FeedbackCue.CONFIRM)
                             onImportCatalog()
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
                     ) {
                         Icon(Icons.Default.Add, null)
                         Spacer(Modifier.width(8.dp))
@@ -1036,7 +1207,8 @@ private fun DiscoverScreen(
                     entry = entry,
                     progress = downloads[entry.sha256.lowercase()],
                     downloadable = entry.sha256.lowercase() in downloadableHashes,
-                    onDownload = onDownload
+                    onDownload = onDownload,
+                    onOpenSource = { openExternal(it) }
                 )
             }
         }
@@ -1045,7 +1217,7 @@ private fun DiscoverScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Secure by construction", style = MaterialTheme.typography.titleMedium)
                     Text(
-                        "Catalogs are strict UTF-8 JSON. Retra blocks private targets, cross-host redirects, unknown fields, oversized files, invalid hashes, and missing license provenance.",
+                        "Catalogs are strict UTF-8 JSON. Retra blocks private targets, cross-host redirects, unknown fields, oversized files, invalid hashes, and missing license provenance. External creator links open in the browser.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1061,16 +1233,19 @@ private fun CatalogCard(
     entry: CatalogEntry,
     progress: CatalogDownloadProgress?,
     downloadable: Boolean,
-    onDownload: (CatalogEntry) -> Unit
+    onDownload: (CatalogEntry) -> Unit,
+    onOpenSource: (String) -> Unit = {}
 ) {
     val feedback = LocalRetraFeedback.current
+    val external = entry.contentKind == CatalogContentKind.EXTERNAL || (!downloadable && !entry.sourcePageUrl.isNullOrBlank())
     GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 24.dp, contentPadding = PaddingValues(18.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
             Text(entry.title, style = MaterialTheme.typography.titleLarge)
             Text(entry.description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 StatusPill(entry.license)
-                StatusPill(formatBytes(entry.fileSize))
+                if (entry.contentKind != CatalogContentKind.EXTERNAL) StatusPill(formatBytes(entry.fileSize))
+                StatusPill(entry.contentKind.name.humanize())
             }
             Text("By ${entry.creator}", style = MaterialTheme.typography.labelLarge)
             Text(entry.distributionPermission, style = MaterialTheme.typography.bodySmall, color = SaveMint)
@@ -1085,16 +1260,33 @@ private fun CatalogCard(
                 CatalogDownloadPhase.VERIFYING,
                 CatalogDownloadPhase.IMPORTING
             )
-            OutlinedButton(
-                onClick = {
-                    feedback(FeedbackCue.CONFIRM)
-                    onDownload(entry)
-                },
-                enabled = downloadable && !active
-            ) {
-                Icon(if (downloadable) Icons.Default.Download else Icons.Default.CloudOff, null)
-                Spacer(Modifier.width(8.dp))
-                Text(if (downloadable) "Download and verify" else "Preview only")
+            if (external) {
+                val page = entry.sourcePageUrl
+                OutlinedButton(
+                    onClick = {
+                        feedback(FeedbackCue.CONFIRM)
+                        if (!page.isNullOrBlank()) onOpenSource(page)
+                    },
+                    enabled = !page.isNullOrBlank(),
+                    modifier = Modifier.heightIn(min = 48.dp)
+                ) {
+                    Icon(Icons.Default.OpenInNew, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Open creator page")
+                }
+            } else {
+                OutlinedButton(
+                    onClick = {
+                        feedback(FeedbackCue.CONFIRM)
+                        onDownload(entry)
+                    },
+                    enabled = downloadable && !active,
+                    modifier = Modifier.heightIn(min = 48.dp)
+                ) {
+                    Icon(if (downloadable) Icons.Default.Download else Icons.Default.CloudOff, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(if (downloadable) "Download and verify" else "Preview only")
+                }
             }
             progress?.message?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
@@ -1102,63 +1294,55 @@ private fun CatalogCard(
 }
 
 @Composable
-private fun VaultScreen(
+private fun VaultSection(
     games: List<GameRecord>,
     records: List<VaultSaveRecord>,
     onDelete: (VaultSaveRecord) -> Unit
 ) {
     val feedback = LocalRetraFeedback.current
     val titlesByHash = remember(games) { games.associateBy({ it.sha256.lowercase() }, GameRecord::title) }
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(20.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        item {
-            GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 28.dp, contentPadding = PaddingValues(22.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)) {
-                        Icon(Icons.Default.Save, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(12.dp).size(28.dp))
-                    }
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Retra Vault", style = MaterialTheme.typography.headlineMedium)
-                        Text(
-                            "Checksummed states, automatic suspend snapshots, and rotating local backups.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 28.dp, contentPadding = PaddingValues(22.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)) {
+                    Icon(Icons.Default.Save, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(12.dp).size(28.dp))
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Retra Vault", style = MaterialTheme.typography.headlineMedium)
+                    Text(
+                        "Checksummed states, automatic suspend snapshots, and rotating local backups. Session save menus in the player still work the same way.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
-        item { VaultFeature("Atomic state storage", "Bound to ROM identity and emulator core version", Icons.Default.Storage) }
-        item { VaultFeature("Rotating backups", "Three local generations before replacement", Icons.Default.Security) }
+        VaultFeature("Atomic state storage", "Bound to ROM identity and emulator core version", Icons.Default.Storage)
+        VaultFeature("Rotating backups", "Three local generations before replacement", Icons.Default.Security)
         if (records.isEmpty()) {
-            item {
-                GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 24.dp, contentPadding = PaddingValues(22.dp)) {
-                    Column(
-                        Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text("No snapshots yet", style = MaterialTheme.typography.titleLarge)
-                        Text(
-                            "Open a game and use Quick Save. Automatic background suspends also appear here.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+            GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 24.dp, contentPadding = PaddingValues(22.dp)) {
+                Column(
+                    Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("No snapshots yet", style = MaterialTheme.typography.titleLarge)
+                    Text(
+                        "Open a game and use Quick Save. Automatic background suspends also appear here.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         } else {
-            item { SectionTitle("Local timeline") }
-            items(records, key = VaultSaveRecord::relativePath) { record ->
+            SectionTitle("Local timeline")
+            records.forEach { record ->
                 GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 22.dp, contentPadding = PaddingValues(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Icon(
                             if (record.kind == SaveKind.SUSPEND) Icons.Default.Pause else Icons.Default.Save,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.secondary
+                            tint = MaterialTheme.colorScheme.primary
                         )
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                             Text(
@@ -1190,7 +1374,7 @@ private fun VaultScreen(
                 }
             }
         }
-        item { VaultFeature("Cloud synchronization", "Optional save-only provider planned; ROM upload remains disabled", Icons.Default.CloudOff) }
+        VaultFeature("Cloud synchronization", "Optional save-only provider planned; ROM upload remains disabled", Icons.Default.CloudOff)
     }
 }
 
@@ -1210,6 +1394,8 @@ private fun VaultFeature(title: String, status: String, icon: ImageVector) {
 @Composable
 private fun SettingsScreen(
     settings: AppSettings,
+    games: List<GameRecord>,
+    vaultRecords: List<VaultSaveRecord>,
     onThemeChanged: (ThemeMode) -> Unit,
     onLayoutChanged: (LibraryLayout) -> Unit,
     onDynamicColorChanged: (Boolean) -> Unit,
@@ -1217,6 +1403,7 @@ private fun SettingsScreen(
     onReduceTransparencyChanged: (Boolean) -> Unit,
     onFastForwardChanged: (Float) -> Unit,
     onPerformanceChanged: (PerformanceProfile) -> Unit,
+    onDeleteVaultRecord: (VaultSaveRecord) -> Unit,
     viewModel: RetraViewModel
 ) {
     var selectedName by rememberSaveable { mutableStateOf(SettingsCategory.APPEARANCE.name) }
@@ -1273,6 +1460,14 @@ private fun SettingsScreen(
                 FlowChips(StartupDestination.entries, settings.startupDestination, { it.name.humanize() }, viewModel::setStartupDestination)
                 ToggleSetting("Show library statistics", settings.showStatistics, viewModel::setShowStatistics)
                 ToggleSetting("Show legal online recommendations", settings.showOnlineRecommendations, viewModel::setShowOnlineRecommendations)
+            }
+
+            SettingsCategory.VAULT -> {
+                VaultSection(games, vaultRecords, onDeleteVaultRecord)
+            }
+
+            SettingsCategory.COMMUNITY -> {
+                CommunityHub(viewModel)
             }
 
             SettingsCategory.PLAYER -> SettingsSection("Display & audio", Icons.Default.Memory) {
@@ -1440,6 +1635,7 @@ private fun GameDetailsScreen(
     onDeleteCheatPack: (StoredCheatPack) -> Unit,
     onToggleFavorite: () -> Unit,
     onUpdateMetadata: (String, String?) -> Unit,
+    onUpdateOrganization: (List<String>, List<String>) -> Unit,
     onImportCoverArt: (Uri) -> Unit,
     onRemoveCoverArt: () -> Unit,
     onDelete: () -> Unit,
@@ -1447,8 +1643,15 @@ private fun GameDetailsScreen(
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
     var metadataDialog by rememberSaveable { mutableStateOf(false) }
+    var organizationDialog by rememberSaveable { mutableStateOf(false) }
     var editedTitle by rememberSaveable(game.id, game.title) { mutableStateOf(game.title) }
     var editedNotes by rememberSaveable(game.id, game.notes) { mutableStateOf(game.notes.orEmpty()) }
+    var editedCollections by rememberSaveable(game.id, game.collections.joinToString(",")) {
+        mutableStateOf(game.collections.joinToString(", "))
+    }
+    var editedTags by rememberSaveable(game.id, game.tags.joinToString(",")) {
+        mutableStateOf(game.tags.joinToString(", "))
+    }
     var customCheatDialog by rememberSaveable { mutableStateOf(false) }
     var onlinePackDialog by rememberSaveable { mutableStateOf(false) }
     var customName by rememberSaveable { mutableStateOf("") }
@@ -1474,6 +1677,9 @@ private fun GameDetailsScreen(
                     IconButton(onClick = { metadataDialog = true }) {
                         Icon(Icons.Default.Edit, "Edit library details")
                     }
+                    IconButton(onClick = { organizationDialog = true }) {
+                        Icon(Icons.Default.LibraryBooks, "Edit collections and tags")
+                    }
                     IconButton(onClick = onToggleFavorite) {
                         Icon(if (game.favorite) Icons.Default.Star else Icons.Default.StarBorder, if (game.favorite) "Remove favorite" else "Add favorite")
                     }
@@ -1497,6 +1703,22 @@ private fun GameDetailsScreen(
             item {
                 Text(game.title, style = MaterialTheme.typography.headlineLarge)
                 Text(game.displayName, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (game.collections.isNotEmpty() || game.tags.isNotEmpty()) {
+                    Column(Modifier.padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (game.collections.isNotEmpty()) {
+                            Text("Collections", style = MaterialTheme.typography.labelLarge)
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                items(game.collections) { StatusPill(it) }
+                            }
+                        }
+                        if (game.tags.isNotEmpty()) {
+                            Text("Tags", style = MaterialTheme.typography.labelLarge)
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                items(game.tags) { StatusPill(it) }
+                            }
+                        }
+                    }
+                }
                 game.notes?.takeIf(String::isNotBlank)?.let { notes ->
                     Surface(
                         modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
@@ -1694,6 +1916,43 @@ private fun GameDetailsScreen(
             dismissButton = { OutlinedButton(onClick = { metadataDialog = false }) { Text("Cancel") } }
         )
     }
+    if (organizationDialog) {
+        AlertDialog(
+            onDismissRequest = { organizationDialog = false },
+            title = { Text("Collections and tags") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = editedCollections,
+                        onValueChange = { editedCollections = it.take(400) },
+                        label = { Text("Collections") },
+                        supportingText = { Text("Comma-separated, for example Favorites shelf, Speedruns") },
+                        minLines = 2,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = editedTags,
+                        onValueChange = { editedTags = it.take(400) },
+                        label = { Text("Tags") },
+                        supportingText = { Text("Comma-separated, for example homebrew, patched") },
+                        minLines = 2,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val collections = editedCollections.split(',').map(String::trim).filter(String::isNotEmpty)
+                        val tags = editedTags.split(',').map(String::trim).filter(String::isNotEmpty)
+                        onUpdateOrganization(collections, tags)
+                        organizationDialog = false
+                    }
+                ) { Text("Save") }
+            },
+            dismissButton = { OutlinedButton(onClick = { organizationDialog = false }) { Text("Cancel") } }
+        )
+    }
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
@@ -1815,10 +2074,10 @@ private fun SectionTitle(title: String) { Text(title, style = MaterialTheme.typo
 internal fun gameArtworkBrush(game: GameRecord): Brush {
     val seed = game.sha256.take(8).toLongOrNull(16) ?: game.title.hashCode().toLong()
     val palettes = listOf(
-        listOf(RetraIndigo.copy(alpha = 0.82f), MemoryViolet.copy(alpha = 0.32f)),
-        listOf(PrismCyan.copy(alpha = 0.58f), RetraIndigo.copy(alpha = 0.28f)),
-        listOf(SaveMint.copy(alpha = 0.52f), PrismCyan.copy(alpha = 0.22f)),
-        listOf(AdventureGold.copy(alpha = 0.48f), MemoryViolet.copy(alpha = 0.24f))
+        listOf(RetraIndigo.copy(alpha = 0.82f), SoftViolet.copy(alpha = 0.28f)),
+        listOf(RetraIndigo.copy(alpha = 0.58f), Graphite.copy(alpha = 0.55f)),
+        listOf(SaveMint.copy(alpha = 0.42f), RetraIndigo.copy(alpha = 0.28f)),
+        listOf(AdventureGold.copy(alpha = 0.40f), SoftViolet.copy(alpha = 0.22f))
     )
     return Brush.linearGradient(palettes[kotlin.math.abs(seed % palettes.size).toInt()])
 }
@@ -1842,10 +2101,81 @@ private fun OnboardingPreview() {
             account = null,
             authOperation = app.retra.emulator.auth.AuthOperation.IDLE,
             googleConfigured = false,
-            onThemeChanged = {},
-            onAccentChanged = {},
             onGoogleSignIn = {},
             onComplete = {}
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PendingPatchSheet(
+    pending: PendingPatch,
+    compatibleBases: List<GameRecord>,
+    onDismiss: () -> Unit,
+    onApply: (GameRecord) -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .padding(bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Text("Apply patch", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+            Text(
+                pending.displayName,
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                "Format ${pending.descriptor.format.name}. Choose a compatible base ROM from your library. Retra keeps the original file and creates a separate patched entry.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            pending.knownHint?.let { hint ->
+                StatusPill("Suggested base: $hint", Icons.Default.AutoAwesome)
+            }
+            if (compatibleBases.isEmpty()) {
+                GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 22.dp, contentPadding = PaddingValues(18.dp)) {
+                    Text(
+                        "No compatible base ROMs are in the library yet. Import the matching .gba first, then re-open this patch.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                compatibleBases.forEach { base ->
+                    GlassPanel(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onApply(base) },
+                        cornerRadius = 20.dp,
+                        contentPadding = PaddingValues(16.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                Text(base.title, style = MaterialTheme.typography.titleMedium)
+                                Text(
+                                    "${formatBytes(base.sizeBytes)} · ${base.gameCode.ifBlank { "No code" }}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Icon(Icons.Default.PlayArrow, contentDescription = "Apply to ${base.title}", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
+            }
+            OutlinedButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                Text("Dismiss")
+            }
+        }
     }
 }

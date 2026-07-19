@@ -9,6 +9,7 @@ import app.retra.core.download.CatalogDownloadPolicy
 import app.retra.core.model.CatalogEntry
 import app.retra.core.model.CatalogManifest
 import app.retra.core.model.CompatibilityStatus
+import app.retra.core.model.CuratedDiscoveryLink
 import app.retra.core.rom.CatalogValidationResult
 import app.retra.core.rom.CatalogValidator
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -45,6 +46,27 @@ sealed interface CatalogImportOutcome {
 class CatalogRepository @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
+    val curatedLinks = listOf(
+        CuratedDiscoveryLink(
+            id = "gbadev",
+            title = "gbadev.net",
+            description = "Community-maintained Game Boy Advance development and homebrew resources.",
+            creator = "gbadev.net community",
+            sourcePageUrl = "https://gbadev.net/",
+            license = "Varies by linked project",
+            tags = listOf("homebrew", "development", "community")
+        ),
+        CuratedDiscoveryLink(
+            id = "butano",
+            title = "Butano Engine Releases",
+            description = "Upstream open-source GBA engine releases and examples.",
+            creator = "GValiente",
+            sourcePageUrl = "https://github.com/GValiente/butano/releases",
+            license = "MIT",
+            tags = listOf("homebrew", "open-source", "development")
+        )
+    )
+
     val officialPreview = CatalogManifest(
         catalogVersion = 1,
         catalogId = "retra-official-preview",
@@ -109,7 +131,7 @@ class CatalogRepository @Inject constructor(
                 connection.requestMethod = "GET"
                 connection.setRequestProperty("Accept", "application/json, text/json, text/plain")
                 connection.setRequestProperty("Accept-Encoding", "identity")
-                connection.setRequestProperty("User-Agent", "Retra/0.6.0 Android")
+                connection.setRequestProperty("User-Agent", "Retra/0.7 Android")
                 val status = connection.responseCode
                 if (status in REDIRECT_CODES) {
                     if (redirectIndex == MAX_MANIFEST_REDIRECTS) {

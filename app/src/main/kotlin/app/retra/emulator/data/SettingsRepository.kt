@@ -72,16 +72,16 @@ class SettingsRepository @Inject constructor(
             reduceTransparency = preferences[Keys.reduceTransparency] ?: false,
             fastForwardSpeed = preferences[Keys.fastForwardSpeed] ?: 2f,
             performanceProfile = preferences[Keys.performanceProfile].enumOrDefault(PerformanceProfile.BALANCED),
-            accentPalette = preferences[Keys.accentPalette].enumOrDefault(AccentPalette.RETRA_PRISM),
-            contentDensity = preferences[Keys.contentDensity].enumOrDefault(ContentDensity.BALANCED),
+            accentPalette = preferences[Keys.accentPalette].mapAccentPalette(),
+            contentDensity = preferences[Keys.contentDensity].enumOrDefault(ContentDensity.COMFORTABLE),
             startupDestination = preferences[Keys.startupDestination].enumOrDefault(StartupDestination.HOME),
-            glassIntensity = (preferences[Keys.glassIntensity] ?: 0.62f).coerceIn(0f, 1f),
+            glassIntensity = (preferences[Keys.glassIntensity] ?: 0.28f).coerceIn(0f, 1f),
             cornerScale = (preferences[Keys.cornerScale] ?: 1f).coerceIn(0.75f, 1.35f),
             fontScale = (preferences[Keys.fontScale] ?: 1f).coerceIn(0.85f, 1.3f),
             touchControlOpacity = (preferences[Keys.touchControlOpacity] ?: 0.72f).coerceIn(0.25f, 1f),
             hapticsEnabled = preferences[Keys.hapticsEnabled] ?: true,
             soundEffectsEnabled = preferences[Keys.soundEffectsEnabled] ?: true,
-            soundEffectsVolume = (preferences[Keys.soundEffectsVolume] ?: 0.55f).coerceIn(0f, 1f),
+            soundEffectsVolume = (preferences[Keys.soundEffectsVolume] ?: 0.45f).coerceIn(0f, 1f),
             notificationsEnabled = preferences[Keys.notificationsEnabled] ?: true,
             notifyAchievements = preferences[Keys.notifyAchievements] ?: true,
             notifyDownloads = preferences[Keys.notifyDownloads] ?: true,
@@ -140,4 +140,12 @@ class SettingsRepository @Inject constructor(
 
     private inline fun <reified T : Enum<T>> String?.enumOrDefault(default: T): T =
         this?.let { runCatching { enumValueOf<T>(it) }.getOrNull() } ?: default
+
+    private fun String?.mapAccentPalette(): AccentPalette = when (this) {
+        null -> AccentPalette.RETRA_INDIGO
+        "RETRA_PRISM", "AURORA", "ATOMIC_PURPLE" -> AccentPalette.RETRA_INDIGO
+        "EMERALD_CARTRIDGE", "GLACIER" -> AccentPalette.GRAPHITE
+        "SUNSET_GOLD" -> AccentPalette.SOFT_VIOLET
+        else -> enumOrDefault(AccentPalette.RETRA_INDIGO)
+    }
 }

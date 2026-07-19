@@ -4,6 +4,24 @@
 
 Retra is a privacy-first Android Game Boy Advance emulator built with Kotlin, Jetpack Compose, Material 3, Room, DataStore, Credential Manager, WorkManager, JNI, CMake, and a pinned mGBA/libretro integration path.
 
+## 0.7.0 milestone — CI release automation
+
+Retra 0.7.0 rebuilds the product shell and hardens the import/Discover pipelines while moving release packaging into GitHub Actions.
+
+### Product
+- Four permanent destinations: Home, Library, Discover, Settings
+- Managed multi-format imports (`.gba` / `.zip` / `.ups` / `.ips` / `.bps`), guided CRC patch apply, Room schema 5 migration
+- Discover source groups: Retra Curated links, official creator releases, SHA-256-pinned custom manifests
+- Graphite/off-white surfaces with a single indigo accent and a forward-leaning white **R** mark
+
+### CI / packaging
+- CI provisions Java 17, Gradle 9.5.0, Android SDK platform 37, build-tools, NDK 28.2.13676358, and CMake 3.22.1.
+- CI fetches the pinned, SHA-256-verified mGBA 0.10.5 DFSG source and builds the libretro core for `arm64-v8a`, `armeabi-v7a`, and `x86_64` before assembling the APK.
+- CI runs the unit tests and release assembly, attempts Android lint and the host verification suites best-effort, then packages the APK with a SHA-256 sum, uploads it as a workflow artifact, and publishes a GitHub release.
+- Per-ABI `ANDROID_BINARY_HASHES.txt` is attached to the release when the native core is staged.
+
+The APK is debug-signed for personal / open-source sideload testing and is not built for the Play Store. Local checkouts without the Android SDK, NDK, and CMake cannot reproduce the APK; use the CI workflow (or a fully provisioned workstation) for that.
+
 ## 0.6.0 milestone — Prism Glass
 
 This release repairs the reported Compose compilation failure and rebuilds the interaction layer around a minimal, premium, accessible glass system.
@@ -49,11 +67,11 @@ The failed release build imported Compose's internal `RowColumnParentData.weight
 | Native diagnostic JNI pipeline | Host verification passes |
 | mGBA/libretro frontend | Host mock-core verification passes |
 | Project structure / UI / notifications / feedback | Static verifier passes |
-| Full Android Gradle build | Must be rerun in Android CI; this sandbox has no Gradle or Android SDK |
-| Android mGBA ABI libraries | Reproducible build/staging scripts included; binaries not bundled |
+| Full Android Gradle build | Runs in GitHub Actions CI (Java 17, Gradle 9.5.0, SDK 37); a local checkout without the Android SDK cannot reproduce it |
+| Android mGBA ABI libraries | Built from pinned source in CI and staged into the APK; reproducible scripts included, binaries never committed |
 | Device UX, audio, haptics, and notification testing | Required before production release |
 
-No APK or AAB is claimed from this environment.
+A debug-signed APK is produced by CI for sideload testing. No Play Store-signed APK or AAB is claimed, and this local sandbox still has no Gradle or Android SDK.
 
 ## Build
 

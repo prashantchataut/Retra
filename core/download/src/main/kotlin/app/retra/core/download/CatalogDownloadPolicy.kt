@@ -1,5 +1,6 @@
 package app.retra.core.download
 
+import app.retra.core.model.CatalogContentKind
 import app.retra.core.model.CatalogEntry
 import java.net.InetAddress
 import java.net.URI
@@ -17,14 +18,23 @@ object CatalogDownloadPolicy {
     const val MAX_REDIRECTS: Int = 5
     private val hashPattern = Regex("[0-9a-fA-F]{64}")
     private val idPattern = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,79}")
+    private val allowedExtensions = setOf(".gba", ".zip", ".ups", ".ips", ".bps")
     private val allowedContentTypes = setOf(
         "application/octet-stream",
         "binary/octet-stream",
         "application/x-gba-rom",
-        "application/vnd.gba-rom"
+        "application/vnd.gba-rom",
+        "application/zip",
+        "application/x-zip-compressed",
+        "application/x-ips-patch",
+        "application/x-ups-patch",
+        "application/x-bps-patch"
     )
 
     fun validateEntry(entry: CatalogEntry): URI {
+        if (entry.contentKind == CatalogContentKind.EXTERNAL) {
+            throw UnsafeDownloadException("External catalog links are opened in the browser, not downloaded in-app.")
+        }
         if (!entry.id.matches(idPattern)) {
             throw UnsafeDownloadException("Catalog entry ID must use 1-80 safe ASCII characters.")
         }
@@ -33,7 +43,10 @@ object CatalogDownloadPolicy {
         if (entry.fileSize !in 1..MAX_DOWNLOAD_BYTES) throw UnsafeDownloadException("Catalog entry size is outside Retra's 64 MiB limit.")
         if (entry.license.isBlank()) throw UnsafeDownloadException("Catalog entry license is missing.")
         if (entry.distributionPermission.isBlank()) throw UnsafeDownloadException("Catalog entry distribution permission is missing.")
-        if (!uri.path.lowercase().endsWith(".gba")) throw UnsafeDownloadException("Catalog game URL must identify a .gba file.")
+        val path = uri.path.lowercase()
+        if (allowedExtensions.none { path.endsWith(it) }) {
+            throw UnsafeDownloadException("Catalog URL must identify a .gba, .zip, .ups, .ips, or .bps file.")
+        }
         return uri
     }
 
@@ -41,7 +54,12 @@ object CatalogDownloadPolicy {
         val next = runCatching { current.resolve(location) }
             .getOrElse { throw UnsafeDownloadException("Download redirect is invalid.") }
         val secure = parseHttps(next.toString(), "Redirect URL")
-        if (!origin.host.equals(secure.host, ignoreCase = true)) {
+        val sameHost = origin.host.equals(secure.host, ignoreCase = true)
+        val githubAssetHop = origin.host.equals("github.com", ignoreCase = true) &&
+            (secure.host.equals("objects.githubusercontent.com", ignoreCase = true) ||
+                secure.host.equals("release-assets.githubusercontent.com", ignoreCase = true) ||
+                secure.host.endsWith(".amazonaws.com", ignoreCase = true))
+        if (!sameHost && !githubAssetHop) {
             throw UnsafeDownloadException("Cross-host download redirect was blocked.")
         }
         if (secure in visited) throw UnsafeDownloadException("Download redirect loop detected.")
@@ -55,7 +73,7 @@ object CatalogDownloadPolicy {
         }
         val encoding = metadata.contentEncoding?.trim()?.lowercase()
         if (!encoding.isNullOrEmpty() && encoding != "identity") {
-            throw UnsafeDownloadException("Compressed transfer encoding is not accepted for ROM downloads.")
+            throw UnsafeDownloadException("Compressed transfer encoding is not accepted for catalog downloads.")
         }
         val type = metadata.contentType?.substringBefore(';')?.trim()?.lowercase()
         if (!type.isNullOrEmpty() && type !in allowedContentTypes) {

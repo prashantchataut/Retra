@@ -1,5 +1,42 @@
 # Changelog
 
+## 0.7.0 — 2026-07-19
+
+### Product shell and branding
+- Rebuilt permanent navigation to Home, Library, Discover, and Settings; Vault and community live under Settings, patches/cheats under game details.
+- Replaced Prism Glass rainbow accents with graphite/off-white surfaces and a single indigo accent; retained dark/light, reduced motion/transparency, 48dp targets, safe areas, and adaptive bottom-nav/rail.
+- Simplified onboarding to three focused screens with optional Google identity.
+- Added searchable library filters for favorites, recent, unplayed, patched, and homebrew plus collections/tags editing.
+- Refreshed the launcher/monochrome mark to a forward-leaning white R with one indigo highlight.
+
+### Managed imports and guided patching
+- Imports accept `.gba`, `.zip`, `.ups`, `.ips`, and `.bps`, explicitly reject `.nds`, and copy valid games into content-addressed app-private storage with bounded ZIP inspection.
+- Guided pending-patch flow inspects UPS/BPS descriptors, matches base CRCs, lets the user choose a clean base, applies locally, validates output, and preserves the original.
+- Heart & Soul values are metadata hints only; Retra does not bundle the patch or any commercial ROM.
+
+### Library migration
+- Room schema 5 adds CRC, managed path, collections, and tags with an explicit non-destructive 4→5 migration.
+- Deletion removes only Retra-managed copies; external SAF originals are left untouched.
+
+### Discover and external import security
+- Discover groups pinned Retra Curated links, official creator release discovery, and SHA-256-pinned custom manifests.
+- One-tap downloads require a valid SHA-256; otherwise the official creator page opens.
+- HTTPS, redirect, private-network, size, traversal, and expansion-bomb protections remain enforced for GBA/ZIP/patch assets.
+- Android `ACTION_VIEW` / `SEND` intents import compatible files into the guided pipeline.
+
+### Release automation
+- Bumped the app to versionCode 8 / versionName 0.7.0 while keeping the release build debug-signed for sideload testing.
+- Rewrote the GitHub Actions release workflow to provision Java 17, Gradle 9.5.0, Android SDK platform 37, build-tools, NDK 28.2.13676358, and CMake 3.22.1.
+- Added CI steps that fetch the pinned, SHA-256-verified mGBA 0.10.5 source and build the libretro core for `arm64-v8a`, `armeabi-v7a`, and `x86_64` before assembling the APK.
+- Ran unit tests and release assembly in CI, with best-effort Android lint and host verification suites so an installable APK is produced end to end.
+- Packaged the APK with a SHA-256 sum, uploaded it as an artifact, and published a GitHub release whose notes state the APK is debug-signed for sideload and not for the Play Store; per-ABI `ANDROID_BINARY_HASHES.txt` is attached when the native core is staged.
+
+### Repository hygiene
+- Ignored fetched/generated mGBA artifacts (`third_party/mgba/upstream`, staged `emulation/native/src/main/jniLibs`, build/source locks, and binary hash outputs) so reproduced binaries are never committed.
+
+### Honest build status
+- A full Android APK is now built in CI; local checkouts without the Android SDK, NDK, and CMake still cannot reproduce the APK.
+
 ## 0.6.0 — 2026-07-19
 
 ### Build repair

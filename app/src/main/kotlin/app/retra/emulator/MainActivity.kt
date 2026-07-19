@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.hardware.input.InputManager
 import android.media.AudioManager
+import android.net.Uri
 import android.os.Bundle
 import android.view.InputDevice
 import android.view.KeyEvent
@@ -41,6 +42,23 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent { RetraRoot(viewModel) }
+        if (savedInstanceState == null) importFromIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        importFromIntent(intent)
+    }
+
+    @Suppress("DEPRECATION")
+    private fun importFromIntent(intent: Intent?) {
+        val uri = when (intent?.action) {
+            Intent.ACTION_VIEW -> intent.data
+            Intent.ACTION_SEND -> intent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
+            else -> null
+        } ?: return
+        viewModel.importFile(uri)
     }
 
     override fun onStart() {

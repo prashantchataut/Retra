@@ -1,4 +1,3 @@
-
 package app.retra.emulator.data
 
 import androidx.room.Entity
@@ -9,7 +8,11 @@ import app.retra.core.model.GameRecord
 
 @Entity(
     tableName = "games",
-    indices = [Index(value = ["sha256"], unique = true), Index(value = ["gameCode"])]
+    indices = [
+        Index(value = ["sha256"], unique = true),
+        Index(value = ["gameCode"]),
+        Index(value = ["crc32"])
+    ]
 )
 data class GameEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -35,7 +38,11 @@ data class GameEntity(
     val distributionPermission: String? = null,
     val favorite: Boolean = false,
     val notes: String? = null,
-    val coverArtPath: String? = null
+    val coverArtPath: String? = null,
+    val crc32: Long? = null,
+    val managedPath: String? = null,
+    val collectionsCsv: String = "",
+    val tagsCsv: String = ""
 ) {
     fun toRecord(): GameRecord = GameRecord(
         id = id,
@@ -62,6 +69,24 @@ data class GameEntity(
         distributionPermission = distributionPermission,
         favorite = favorite,
         notes = notes,
-        coverArtPath = coverArtPath
+        coverArtPath = coverArtPath,
+        crc32 = crc32,
+        managedPath = managedPath,
+        collections = decodeCsv(collectionsCsv),
+        tags = decodeCsv(tagsCsv)
     )
+
+    companion object {
+        fun encodeCsv(values: List<String>): String = values
+            .map { it.trim().take(40) }
+            .filter { it.isNotEmpty() }
+            .distinct()
+            .take(20)
+            .joinToString("|")
+
+        fun decodeCsv(value: String): List<String> = value
+            .split('|')
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+    }
 }

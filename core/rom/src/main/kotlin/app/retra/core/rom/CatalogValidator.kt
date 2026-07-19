@@ -1,6 +1,6 @@
-
 package app.retra.core.rom
 
+import app.retra.core.model.CatalogContentKind
 import app.retra.core.model.CatalogEntry
 import app.retra.core.model.CatalogManifest
 import java.net.URI
@@ -14,6 +14,7 @@ object CatalogValidator {
     private const val MAX_DOWNLOAD_SIZE = 64L * 1024L * 1024L
     private val sha256Pattern = Regex("^[0-9a-fA-F]{64}$")
     private val safeIdPattern = Regex("^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
+    private val allowedExtensions = setOf(".gba", ".zip", ".ups", ".ips", ".bps")
 
     fun validate(manifest: CatalogManifest): CatalogValidationResult {
         val reasons = mutableListOf<String>()
@@ -42,9 +43,16 @@ object CatalogValidator {
         if (entry.distributionPermission.isBlank()) {
             reasons += prefix + "distribution permission is required."
         }
+        if (entry.contentKind == CatalogContentKind.EXTERNAL) {
+            val page = entry.sourcePageUrl
+            if (page.isNullOrBlank() || !page.isHttps()) {
+                reasons += prefix + "EXTERNAL entries require an HTTPS source page URL."
+            }
+            return reasons
+        }
         if (!entry.downloadUrl.isHttps()) reasons += prefix + "download URL must use HTTPS."
-        if (!entry.downloadUrl.substringBefore('?').lowercase().endsWith(".gba")) {
-            reasons += prefix + "download URL must identify a .gba file."
+        if (allowedExtensions.none { entry.downloadUrl.substringBefore('?').lowercase().endsWith(it) }) {
+            reasons += prefix + "download URL must identify a .gba, .zip, .ups, .ips, or .bps file."
         }
         if (entry.fileSize <= 0 || entry.fileSize > MAX_DOWNLOAD_SIZE) {
             reasons += prefix + "file size must be between 1 byte and 64 MiB."

@@ -1,66 +1,30 @@
-# Retra 0.6.0 Build Report
+# Retra 0.7.0 Build Report
 
-## Reported failure
+## Scope delivered
 
-The supplied CI run reached `:app:compileReleaseKotlin` after successfully compiling the platform-neutral modules and all three native ABIs. Kotlin then rejected six explicit imports of Compose's internal `weight` implementation.
+- Managed multi-format imports and guided CRC patch application
+- Room schema 5 migration for CRC, managed paths, collections, and tags
+- Discover groups: Retra Curated, official creator releases, SHA-256-pinned manifests
+- External `ACTION_VIEW` / `SEND` import intents
+- Four-destination Compose shell, three-step onboarding, graphite/indigo theme, refreshed R mark
+- CI workflow provisioning SDK 37 / NDK 28.2 / CMake 3.22.1 / Gradle 9.5 and packaging mGBA for three ABIs
 
-## Repair
+## Signing
 
-Removed `import androidx.compose.foundation.layout.weight` from:
+Release APKs remain **debug-signed** for personal / FOSS sideload testing. They are not Play Store artifacts.
 
-- `CommunityUi.kt`
-- `ControllerUi.kt`
-- `OnboardingUi.kt`
-- `PlayerUi.kt`
-- `ProfileUi.kt`
-- `RetraUi.kt`
+## Local sandbox limitation
 
-`Modifier.weight(...)` remains only inside `Row` or `Column` receiver scopes, which resolves to the public Compose API. `tools/project-verification/run.sh` now fails if the forbidden import returns.
+This workstation checkout does not currently have a working Android SDK/NDK Gradle toolchain (JDK boot-class-path failure on the local Temurin 17 install). Full `:app:test` / `:app:assembleRelease` verification is delegated to GitHub Actions on push to `main`.
 
-## Implemented in 0.6.0
+## Host/unit coverage added or retained
 
-- Prism Glass component system and quieter dark/light palettes.
-- Minimal adaptive top bar, bottom bar, navigation rail, content panels, pills, profile, community, catalog, Vault, library, onboarding, and player-status surfaces.
-- Categorized settings UX instead of one giant preference form.
-- Reduced-transparency fallback and decorative-only blur.
-- Semantic haptic engine with API-aware predefined effects and brief API 26-28 fallbacks.
-- Original Retra tap, confirmation, save, achievement, error, and invite sound cues.
-- Asynchronous `SoundPool` load tracking so unloaded cues are never played.
-- Separate preferences for haptics, UI sounds, UI-sound volume, and notification categories.
-- Android notification channels and Android 13+ contextual permission flow.
-- Achievement, verified-download, multiplayer-room, and suspend-protection notifications.
-- Existing ROM playback, saves, rewind, screenshots, catalogs, patches, cheats, identity, and multiplayer foundations retained.
+- `PatchEngine` UPS descriptor / CRC inspection tests
+- `CatalogDownloadPolicy` tests for GBA/ZIP/patch URLs, EXTERNAL blocking, private hosts, and GitHub asset redirect hops
+- Existing core / native / libretro / project verification scripts remain in `tools/`
 
-## Verification executed here
+## Claims that are intentionally not made
 
-```text
-core-verification:       36 passed, 0 failed
-native-verification:     PASS
-libretro-verification:   PASS
-project-verification:    PASS
-shell syntax:            PASS
-JNI C++20 -Werror:       PASS
-libretro C++20 -Werror:  PASS
-sound asset inspection:  PASS (6 PCM mono cues, all under 0.5 seconds)
-```
-
-## Full Android build
-
-**Not executable in this sandbox.** There is no Gradle runtime, Android SDK/NDK installation, ADB, emulator, or dependency cache. The exact CI compilation error has been removed and guarded, but `:app:assembleRelease` must be rerun in the user's Android build environment before calling the release buildable.
-
-Expected command:
-
-```bash
-gradle --no-daemon --stacktrace :app:assembleRelease
-```
-
-## Required device validation
-
-- API 26 through current Android versions;
-- dark, light, OLED, dynamic color, high contrast, reduced motion, and reduced transparency;
-- phone, tablet, foldable, gaming handheld, display cutout, and large font sizes;
-- haptic quality and fallback behavior across actuator classes;
-- notification permission denial/allow/dismiss, channels, sounds, vibration, and system-disabled notifications;
-- SoundPool routing, Bluetooth, Do Not Disturb, mute, and audio focus;
-- TalkBack, switch access, controller-only navigation, and minimum touch targets;
-- gameplay audio/video/input/save behavior with reviewed mGBA ABI libraries.
+- No commercial ROM or Heart & Soul patch binary is bundled
+- No Play-ready signing key is present
+- Device UX matrix and hardware gameplay validation still require a physical install of the CI APK

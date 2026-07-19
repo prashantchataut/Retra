@@ -1,4 +1,3 @@
-
 package app.retra.core.model
 
 enum class CompatibilityStatus {
@@ -30,12 +29,9 @@ enum class LibraryLayout {
 }
 
 enum class AccentPalette {
-    RETRA_PRISM,
-    AURORA,
-    EMERALD_CARTRIDGE,
-    SUNSET_GOLD,
-    ATOMIC_PURPLE,
-    GLACIER,
+    RETRA_INDIGO,
+    GRAPHITE,
+    SOFT_VIOLET,
     CLASSIC_GRAY
 }
 
@@ -49,6 +45,13 @@ enum class StartupDestination {
     HOME,
     LIBRARY,
     CONTINUE_PLAYING
+}
+
+enum class CatalogContentKind {
+    GAME,
+    PATCH,
+    ARCHIVE,
+    EXTERNAL
 }
 
 data class RomHeader(
@@ -84,7 +87,11 @@ data class GameRecord(
     val distributionPermission: String? = null,
     val favorite: Boolean = false,
     val notes: String? = null,
-    val coverArtPath: String? = null
+    val coverArtPath: String? = null,
+    val crc32: Long? = null,
+    val managedPath: String? = null,
+    val collections: List<String> = emptyList(),
+    val tags: List<String> = emptyList()
 )
 
 data class CatalogEntry(
@@ -100,7 +107,9 @@ data class CatalogEntry(
     val distributionPermission: String,
     val artworkUrl: String? = null,
     val tags: List<String>,
-    val compatibility: CompatibilityStatus
+    val compatibility: CompatibilityStatus,
+    val contentKind: CatalogContentKind = CatalogContentKind.GAME,
+    val sourcePageUrl: String? = null
 )
 
 data class CatalogManifest(
@@ -114,6 +123,16 @@ data class CatalogManifest(
     val games: List<CatalogEntry>
 )
 
+data class CuratedDiscoveryLink(
+    val id: String,
+    val title: String,
+    val description: String,
+    val creator: String,
+    val sourcePageUrl: String,
+    val license: String,
+    val tags: List<String>
+)
+
 data class AppSettings(
     val onboardingComplete: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
@@ -123,16 +142,16 @@ data class AppSettings(
     val reduceTransparency: Boolean = false,
     val fastForwardSpeed: Float = 2f,
     val performanceProfile: PerformanceProfile = PerformanceProfile.BALANCED,
-    val accentPalette: AccentPalette = AccentPalette.RETRA_PRISM,
-    val contentDensity: ContentDensity = ContentDensity.BALANCED,
+    val accentPalette: AccentPalette = AccentPalette.RETRA_INDIGO,
+    val contentDensity: ContentDensity = ContentDensity.COMFORTABLE,
     val startupDestination: StartupDestination = StartupDestination.HOME,
-    val glassIntensity: Float = 0.62f,
+    val glassIntensity: Float = 0.28f,
     val cornerScale: Float = 1f,
     val fontScale: Float = 1f,
     val touchControlOpacity: Float = 0.72f,
     val hapticsEnabled: Boolean = true,
     val soundEffectsEnabled: Boolean = true,
-    val soundEffectsVolume: Float = 0.55f,
+    val soundEffectsVolume: Float = 0.45f,
     val notificationsEnabled: Boolean = true,
     val notifyAchievements: Boolean = true,
     val notifyDownloads: Boolean = true,
