@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -549,24 +550,39 @@ private fun PremiumBottomBar(
         ) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                 Destination.entries.forEach { item ->
+                    val selectedItem = selected == item
                     GlassPill(
                         modifier = Modifier
                             .weight(1f)
+                            .heightIn(min = 48.dp)
                             .clip(RoundedCornerShape(18.dp))
-                            .clickable { onSelected(item) },
-                        selected = selected == item
+                            .clickable { onSelected(item) }
+                            .semantics { contentDescription = item.label },
+                        selected = selectedItem
                     ) {
                         Column(
                             Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 5.dp, vertical = 8.dp),
+                                .padding(horizontal = 4.dp, vertical = 8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(3.dp)
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
-                            Icon(item.icon, contentDescription = item.label, modifier = Modifier.size(21.dp))
-                            if (selected == item) {
-                                Text(item.label, style = MaterialTheme.typography.labelSmall, maxLines = 1)
-                            }
+                            Icon(
+                                item.icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Text(
+                                item.label,
+                                style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1,
+                                fontWeight = if (selectedItem) FontWeight.SemiBold else FontWeight.Medium,
+                                color = if (selectedItem) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            )
                         }
                     }
                 }
@@ -702,14 +718,14 @@ private fun HeroCard(
             }
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 Text(
-                    game?.title ?: "Your games, beautifully organized.",
+                    game?.title ?: "Private library, ready when you are.",
                     style = MaterialTheme.typography.headlineLarge
                 )
                 Text(
                     if (game == null) {
-                        "Import a personal GBA backup. Retra validates the cartridge header, hashes the file, and keeps the collection local by default."
+                        "Import a personal GBA backup. Retra checks the header, hashes the file, and keeps everything on-device by default."
                     } else if (coreAvailable) {
-                        "Resume with the same display, audio, controls, cheats, and save profile."
+                        "Resume with your display, audio, controls, cheats, and save profile intact."
                     } else {
                         coreStatus
                     },
@@ -908,18 +924,24 @@ private fun EmptyLibraryCard(onImportFile: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)) {
-                Icon(Icons.Default.Storage, null, modifier = Modifier.padding(14.dp).size(30.dp), tint = MaterialTheme.colorScheme.primary)
-            }
+            RetraLogoTile(size = 64.dp)
             Text("Start your private library", style = MaterialTheme.typography.titleLarge)
             Text(
                 "Choose one of your own .gba backups. Retra never bundles commercial games.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium
             )
-            Button(onClick = {
-                feedback(FeedbackCue.CONFIRM)
-                onImportFile()
-            }) { Text("Choose a game") }
+            Button(
+                onClick = {
+                    feedback(FeedbackCue.CONFIRM)
+                    onImportFile()
+                },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Choose a game")
+            }
         }
     }
 }

@@ -78,4 +78,4 @@ jobs:
             "$APK_NAME.sha256" \
             --target "$GITHUB_SHA" \
             --title "Retra ${SHORT_SHA}" \
-            --notes "Automated Android release for commit ${GITHUB_SHA}. This APK is unsigned and intended for personal/open-source test builds."
+            --notes "Automated Android release for commit ${GITHUB_SHA}. Signed with the public Android debug keystore for personal/open-source sideload testing. Uninstall any previously unsigned Retra build before installing. Not for Play Store distribution."

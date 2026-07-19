@@ -250,7 +250,10 @@ private fun OnboardingCard(
 
 @Composable
 private fun WelcomeStep() {
-    StepHeading("Your games, beautifully remembered", "Retra is designed around fast access, reliable saves, low-latency controls, and a library that feels personal—not like a file browser.")
+    StepHeading(
+        "Your games, remembered well",
+        "Retra is built for fast access, reliable saves, low-latency controls, and a library that feels personal instead of like a file browser."
+    )
     FeatureLine(Icons.Default.Security, "Private by default", "ROMs stay on your device unless you explicitly choose a personal backup provider.")
     FeatureLine(Icons.Default.Gamepad, "Built for play", "Touch, Bluetooth, USB controllers, keyboard input, fast-forward, and suspend/resume are first-class flows.")
     FeatureLine(Icons.Default.Palette, "Made yours", "Theme, density, controls, library layout, and per-game behavior can evolve without compromising readability.")

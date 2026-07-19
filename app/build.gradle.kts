@@ -20,8 +20,8 @@ android {
         applicationId = "app.retra.emulator"
         minSdk = 26
         targetSdk = 37
-        versionCode = 6
-        versionName = "0.6.0"
+        versionCode = 7
+        versionName = "0.6.1"
         buildConfigField("String", "RETRA_GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -30,6 +30,9 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            // FOSS / personal test builds: sign so APKs install on devices.
+            // Replace with a private upload key before Play Store distribution.
+            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

@@ -23,18 +23,18 @@ import app.retra.core.model.AccentPalette
 import app.retra.core.model.AppSettings
 import app.retra.core.model.ThemeMode
 
-val VoidBlack = Color(0xFF080A0F)
-val MidnightNavy = Color(0xFF11141B)
-val RetraIndigo = Color(0xFF7567FF)
-val PrismCyan = Color(0xFF45D9FF)
-val MemoryViolet = Color(0xFFB38BFF)
-val SaveMint = Color(0xFF59E1AF)
-val AdventureGold = Color(0xFFFFC766)
-val ErrorCoral = Color(0xFFFF687C)
-val CloudWhite = Color(0xFFF5F6FF)
-val SoftCloud = Color(0xFFF6F6FC)
-val DeepInk = Color(0xFF181925)
-val MutedInk = Color(0xFF646675)
+val VoidBlack = Color(0xFF07080D)
+val MidnightNavy = Color(0xFF10131A)
+val RetraIndigo = Color(0xFF6E63F0)
+val PrismCyan = Color(0xFF3DD0F5)
+val MemoryViolet = Color(0xFFA78BFA)
+val SaveMint = Color(0xFF4AD9A8)
+val AdventureGold = Color(0xFFF0B84D)
+val ErrorCoral = Color(0xFFFF6B7A)
+val CloudWhite = Color(0xFFF4F5FA)
+val SoftCloud = Color(0xFFF2F3F8)
+val DeepInk = Color(0xFF14151F)
+val MutedInk = Color(0xFF5C5F70)
 
 private val DarkBase = darkColorScheme(
     primary = RetraIndigo,
