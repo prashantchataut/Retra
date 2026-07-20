@@ -68,7 +68,7 @@ jobs:
       - name: Install native build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build
+          sudo apt-get install -y ninja-build patch
 
       - name: Make project scripts executable
         run: chmod +x scripts/*.sh tools/*/run.sh
@@ -77,9 +77,16 @@ jobs:
         run: ./scripts/fetch-mgba-archive.sh
 
       - name: Build and stage mGBA libretro core
+        shell: bash
         env:
           ABIS: "arm64-v8a armeabi-v7a x86_64"
-        run: ./scripts/build-mgba-libretro-android.sh
+          CMAKE_VERSION: "3.22.1"
+        run: |
+          set -euo pipefail
+          test -f "${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake"
+          test -x "${ANDROID_SDK_ROOT}/cmake/${CMAKE_VERSION}/bin/cmake"
+          command -v ninja
+          ./scripts/build-mgba-libretro-android.sh
 
       - name: Verify gameplay core packaging
         shell: bash
