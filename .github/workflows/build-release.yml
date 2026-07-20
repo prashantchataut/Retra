@@ -80,7 +80,10 @@ jobs:
         shell: bash
         env:
           ABIS: "arm64-v8a armeabi-v7a x86_64"
-        run: ./scripts/build-mgba-libretro-android.sh
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+          ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
+        run: bash ./scripts/build-mgba-libretro-android.sh
 
       - name: Upload mGBA debug logs on failure
         if: failure()

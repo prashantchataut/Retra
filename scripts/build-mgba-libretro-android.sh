@@ -104,6 +104,7 @@ cp "$SOURCE/LICENSE" "$ROOT/third_party/mgba/notices/LICENSE-mGBA-MPL-2.0.txt"
 
 for ABI in $ABIS; do
   BUILD="$OUT_ROOT/$ABI"
+  mkdir -p "$BUILD"
   echo "Configuring mGBA libretro for $ABI..."
   CONFIG_LOG="$BUILD/configure.log"
   if ! "$CMAKE_BIN" -S "$SOURCE" -B "$BUILD" -G Ninja \
