@@ -41,17 +41,23 @@ jobs:
           gradle-version: "9.5.0"
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       - name: Install Android SDK components
+        shell: bash
         run: |
+          set -euo pipefail
           yes | sdkmanager --licenses >/dev/null 2>&1 || true
           sdkmanager \
             "platform-tools" \
-            "platforms;android-37" \
-            "build-tools;36.0.0" \
+            "platforms;android-37.0" \
+            "build-tools;37.0.0" \
             "ndk;${NDK_VERSION}" \
             "cmake;${CMAKE_VERSION}"
+          # sdkmanager installs API 37 as android-37.0; keep android-37 for older AGP lookups.
+          if [ -d "${ANDROID_SDK_ROOT}/platforms/android-37.0" ] && [ ! -e "${ANDROID_SDK_ROOT}/platforms/android-37" ]; then
+            ln -s "${ANDROID_SDK_ROOT}/platforms/android-37.0" "${ANDROID_SDK_ROOT}/platforms/android-37"
+          fi
 
       - name: Export native toolchain paths
         run: |
@@ -163,7 +169,7 @@ jobs:
           TAG="build-${SHORT_SHA}-${GITHUB_RUN_NUMBER}"
           ASSETS=("$APK_NAME" "$APK_NAME.sha256" "ANDROID_BINARY_HASHES.txt")
           {
-            echo "Automated Retra 0.7.0 Android release for commit ${GITHUB_SHA}."
+            echo "Automated Retra 0.7.1 Android release for commit ${GITHUB_SHA}."
             echo
             echo "This APK is **debug-signed** with the public Android debug keystore for personal / open-source **sideload testing only**. It is **not** intended for Play Store distribution. Replace the signing config with a private upload key before any store submission. Uninstall any previously installed Retra build with a different signature before installing."
             echo
@@ -173,5 +179,5 @@ jobs:
           } > release-notes.md
           gh release create "$TAG" "${ASSETS[@]}" \
             --target "$GITHUB_SHA" \
-            --title "Retra 0.7.0 (${SHORT_SHA})" \
+            --title "Retra 0.7.1 (${SHORT_SHA})" \
             --notes-file release-notes.md

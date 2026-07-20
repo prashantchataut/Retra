@@ -14,7 +14,11 @@ plugins {
 
 android {
     namespace = "app.retra.emulator"
-    compileSdk = 37
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 0
+        }
+    }
 
     defaultConfig {
         applicationId = "app.retra.emulator"
