@@ -10,7 +10,7 @@ OUT_ROOT="$ROOT/third_party/mgba/android-build"
 JNI_ROOT="$ROOT/emulation/native/src/main/jniLibs"
 ANDROID_PLATFORM=${ANDROID_PLATFORM:-26}
 ABIS=${ABIS:-"arm64-v8a armeabi-v7a x86_64"}
-CMAKE_VERSION=${CMAKE_VERSION:-3.30.3}
+CMAKE_VERSION=${CMAKE_VERSION:-3.22.1}
 PATCH_FILE="$ROOT/third_party/mgba/patches/android-posix-vfs.patch"
 
 apply_android_posix_patch() {

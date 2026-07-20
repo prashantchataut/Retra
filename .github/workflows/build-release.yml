@@ -16,7 +16,7 @@ concurrency:
 
 env:
   NDK_VERSION: "28.2.13676358"
-  CMAKE_VERSION: "3.30.3"
+  CMAKE_VERSION: "3.22.1"
 
 jobs:
   release:
@@ -80,13 +80,18 @@ jobs:
         shell: bash
         env:
           ABIS: "arm64-v8a armeabi-v7a x86_64"
-          CMAKE_VERSION: "3.30.3"
-        run: |
-          set -euo pipefail
-          test -f "${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake"
-          test -f "${ANDROID_SDK_ROOT}/cmake/${CMAKE_VERSION}/bin/cmake"
-          command -v ninja
-          ./scripts/build-mgba-libretro-android.sh
+        run: ./scripts/build-mgba-libretro-android.sh
+
+      - name: Upload mGBA debug logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mgba-build-debug
+          path: |
+            third_party/mgba/android-build/**/CMakeFiles/CMakeError.log
+            third_party/mgba/android-build/**/CMakeFiles/CMakeOutput.log
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Verify gameplay core packaging
         shell: bash
