@@ -1,5 +1,5 @@
-#!/usr/bin/env sh
-set -eu
+#!/usr/bin/env bash
+set -euo pipefail
 if [ -n "${GITHUB_ACTIONS:-}" ]; then
   set -x
 fi
