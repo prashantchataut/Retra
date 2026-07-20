@@ -106,7 +106,6 @@ for ABI in $ABIS; do
   BUILD="$OUT_ROOT/$ABI"
   mkdir -p "$BUILD"
   echo "Configuring mGBA libretro for $ABI..."
-  CONFIG_LOG="$BUILD/configure.log"
   if ! "$CMAKE_BIN" -S "$SOURCE" -B "$BUILD" -G Ninja \
     -DCMAKE_MAKE_PROGRAM="$NINJA_BIN" \
     -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake" \
@@ -117,10 +116,8 @@ for ABI in $ABIS; do
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_LIBRETRO=ON \
     -DSKIP_LIBRARY=ON \
-    -DDISABLE_DEPS=ON \
-    2>&1 | tee "$CONFIG_LOG"; then
+    -DDISABLE_DEPS=ON; then
     echo "::error::CMake configure failed for $ABI" >&2
-    tail -n 120 "$CONFIG_LOG" >&2 || true
     for log in "$BUILD/CMakeFiles/CMakeError.log" "$BUILD/CMakeFiles/CMakeOutput.log"; do
       if [ -f "$log" ]; then
         echo "---- $log ----" >&2
@@ -132,10 +129,8 @@ for ABI in $ABIS; do
 
   JOBS=${CMAKE_BUILD_PARALLEL_LEVEL:-$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)}
   echo "Building mGBA libretro for $ABI with $JOBS parallel jobs..."
-  BUILD_LOG="$BUILD/build.log"
-  if ! "$CMAKE_BIN" --build "$BUILD" --parallel "$JOBS" --target mgba_libretro 2>&1 | tee "$BUILD_LOG"; then
+  if ! "$CMAKE_BIN" --build "$BUILD" --parallel "$JOBS" --target mgba_libretro; then
     echo "::error::CMake build failed for $ABI" >&2
-    tail -n 120 "$BUILD_LOG" >&2 || true
     exit 1
   fi
 
