@@ -188,7 +188,9 @@ jobs:
           {
             echo "Automated Retra 0.7.1 Android release for commit ${GITHUB_SHA}."
             echo
-            echo "This APK is **debug-signed** with the public Android debug keystore for personal / open-source **sideload testing only**. It is **not** intended for Play Store distribution. Replace the signing config with a private upload key before any store submission. Uninstall any previously installed Retra build with a different signature before installing."
+            echo "This APK is **sideload-signed** with the repository's public test keystore (\`app/retra-sideload.jks\`) for personal / open-source **sideload testing only**. It is **not** intended for Play Store distribution. Replace the signing config with a private upload key before any store submission."
+            echo
+            echo "If install fails with *App not installed*, uninstall any older Retra build first (Settings → Apps → Retra → Uninstall). Older CI APKs used ephemeral debug keys with incompatible signatures."
             echo
             echo "The pinned mGBA 0.10.5 libretro core was built from source and verified for arm64-v8a, armeabi-v7a, and x86_64. The workflow refuses to publish an APK when any gameplay ABI is missing."
             echo

@@ -20,6 +20,15 @@ android {
         }
     }
 
+    signingConfigs {
+        create("sideload") {
+            storeFile = file("retra-sideload.jks")
+            storePassword = "retra-sideload"
+            keyAlias = "retra"
+            keyPassword = "retra-sideload"
+        }
+    }
+
     defaultConfig {
         applicationId = "app.retra.emulator"
         minSdk = 26
@@ -34,9 +43,9 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            // FOSS / personal test builds: sign so APKs install on devices.
+            // FOSS sideload builds: one stable test key across CI and local release APKs.
             // Replace with a private upload key before Play Store distribution.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("sideload")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
