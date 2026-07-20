@@ -1,23 +1,28 @@
-# Retra 0.7.0 Build Report
+# Retra 0.7.1 Build Report
 
 ## Scope delivered
 
-- Managed multi-format imports and guided CRC patch application
-- Room schema 5 migration for CRC, managed paths, collections, and tags
-- Discover groups: Retra Curated, official creator releases, SHA-256-pinned manifests
-- External `ACTION_VIEW` / `SEND` import intents
-- Four-destination Compose shell, three-step onboarding, graphite/indigo theme, refreshed R mark
-- CI workflow provisioning SDK 37 / NDK 28.2 / CMake 3.22.1 / Gradle 9.5 and packaging mGBA for three ABIs
+- Premium Material shell: top app bar, bottom navigation, navigation rail (≥600dp), opaque surfaces, ≤16dp radii
+- PNG negative-space brand mark for launcher, splash, and in-app logos (no letter-R glyph)
+- Restrained graphite / indigo theme with quieter interface sounds and haptic cooldowns
+- Honest `coreAvailable` gating (gameplay-tier mGBA only; diagnostic cores do not claim play-ready)
+- CI release workflow fails unless `arm64-v8a`, `armeabi-v7a`, and `x86_64` mGBA cores are staged
+- Discover prioritizes official creator pages with browser download → Open-with-Retra import handoff
+- Clearer NDS rejection messaging (e.g. HeartGold/SoulSilver) and more reliable MIME-typed GBA/ZIP/patch imports
+
+## Local verification (this workstation)
+
+- JDK: `C:\Users\MMT\AppData\Local\Programs\Microsoft\jdk-17.0.10.7-hotspot`
+- `:app:compileDebugKotlin` — BUILD SUCCESSFUL
+- `:app:assembleDebug` — BUILD SUCCESSFUL (~25 MB APK at `app/build/outputs/apk/debug/app-debug.apk`)
+- `:core:download:test` / `:core:patching:test` — BUILD SUCCESSFUL
+- Local debug APK packages `libretra_native.so` only; it does **not** include CI-staged `libmgba_libretro.so`. Real GBA play still requires a release APK from GitHub Actions after the mGBA packaging gate passes.
 
 ## Signing
 
 Release APKs remain **debug-signed** for personal / FOSS sideload testing. They are not Play Store artifacts.
 
-## Local sandbox limitation
-
-This workstation checkout does not currently have a working Android SDK/NDK Gradle toolchain (JDK boot-class-path failure on the local Temurin 17 install). Full `:app:test` / `:app:assembleRelease` verification is delegated to GitHub Actions on push to `main`.
-
-## Host/unit coverage added or retained
+## Host/unit coverage retained
 
 - `PatchEngine` UPS descriptor / CRC inspection tests
 - `CatalogDownloadPolicy` tests for GBA/ZIP/patch URLs, EXTERNAL blocking, private hosts, and GitHub asset redirect hops
@@ -27,4 +32,12 @@ This workstation checkout does not currently have a working Android SDK/NDK Grad
 
 - No commercial ROM or Heart & Soul patch binary is bundled
 - No Play-ready signing key is present
-- Device UX matrix and hardware gameplay validation still require a physical install of the CI APK
+- Physical device UX matrix still requires installing a build that packages mGBA for the device ABI
+
+## Device checks remaining
+
+1. Install the CI or local APK on arm64 hardware (uninstall any differently signed Retra first)
+2. Confirm a GBA ROM (including large hacks ≤64 MiB) plays
+3. Confirm `.nds` imports are rejected with the HeartGold/SoulSilver callout
+4. Confirm Discover creator links → browser download → Open with Retra import
+5. Spot-check Home / Library / Discover padding on phone and tablet widths

@@ -1,46 +1,43 @@
 # Retra — Master Design System
 
 ## Design read
-A premium, privacy-first Game Boy Advance player: emotionally nostalgic, technically credible, controller-first, and modern rather than faux-retro. Surfaces stay graphite/off-white with a single indigo accent.
+A premium, privacy-first Game Boy Advance player. Surfaces stay graphite / off-white with one indigo accent. No decorative glass, aurora fills, oversized radii, or multi-color chrome.
 
 ## Dials
-- Variance: 6/10 — shelf composition with restrained hero regions; never chaotic.
-- Motion: 4/10 — short continuity; gameplay controls stay immediate; reduced-motion removes choreography.
-- Density: 6/10 — compact metadata and settings, comfortable 48dp touch surfaces.
+- Variance: 4/10 — calm product layout with one clear hero action.
+- Motion: 3/10 — short 150–220ms fades; reduced-motion cuts to instant.
+- Density: 6/10 — comfortable library browsing with 48dp touch targets.
 
 ## Tokens
-- 4/8dp spacing grid; page tiers 16/24/32dp.
-- Touch targets: 48dp minimum; icon glyphs typically 20–24dp.
-- Shape scale: 8/12/18/24/32dp; panels max ~24–28dp on phones.
-- Elevation: tonal first; shadow only where separation requires it.
-- Motion: 150ms press, 220ms local transition, 300ms navigation.
-- Typography: Material roles, 16sp body baseline, tabular/monospace numerals for hashes, timers, codes, and diagnostics.
+- Spacing: 4dp base; page padding 16/20/24dp; group gaps 8–12dp; section gaps 24dp.
+- Touch targets: 48dp minimum.
+- Shape: 6 / 8 / 12 / 16dp. Cards and panels stay at or under 16dp.
+- Elevation: flat surfaces + 1dp outlineVariant borders. No decorative shadows.
+- Typography: Material roles only. One sans family.
 
 ## Color
-- Brand/action: Retra Indigo `#5B54E8`
+- Brand/action: Retra Indigo `#675CF5`
 - Surfaces: Void black / graphite dark, soft cloud / white light
-- Support: soft violet, save mint, adventure gold, error coral
+- Semantic only: save mint, adventure gold, error coral
 - Status always includes text or icon, never color alone
-- Dynamic color is opt-in and does not erase semantic success/warning/error roles
+- Dynamic color remains opt-in
 
 ## Composition
-- Compact: 4-item labeled bottom navigation — Home, Library, Discover, Settings
-- Medium: navigation rail
-- Expanded: rail with list-detail panes and ~900dp content width cap
-- Vault, community, patches, cheats, and account live in Settings or game details — not as permanent destinations
+- Compact: Material bottom navigation — Home, Library, Discover, Settings
+- Medium+: Material navigation rail from 600dp
+- Content width expands to ~1200dp on tablets
+- Vault, community, and advanced tools live under Settings or game details
 - One primary CTA per screen
+
+## Brand mark
+- Canonical mark: interlocking indigo forms with a negative-space handheld / cartridge silhouette
+- Delivered as a PNG launcher asset (`retra_logo`) plus a monochrome adaptive silhouette
+- Do not use letter-R monograms or geometric glyph experiments as the primary brand
 
 ## Product-specific rules
 - Never imply commercial ROM downloads or bundle commercial ROMs/patches
 - Heart & Soul CRC metadata may guide patch apply; users supply their own clean Emerald base and UPS
-- Online catalog entries expose creator, license, permission, checksum, and source domain before download
-- EXTERNAL catalog entries open the official creator page; one-tap download requires a valid SHA-256
-- Cheat activation always surfaces ROM match, conflicts, risk, save-backup state, and achievement eligibility impact
+- Discover shows official creator pages first; one-tap download requires a published SHA-256
+- After browser download, users can Open with Retra via ACTION_VIEW / ACTION_SEND
 - Deleting a library entry removes only Retra-managed copies, never the user’s original SAF file
-
-## 0.7 brand notes
-- Canonical mark: forward-leaning white **R** with one indigo bowl highlight on a near-black cartridge plate
-- Monochrome adaptive icon uses the solid white R silhouette
-- Splash and launcher reuse the same mark family
-- Onboarding is three focused screens; Google identity remains optional and never gates offline play
-- Glass intensity defaults quieter; reduce-transparency falls back to opaque surfaces
+- Releases must package mGBA for arm64-v8a, armeabi-v7a, and x86_64 or fail the workflow

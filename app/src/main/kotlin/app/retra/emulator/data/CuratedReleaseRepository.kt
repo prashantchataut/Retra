@@ -55,7 +55,7 @@ class CuratedReleaseRepository @Inject constructor() {
         )
     )
     private val mutableState = MutableStateFlow(
-        CuratedReleaseState(links = sources.map(CuratedGitHubRelease::toDiscoveryLink))
+        CuratedReleaseState(links = sources.map { it.toDiscoveryLink() })
     )
     val state: StateFlow<CuratedReleaseState> = mutableState
 
@@ -69,7 +69,7 @@ class CuratedReleaseRepository @Inject constructor() {
                 .onFailure { errors += "${source.title}: ${it.message ?: "request failed"}" }
         }
         mutableState.value = CuratedReleaseState(
-            links = sources.map(CuratedGitHubRelease::toDiscoveryLink),
+            links = sources.map { it.toDiscoveryLink() },
             downloadableEntries = entries.distinctBy(CatalogEntry::id),
             refreshing = false,
             lastError = if (errors.isEmpty()) null else errors.joinToString(" ")

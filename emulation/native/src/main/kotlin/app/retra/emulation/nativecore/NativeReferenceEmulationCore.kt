@@ -304,7 +304,7 @@ class NativeReferenceEmulationCore(context: Context) : EmulationCore, AutoClosea
     private fun readAndVerifyRom(uri: Uri, expectedHash: String): ByteArray {
         val digest = MessageDigest.getInstance("SHA-256")
         val output = ByteArrayOutputStream()
-        val maximum = 32 * 1024 * 1024
+        val maximum = 64 * 1024 * 1024
         applicationContext.contentResolver.openInputStream(uri).use { inputStream ->
             requireNotNull(inputStream) { "Android could not open the selected ROM." }
             val buffer = ByteArray(64 * 1024)
@@ -313,7 +313,7 @@ class NativeReferenceEmulationCore(context: Context) : EmulationCore, AutoClosea
                 val read = inputStream.read(buffer)
                 if (read < 0) break
                 total += read
-                require(total <= maximum) { "ROM exceeds the 32 MiB GBA safety limit." }
+                require(total <= maximum) { "ROM exceeds Retra's 64 MiB safety limit." }
                 digest.update(buffer, 0, read)
                 output.write(buffer, 0, read)
             }

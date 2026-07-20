@@ -51,7 +51,7 @@ import app.retra.core.model.AppSettings
 import app.retra.emulator.auth.AuthOperation
 import app.retra.emulator.auth.RetraAccount
 
-private const val ONBOARDING_STEPS = 3
+private const val ONBOARDING_STEPS = 2
 
 @Composable
 fun OnboardingScreen(
@@ -140,12 +140,6 @@ private fun OnboardingBrandPanel(modifier: Modifier = Modifier) {
                 color = MaterialTheme.colorScheme.primary,
                 textAlign = TextAlign.Center
             )
-            Spacer(Modifier.height(28.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                MiniPill(Icons.Default.Gamepad, "Play")
-                MiniPill(Icons.Default.Save, "Protect")
-                MiniPill(Icons.Default.Security, "Private")
-            }
         }
     }
 }
@@ -197,8 +191,7 @@ private fun OnboardingCard(
                 ) {
                     when (current) {
                         0 -> WelcomeStep()
-                        1 -> LibraryStep()
-                        else -> AccountStep(account, authOperation, googleConfigured, onGoogleSignIn, onCompleteOffline)
+                        else -> LibraryStep()
                     }
                 }
             }
@@ -220,7 +213,7 @@ private fun OnboardingCard(
                     },
                     modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                 ) {
-                    Text(if (step == ONBOARDING_STEPS - 1) "Enter Retra" else "Continue")
+                    Text(if (step == ONBOARDING_STEPS - 1) "Start using Retra" else "Continue")
                 }
             }
         }
@@ -230,23 +223,23 @@ private fun OnboardingCard(
 @Composable
 private fun WelcomeStep() {
     StepHeading(
-        "What Retra is",
-        "Retra is a private Game Boy Advance home: fast library access, reliable saves, and controller-first play — without turning your collection into a file browser."
+        "A better home for GBA games",
+        "Retra keeps your library simple, your saves local, and the controls familiar."
     )
-    FeatureLine(Icons.Default.Security, "Private by default", "ROMs stay on your device unless you explicitly choose a personal backup provider.")
-    FeatureLine(Icons.Default.Gamepad, "Built for play", "Touch, Bluetooth, USB controllers, keyboard input, fast-forward, and suspend/resume are first-class flows.")
-    FeatureLine(Icons.Default.Save, "Saves you can trust", "Versioned, checksummed envelopes protect battery saves and states across sessions.")
+    FeatureLine(Icons.Default.Gamepad, "Ready to play", "Use touch controls or a Bluetooth, USB, or keyboard controller.")
+    FeatureLine(Icons.Default.Save, "Reliable saves", "Battery saves, save states, and suspend data are written atomically.")
+    FeatureLine(Icons.Default.Security, "Private by default", "Your ROM files stay on this device.")
 }
 
 @Composable
 private fun LibraryStep() {
     StepHeading(
-        "What files Retra imports",
-        "Bring your own backups through Android's Storage Access Framework, or add legal, checksum-verified homebrew catalogs."
+        "Bring your own games",
+        "Choose a .gba file, scan a folder, or discover legal homebrew from verified creators."
     )
-    FeatureLine(Icons.Default.FolderOpen, "Verified imports", "Retra accepts .gba and .zip libraries, parses the GBA header, computes SHA-256, and never silently edits the source ROM.")
-    FeatureLine(Icons.Default.Code, "Patches, not pirated copies", "IPS, UPS, and BPS patches are applied locally to a compatible base ROM and stored as separate library entries.")
-    FeatureLine(Icons.Default.Lock, "Legal online catalogs", "Downloads require HTTPS, a declared license, distribution permission, size limits, and an exact checksum.")
+    FeatureLine(Icons.Default.FolderOpen, "Simple imports", "Retra accepts .gba files and safe .zip archives, then copies them into its managed library.")
+    FeatureLine(Icons.Default.Code, "ROM hacks", "Import IPS, UPS, or BPS patches and apply them to a compatible base game you own.")
+    FeatureLine(Icons.Default.Lock, "Verified homebrew", "In-app downloads require HTTPS, distribution permission, and an exact checksum.")
 }
 
 @Composable

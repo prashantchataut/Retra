@@ -49,21 +49,39 @@ class CatalogRepository @Inject constructor(
     val curatedLinks = listOf(
         CuratedDiscoveryLink(
             id = "gbadev",
-            title = "gbadev.net",
-            description = "Community-maintained Game Boy Advance development and homebrew resources.",
+            title = "GBA Jam 2024",
+            description = "Browse original games made for real Game Boy Advance hardware.",
             creator = "gbadev.net community",
-            sourcePageUrl = "https://gbadev.net/",
+            sourcePageUrl = "https://itch.io/jam/gbajam24",
             license = "Varies by linked project",
-            tags = listOf("homebrew", "development", "community")
+            tags = listOf("homebrew", "games", "community")
         ),
         CuratedDiscoveryLink(
-            id = "butano",
-            title = "Butano Engine Releases",
-            description = "Upstream open-source GBA engine releases and examples.",
-            creator = "GValiente",
-            sourcePageUrl = "https://github.com/GValiente/butano/releases",
-            license = "MIT",
-            tags = listOf("homebrew", "open-source", "development")
+            id = "goodboy-galaxy-demo",
+            title = "Goodboy Galaxy Demo",
+            description = "Official free demo from the creators of Goodboy Galaxy.",
+            creator = "Goodboy Galaxy",
+            sourcePageUrl = "https://goodboygalaxy.itch.io/goodboy-galaxy-demo",
+            license = "Creator-authorized download",
+            tags = listOf("homebrew", "demo", "platformer")
+        ),
+        CuratedDiscoveryLink(
+            id = "anguna",
+            title = "Anguna",
+            description = "Official creator page for the free GBA action-adventure homebrew.",
+            creator = "gauauu",
+            sourcePageUrl = "https://gauauu.itch.io/anguna",
+            license = "Creator-authorized download",
+            tags = listOf("homebrew", "adventure", "free")
+        ),
+        CuratedDiscoveryLink(
+            id = "aereven-advance",
+            title = "Aereven Advance",
+            description = "A complete GBA Jam action-adventure tested on hardware and mGBA.",
+            creator = "Dreamnoid",
+            sourcePageUrl = "https://dreamnoid.itch.io/aereven-advance",
+            license = "Creator-authorized download",
+            tags = listOf("homebrew", "adventure", "gba-jam")
         )
     )
 

@@ -47,13 +47,23 @@ class GameRepository @Inject constructor(
         runCatching { resolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
         val displayName = queryDisplayName(uri) ?: uri.lastPathSegment ?: "imported-file"
         val lower = displayName.lowercase()
+        val mimeType = resolver.getType(uri)?.substringBefore(';')?.trim()?.lowercase()
         when {
-            lower.endsWith(".nds") -> ImportOutcome.Rejected(
-                "Nintendo DS (.nds) files are not supported. Retra currently plays Game Boy Advance (.gba) games and applies IPS, UPS, and BPS patches."
+            lower.endsWith(".nds") || mimeType in NDS_MIME_TYPES -> ImportOutcome.Rejected(
+                "This is a Nintendo DS (.nds) game. Pokémon HeartGold and SoulSilver are DS titles, while Retra currently plays Game Boy Advance (.gba) games only."
             )
-            lower.endsWith(".gba") -> importGba(uri, displayName)
-            lower.endsWith(".zip") -> importZip(uri, displayName)
-            lower.endsWith(".ups") || lower.endsWith(".ips") || lower.endsWith(".bps") -> importPatch(uri, displayName)
+            lower.endsWith(".gba") || mimeType in GBA_MIME_TYPES -> importGba(uri, displayName)
+            lower.endsWith(".zip") || mimeType in ZIP_MIME_TYPES -> importZip(uri, displayName)
+            lower.endsWith(".ups") || lower.endsWith(".ips") || lower.endsWith(".bps") ||
+                mimeType in PATCH_MIME_TYPES -> importPatch(uri, displayName)
+            mimeType == "application/octet-stream" -> {
+                when (val parsed = importGba(uri, displayName)) {
+                    is ImportOutcome.Rejected -> ImportOutcome.Rejected(
+                        "Android did not provide a recognizable file type, and the file is not a valid GBA ROM. Retra accepts .gba, .zip, .ups, .ips, and .bps files."
+                    )
+                    else -> parsed
+                }
+            }
             else -> ImportOutcome.Rejected("Retra accepts .gba, .zip, .ups, .ips, and .bps files.")
         }
     }
@@ -265,7 +275,7 @@ class GameRepository @Inject constructor(
         val hint = KnownPatchHints.match(descriptor)
         return ImportOutcome.PatchDetected(
             PendingPatch(
-                uri = stored.toURI().let(Uri::parse),
+                uri = Uri.parse(stored.toURI().toString()),
                 displayName = displayName.take(180),
                 descriptor = descriptor,
                 storedPath = stored.absolutePath,
@@ -301,7 +311,7 @@ class GameRepository @Inject constructor(
                         lower.endsWith(".gba") -> gbaEntries += name to bytes
                         lower.endsWith(".ups") || lower.endsWith(".ips") || lower.endsWith(".bps") -> patchEntries += name to bytes
                         lower.endsWith(".nds") -> return ImportOutcome.Rejected(
-                            "Archive contains a Nintendo DS (.nds) file. Retra currently supports Game Boy Advance content only."
+                            "This archive contains a Nintendo DS (.nds) game. Pokémon HeartGold and SoulSilver are DS titles; Retra currently supports Game Boy Advance content only."
                         )
                     }
                 }
@@ -420,5 +430,16 @@ class GameRepository @Inject constructor(
             output.write(buffer, 0, read)
         }
         return output.toByteArray()
+    }
+
+    private companion object {
+        val GBA_MIME_TYPES = setOf("application/x-gba-rom", "application/vnd.gba-rom")
+        val NDS_MIME_TYPES = setOf("application/x-nintendo-ds-rom", "application/x-nds-rom")
+        val ZIP_MIME_TYPES = setOf("application/zip", "application/x-zip-compressed")
+        val PATCH_MIME_TYPES = setOf(
+            "application/x-ups-patch",
+            "application/x-ips-patch",
+            "application/x-bps-patch"
+        )
     }
 }

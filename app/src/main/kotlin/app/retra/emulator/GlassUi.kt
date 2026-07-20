@@ -6,21 +6,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.BlurredEdgeTreatment
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -29,52 +22,18 @@ import app.retra.core.model.AppSettings
 val LocalRetraFeedback = staticCompositionLocalOf<(FeedbackCue) -> Unit> { { } }
 val LocalRetraSettings = staticCompositionLocalOf<AppSettings?> { null }
 
-/**
- * Retra's restrained liquid-glass language.
- *
- * Compose blur is used only for decorative background light on supported devices; content surfaces stay
- * crisp and use translucent layers plus an edge highlight so text never becomes blurry.
- */
+/** Compatibility wrappers for the older UI. They now render as calm, opaque Material surfaces. */
 @Composable
 fun RetraBackdrop(
     settings: AppSettings,
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val colors = MaterialTheme.colorScheme
-    val showAtmosphere = !settings.reduceTransparency && settings.glassIntensity > 0.08f
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        colors.background,
-                        colors.background,
-                        colors.surface.copy(alpha = 0.92f)
-                    )
-                )
-            )
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        if (showAtmosphere) {
-            val alpha = (0.05f + settings.glassIntensity * 0.10f).coerceAtMost(0.16f)
-            Box(
-                Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = 110.dp, y = (-120).dp)
-                    .size(360.dp)
-                    .blur(96.dp, BlurredEdgeTreatment.Unbounded)
-                    .background(colors.primary.copy(alpha = alpha), CircleShape)
-            )
-            Box(
-                Modifier
-                    .align(Alignment.BottomStart)
-                    .offset(x = (-120).dp, y = 130.dp)
-                    .size(320.dp)
-                    .blur(110.dp, BlurredEdgeTreatment.Unbounded)
-                    .background(colors.primary.copy(alpha = alpha * 0.45f), CircleShape)
-            )
-        }
         content()
     }
 }
@@ -83,49 +42,22 @@ fun RetraBackdrop(
 fun GlassPanel(
     modifier: Modifier = Modifier,
     settings: AppSettings? = null,
-    cornerRadius: Dp = 24.dp,
+    cornerRadius: Dp = 12.dp,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     content: @Composable () -> Unit
 ) {
     val colors = MaterialTheme.colorScheme
-    val resolvedSettings = settings ?: LocalRetraSettings.current
-    val intensity = resolvedSettings?.glassIntensity?.coerceIn(0f, 1f) ?: 0.58f
-    val opaque = resolvedSettings?.reduceTransparency == true
-    val shape = remember(cornerRadius) { RoundedCornerShape(cornerRadius) }
-    val container = if (opaque) {
-        colors.surface
-    } else {
-        colors.surface.copy(alpha = (0.50f + intensity * 0.24f).coerceIn(0.50f, 0.76f))
-    }
-    val edgeBrush = Brush.linearGradient(
-        listOf(
-            Color.White.copy(alpha = if (opaque) 0.12f else 0.22f),
-            colors.primary.copy(alpha = 0.12f + intensity * 0.12f),
-            Color.White.copy(alpha = 0.04f)
-        )
-    )
+    val shape = remember(cornerRadius) { RoundedCornerShape(cornerRadius.coerceAtMost(16.dp)) }
     Surface(
         modifier = modifier,
         shape = shape,
-        color = container,
+        color = colors.surface,
         contentColor = colors.onSurface,
         tonalElevation = 0.dp,
-        shadowElevation = if (opaque) 0.dp else 2.dp,
-        border = BorderStroke(0.75.dp, edgeBrush)
+        shadowElevation = 0.dp,
+        border = BorderStroke(1.dp, colors.outlineVariant)
     ) {
-        Box(
-            Modifier
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            Color.White.copy(alpha = if (opaque) 0.02f else 0.075f),
-                            Color.Transparent,
-                            colors.primary.copy(alpha = if (opaque) 0f else intensity * 0.025f)
-                        )
-                    )
-                )
-                .padding(contentPadding)
-        ) {
+        Box(Modifier.padding(contentPadding)) {
             content()
         }
     }
@@ -140,10 +72,9 @@ fun GlassPill(
     val colors = MaterialTheme.colorScheme
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(18.dp),
-        color = if (selected) colors.primary.copy(alpha = 0.18f) else Color.Transparent,
-        contentColor = if (selected) colors.primary else colors.onSurfaceVariant,
-        border = if (selected) BorderStroke(0.75.dp, colors.primary.copy(alpha = 0.24f)) else null
+        shape = RoundedCornerShape(12.dp),
+        color = if (selected) colors.primaryContainer else Color.Transparent,
+        contentColor = if (selected) colors.onPrimaryContainer else colors.onSurfaceVariant
     ) {
         content()
     }
@@ -162,8 +93,9 @@ fun <T> RetraAnimatedContent(
             androidx.compose.runtime.key(targetState) { content(targetState) }
         }
     } else {
-        androidx.compose.animation.AnimatedContent(
+        androidx.compose.animation.Crossfade(
             targetState = targetState,
+            animationSpec = androidx.compose.animation.core.tween(durationMillis = 180),
             label = label,
             modifier = modifier
         ) { state ->

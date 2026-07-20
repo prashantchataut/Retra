@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.7.1 — 2026-07-19
+
+### Premium UI phase
+- Replaced decorative glass/blur chrome with Material top app bar, bottom navigation, and navigation rail.
+- Tightened spacing/shape tokens to a 4dp grid and ≤16dp card radii; quieted multi-accent decoration.
+- Replaced the letter-R glyph with a PNG negative-space brand mark for launcher, splash, and in-app logos.
+- Simplified Home/Discover/onboarding copy and removed feature-readiness clutter from game details.
+- Regenerated quieter interface sounds and added haptic/sound emission cooldowns.
+
+### Gameplay honesty and discovery
+- Release workflow now fails if any of `arm64-v8a`, `armeabi-v7a`, or `x86_64` mGBA cores is missing.
+- `coreAvailable` means real GBA gameplay, not diagnostic fallback availability.
+- Discover now prioritizes official creator pages (GBA Jam, Goodboy Galaxy Demo, Anguna, Aereven Advance) with Open-with-Retra handoff after download.
+- Import diagnostics call out Nintendo DS titles such as HeartGold/SoulSilver and accept MIME-typed GBA/ZIP/patch payloads more reliably.
+
 ## 0.7.0 — 2026-07-19
 
 ### Product shell and branding

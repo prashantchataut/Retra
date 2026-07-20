@@ -23,59 +23,61 @@ import app.retra.core.model.AccentPalette
 import app.retra.core.model.AppSettings
 import app.retra.core.model.ThemeMode
 
-val VoidBlack = Color(0xFF0B0C10)
-val Graphite = Color(0xFF16181F)
-val RetraIndigo = Color(0xFF5B54E8)
-val SoftViolet = Color(0xFF8B7FD9)
-val SaveMint = Color(0xFF3CB88A)
-val AdventureGold = Color(0xFFD4A84B)
-val ErrorCoral = Color(0xFFE85A6B)
-val CloudWhite = Color(0xFFF5F5F7)
-val SoftCloud = Color(0xFFF0F1F4)
+val VoidBlack = Color(0xFF0D0E12)
+val Graphite = Color(0xFF17181E)
+val RetraIndigo = Color(0xFF675CF5)
+val SoftViolet = Color(0xFF8D86F7)
+val SaveMint = Color(0xFF39A77B)
+val AdventureGold = Color(0xFFC7963E)
+val ErrorCoral = Color(0xFFE45D6F)
+val CloudWhite = Color(0xFFF8F8FA)
+val SoftCloud = Color(0xFFF2F2F5)
 val DeepInk = Color(0xFF14151A)
-val MutedInk = Color(0xFF5A5D68)
+val MutedInk = Color(0xFF5E606A)
 
 // Retained aliases for status/artwork accents used outside the brand accent system.
-val PrismCyan = Color(0xFF4A9EAD)
+val PrismCyan = RetraIndigo
 val MemoryViolet = SoftViolet
 
 private val DarkBase = darkColorScheme(
     primary = RetraIndigo,
     onPrimary = CloudWhite,
-    primaryContainer = Color(0xFF2A2758),
-    onPrimaryContainer = Color(0xFFE4E1FF),
-    secondary = Color(0xFF9AA0B0),
-    onSecondary = Color(0xFF15171E),
-    secondaryContainer = Color(0xFF2A2D38),
-    onSecondaryContainer = Color(0xFFD5D8E2),
-    tertiary = SoftViolet,
+    primaryContainer = Color(0xFF2B2859),
+    onPrimaryContainer = Color(0xFFE5E2FF),
+    secondary = Color(0xFFB9BBC5),
+    onSecondary = Color(0xFF202127),
+    secondaryContainer = Color(0xFF26272E),
+    onSecondaryContainer = Color(0xFFE2E2E8),
+    tertiary = Color(0xFFB9BBC5),
     background = VoidBlack,
     onBackground = CloudWhite,
     surface = Graphite,
     onSurface = CloudWhite,
-    surfaceVariant = Color(0xFF1E212A),
-    onSurfaceVariant = Color(0xFFB8BBC6),
-    outline = Color(0xFF858996),
+    surfaceVariant = Color(0xFF222329),
+    onSurfaceVariant = Color(0xFFBFC0C8),
+    outline = Color(0xFF777983),
+    outlineVariant = Color(0xFF303138),
     error = ErrorCoral
 )
 
 private val LightBase = lightColorScheme(
-    primary = Color(0xFF4A44C7),
+    primary = Color(0xFF5147D8),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFE4E1FF),
-    onPrimaryContainer = Color(0xFF16005C),
-    secondary = Color(0xFF5A5D68),
+    primaryContainer = Color(0xFFE7E4FF),
+    onPrimaryContainer = Color(0xFF211866),
+    secondary = Color(0xFF5C5E67),
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFE4E6ED),
-    onSecondaryContainer = Color(0xFF1A1C24),
-    tertiary = Color(0xFF6B5FA8),
+    secondaryContainer = Color(0xFFE8E8EC),
+    onSecondaryContainer = Color(0xFF24252B),
+    tertiary = Color(0xFF5C5E67),
     background = SoftCloud,
     onBackground = DeepInk,
     surface = Color.White,
     onSurface = DeepInk,
-    surfaceVariant = Color(0xFFE8EAEE),
+    surfaceVariant = Color(0xFFEDEDF1),
     onSurfaceVariant = MutedInk,
-    outline = Color(0xFF6F7280),
+    outline = Color(0xFF747680),
+    outlineVariant = Color(0xFFD7D7DC),
     error = Color(0xFFBA1A1A)
 )
 
@@ -83,24 +85,24 @@ private data class Palette(val primary: Color, val secondary: Color, val tertiar
 
 private fun palette(value: AccentPalette, dark: Boolean): Palette = when (value) {
     AccentPalette.RETRA_INDIGO -> Palette(
-        primary = if (dark) RetraIndigo else Color(0xFF4A44C7),
-        secondary = if (dark) Color(0xFF9AA0B0) else Color(0xFF5A5D68),
-        tertiary = SoftViolet
+        primary = if (dark) RetraIndigo else Color(0xFF5147D8),
+        secondary = if (dark) Color(0xFFB9BBC5) else Color(0xFF5C5E67),
+        tertiary = if (dark) Color(0xFFB9BBC5) else Color(0xFF5C5E67)
     )
     AccentPalette.GRAPHITE -> Palette(
-        primary = if (dark) Color(0xFF9AA0B0) else Color(0xFF4A4E5A),
-        secondary = if (dark) Color(0xFF6E7382) else Color(0xFF6F7280),
-        tertiary = if (dark) Color(0xFFB8BBC6) else Color(0xFF858996)
+        primary = if (dark) Color(0xFFC2C3CA) else Color(0xFF4F5159),
+        secondary = if (dark) Color(0xFF9B9DA6) else Color(0xFF686A73),
+        tertiary = if (dark) Color(0xFF9B9DA6) else Color(0xFF686A73)
     )
     AccentPalette.SOFT_VIOLET -> Palette(
-        primary = if (dark) SoftViolet else Color(0xFF6B5FA8),
-        secondary = if (dark) Color(0xFFA89FD4) else Color(0xFF7A7198),
-        tertiary = RetraIndigo
+        primary = if (dark) SoftViolet else Color(0xFF665DCB),
+        secondary = if (dark) Color(0xFFB9BBC5) else Color(0xFF5C5E67),
+        tertiary = if (dark) Color(0xFFB9BBC5) else Color(0xFF5C5E67)
     )
     AccentPalette.CLASSIC_GRAY -> Palette(
-        primary = if (dark) Color(0xFF85889A) else Color(0xFF5C5F70),
-        secondary = if (dark) Color(0xFFA8ACB8) else Color(0xFF747585),
-        tertiary = Color(0xFFB8A46C)
+        primary = if (dark) Color(0xFFC2C3CA) else Color(0xFF51535B),
+        secondary = if (dark) Color(0xFF9B9DA6) else Color(0xFF686A73),
+        tertiary = if (dark) Color(0xFF9B9DA6) else Color(0xFF686A73)
     )
 }
 
@@ -128,11 +130,11 @@ private fun typography(scale: Float) = Typography(
 )
 
 private fun shapes(scale: Float) = Shapes(
-    extraSmall = RoundedCornerShape((8 * scale).dp),
-    small = RoundedCornerShape((12 * scale).dp),
-    medium = RoundedCornerShape((18 * scale).dp),
-    large = RoundedCornerShape((24 * scale).dp),
-    extraLarge = RoundedCornerShape((32 * scale).dp)
+    extraSmall = RoundedCornerShape((6 * scale).dp),
+    small = RoundedCornerShape((8 * scale).dp),
+    medium = RoundedCornerShape((12 * scale).dp),
+    large = RoundedCornerShape((16 * scale).dp),
+    extraLarge = RoundedCornerShape((16 * scale).dp)
 )
 
 @Composable

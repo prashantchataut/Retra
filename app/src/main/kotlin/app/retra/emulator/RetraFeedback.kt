@@ -4,6 +4,7 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.SoundPool
 import android.os.Build
+import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
@@ -30,6 +31,7 @@ class RetraFeedbackEngine @Inject constructor(
 ) : AutoCloseable {
     private val appContext = context.applicationContext
     private val loadedSoundIds = ConcurrentHashMap.newKeySet<Int>()
+    private val lastEmissionAt = ConcurrentHashMap<FeedbackCue, Long>()
     private val soundPool = SoundPool.Builder()
         .setMaxStreams(4)
         .setAudioAttributes(
@@ -72,6 +74,14 @@ class RetraFeedbackEngine @Inject constructor(
     }
 
     fun emit(cue: FeedbackCue) {
+        val now = SystemClock.elapsedRealtime()
+        val cooldown = when (cue) {
+            FeedbackCue.GAME_BUTTON -> 24L
+            FeedbackCue.TAP -> 45L
+            else -> 120L
+        }
+        val previous = lastEmissionAt.put(cue, now)
+        if (previous != null && now - previous < cooldown) return
         if (soundsEnabled && soundVolume > 0f) {
             sounds[cue]?.takeIf { it != 0 && it in loadedSoundIds }?.let { soundId ->
                 soundPool.play(soundId, soundVolume, soundVolume, 1, 0, 1f)

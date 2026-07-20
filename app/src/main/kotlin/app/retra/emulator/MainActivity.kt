@@ -53,11 +53,20 @@ class MainActivity : ComponentActivity() {
 
     @Suppress("DEPRECATION")
     private fun importFromIntent(intent: Intent?) {
-        val uri = when (intent?.action) {
+        if (intent == null) return
+        val uri = when (intent.action) {
             Intent.ACTION_VIEW -> intent.data
-            Intent.ACTION_SEND -> intent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
+            Intent.ACTION_SEND -> {
+                (intent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri)
+                    ?: intent.clipData?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.uri
+            }
             else -> null
         } ?: return
+        if (intent.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION != 0) {
+            runCatching {
+                contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+        }
         viewModel.importFile(uri)
     }
 

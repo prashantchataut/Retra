@@ -68,17 +68,26 @@ jobs:
         run: chmod +x scripts/*.sh tools/*/run.sh
 
       - name: Fetch pinned mGBA source
-        id: mgba_fetch
-        continue-on-error: true
         run: ./scripts/fetch-mgba-archive.sh
 
       - name: Build and stage mGBA libretro core
-        id: mgba_build
-        if: steps.mgba_fetch.outcome == 'success'
-        continue-on-error: true
         env:
           ABIS: "arm64-v8a armeabi-v7a x86_64"
         run: ./scripts/build-mgba-libretro-android.sh
+
+      - name: Verify gameplay core packaging
+        shell: bash
+        run: |
+          set -euo pipefail
+          for ABI in arm64-v8a armeabi-v7a x86_64; do
+            CORE="emulation/native/src/main/jniLibs/${ABI}/libmgba_libretro.so"
+            test -s "$CORE" || {
+              echo "::error::Missing gameplay core for ${ABI}: ${CORE}"
+              exit 1
+            }
+            file "$CORE"
+          done
+          test -s third_party/mgba/ANDROID_BINARY_HASHES.txt
 
       - name: Host verification suites (best-effort)
         continue-on-error: true
@@ -123,12 +132,8 @@ jobs:
           echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
           echo "apk_name=$APK_NAME" >> "$GITHUB_OUTPUT"
           HASHES="third_party/mgba/ANDROID_BINARY_HASHES.txt"
-          if [ -f "$HASHES" ]; then
-            cp "$HASHES" ANDROID_BINARY_HASHES.txt
-            echo "has_hashes=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_hashes=false" >> "$GITHUB_OUTPUT"
-          fi
+          test -s "$HASHES"
+          cp "$HASHES" ANDROID_BINARY_HASHES.txt
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -141,7 +146,6 @@ jobs:
           retention-days: 30
 
       - name: Upload mGBA binary hashes artifact
-        if: steps.package.outputs.has_hashes == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: Retra-${{ steps.package.outputs.short_sha }}-mgba-hashes
@@ -154,26 +158,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           APK_NAME: ${{ steps.package.outputs.apk_name }}
           SHORT_SHA: ${{ steps.package.outputs.short_sha }}
-          HAS_HASHES: ${{ steps.package.outputs.has_hashes }}
-          MGBA_BUILD: ${{ steps.mgba_build.outcome }}
         shell: bash
         run: |
           TAG="build-${SHORT_SHA}-${GITHUB_RUN_NUMBER}"
-          ASSETS=("$APK_NAME" "$APK_NAME.sha256")
-          if [ "$HAS_HASHES" = "true" ]; then
-            ASSETS+=("ANDROID_BINARY_HASHES.txt")
-          fi
-          if [ "$MGBA_BUILD" = "success" ]; then
-            CORE_LINE="The pinned mGBA 0.10.5 libretro core was built from source and staged into this APK; per-ABI hashes are attached as ANDROID_BINARY_HASHES.txt."
-          else
-            CORE_LINE="The mGBA libretro core was not staged in this run, so gameplay falls back to the diagnostic reference core."
-          fi
+          ASSETS=("$APK_NAME" "$APK_NAME.sha256" "ANDROID_BINARY_HASHES.txt")
           {
             echo "Automated Retra 0.7.0 Android release for commit ${GITHUB_SHA}."
             echo
             echo "This APK is **debug-signed** with the public Android debug keystore for personal / open-source **sideload testing only**. It is **not** intended for Play Store distribution. Replace the signing config with a private upload key before any store submission. Uninstall any previously installed Retra build with a different signature before installing."
             echo
-            echo "${CORE_LINE}"
+            echo "The pinned mGBA 0.10.5 libretro core was built from source and verified for arm64-v8a, armeabi-v7a, and x86_64. The workflow refuses to publish an APK when any gameplay ABI is missing."
             echo
             echo "Verify the download with the attached .sha256 before installing."
           } > release-notes.md

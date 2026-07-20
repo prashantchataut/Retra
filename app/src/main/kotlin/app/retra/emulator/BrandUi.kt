@@ -1,27 +1,15 @@
 package app.retra.emulator
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import app.retra.emulator.ui.theme.Graphite
-import app.retra.emulator.ui.theme.RetraIndigo
-import app.retra.emulator.ui.theme.VoidBlack
 
 @Composable
 fun RetraLogo(
@@ -44,48 +32,13 @@ fun RetraLogoTile(
     modifier: Modifier = Modifier,
     size: Dp = 48.dp
 ) {
-    val radius = (size.value * 0.28f).dp
-    Box(
-        modifier = modifier
-            .size(size)
-            .clip(RoundedCornerShape(radius))
-            .background(
-                Brush.linearGradient(
-                    listOf(
-                        VoidBlack,
-                        Graphite,
-                        RetraIndigo.copy(alpha = 0.22f)
-                    )
-                )
-            )
-            .padding(size * 0.08f),
-        contentAlignment = Alignment.Center
-    ) {
-        RetraLogo(size = size * 0.84f, contentDescription = "Retra")
-    }
+    RetraLogo(modifier = modifier, size = size, contentDescription = "Retra")
 }
-
-fun retraAuroraBrush(): Brush = Brush.radialGradient(
-    colors = listOf(
-        RetraIndigo.copy(alpha = 0.20f),
-        Graphite.copy(alpha = 0.12f),
-        Color.Transparent
-    ),
-    radius = 1200f
-)
 
 @Composable
 fun RetraBrandMark(
     modifier: Modifier = Modifier,
     size: Dp = 72.dp
 ) {
-    Box(
-        modifier = modifier
-            .size(size)
-            .clip(RoundedCornerShape((size.value * 0.26f).dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)),
-        contentAlignment = Alignment.Center
-    ) {
-        RetraLogoTile(size = size * 0.92f)
-    }
+    RetraLogo(modifier = modifier, size = size, contentDescription = "Retra")
 }

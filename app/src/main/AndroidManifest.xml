@@ -31,6 +31,8 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
                 <data android:mimeType="application/octet-stream" />
                 <data android:mimeType="application/x-gba-rom" />
                 <data android:mimeType="application/vnd.gba-rom" />
@@ -39,11 +41,25 @@
                 <data android:mimeType="application/x-ups-patch" />
                 <data android:mimeType="application/x-ips-patch" />
                 <data android:mimeType="application/x-bps-patch" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:host="*" />
+                <data android:mimeType="*/*" />
                 <data android:pathPattern=".*\\.gba" />
                 <data android:pathPattern=".*\\.zip" />
                 <data android:pathPattern=".*\\.ups" />
                 <data android:pathPattern=".*\\.ips" />
                 <data android:pathPattern=".*\\.bps" />
+                <data android:pathPattern=".*\\..*\\.gba" />
+                <data android:pathPattern=".*\\..*\\.zip" />
+                <data android:pathPattern=".*\\..*\\.ups" />
+                <data android:pathPattern=".*\\..*\\.ips" />
+                <data android:pathPattern=".*\\..*\\.bps" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
@@ -56,6 +72,7 @@
                 <data android:mimeType="application/x-ups-patch" />
                 <data android:mimeType="application/x-ips-patch" />
                 <data android:mimeType="application/x-bps-patch" />
+                <data android:mimeType="*/*" />
             </intent-filter>
         </activity>
     </application>

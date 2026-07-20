@@ -124,8 +124,8 @@ class RetraViewModel @Inject constructor(
     private val mutableAuthOperation = MutableStateFlow(AuthOperation.IDLE)
     val authOperation: StateFlow<AuthOperation> = mutableAuthOperation
     val coreDescriptor = emulationCore.descriptor
-    val coreAvailable: Boolean get() = emulationCore.isAvailable
     val gameplayAvailable: Boolean get() = emulationCore.descriptor.tier == CoreTier.GBA_GAMEPLAY
+    val coreAvailable: Boolean get() = gameplayAvailable && emulationCore.isAvailable
     val coreStatus: String
         get() = emulationCore.unavailableReason ?: when (emulationCore.descriptor.tier) {
             CoreTier.GBA_GAMEPLAY -> "${emulationCore.descriptor.displayName} ${emulationCore.descriptor.version}"
@@ -273,7 +273,7 @@ class RetraViewModel @Inject constructor(
 
     fun refreshCuratedReleases() = viewModelScope.launch {
         curatedReleaseRepository.refresh()
-        curatedReleaseRepository.state.value.lastError?.let(_messages::emit)
+        curatedReleaseRepository.state.value.lastError?.let { _messages.emit(it) }
     }
 
     fun importCatalog(uri: Uri) = viewModelScope.launch {
@@ -307,7 +307,7 @@ class RetraViewModel @Inject constructor(
     }
 
     fun launchGame(game: GameRecord) = viewModelScope.launch {
-        if (!emulationCore.isAvailable) {
+        if (!coreAvailable) {
             _messages.emit(coreStatus)
             return@launch
         }
@@ -542,7 +542,7 @@ class RetraViewModel @Inject constructor(
     }
 
     fun dismissPendingPatch() = viewModelScope.launch {
-        mutablePendingPatch.value?.let(gameRepository::discardPendingPatch)
+        mutablePendingPatch.value?.let { gameRepository.discardPendingPatch(it) }
         mutablePendingPatch.value = null
         mutableCompatiblePatchGames.value = emptyList()
     }

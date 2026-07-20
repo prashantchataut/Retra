@@ -84,6 +84,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -93,6 +97,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
@@ -168,6 +173,15 @@ private enum class SettingsCategory(val label: String, val icon: ImageVector) {
     BOOST("Boost", Icons.Default.Speed),
     PRIVACY("Privacy", Icons.Default.Security)
 }
+
+private val primarySettingsCategories = listOf(
+    SettingsCategory.APPEARANCE,
+    SettingsCategory.LIBRARY,
+    SettingsCategory.PLAYER,
+    SettingsCategory.FEEDBACK,
+    SettingsCategory.CONTROLS,
+    SettingsCategory.PRIVACY
+)
 
 private enum class LibraryFilter(val label: String) {
     ALL("All"),
@@ -336,7 +350,7 @@ private fun MainShell(
     }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        val useRail = maxWidth >= 720.dp
+        val useRail = maxWidth >= 600.dp
         if (useRail) {
             Row(Modifier.fillMaxSize()) {
                 PremiumNavigationRail(
@@ -485,7 +499,7 @@ private fun MainScaffold(
                 label = "destination",
                 modifier = Modifier
                     .fillMaxSize()
-                    .widthIn(max = 900.dp)
+                    .widthIn(max = 1200.dp)
             ) { target ->
                 when (target) {
                     Destination.HOME -> HomeScreen(games, settings, coreAvailable, coreStatus, onImportFile, onGameSelected)
@@ -521,52 +535,32 @@ private fun MainScaffold(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PremiumTopBar(
     settings: AppSettings,
     title: String,
     coreAvailable: Boolean
 ) {
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-    ) {
-        GlassPanel(
-            modifier = Modifier.fillMaxWidth(),
-            settings = settings,
-            cornerRadius = 22.dp,
-            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
-        ) {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                RetraLogoTile(size = 34.dp)
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                    Text(title, style = MaterialTheme.typography.titleLarge)
+    TopAppBar(
+        title = {
+            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text(title, style = MaterialTheme.typography.titleLarge)
+                if (!coreAvailable) {
                     Text(
-                        if (coreAvailable) "Ready to play" else "Library mode",
+                        "Gameplay core unavailable",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.error
                     )
                 }
-                Surface(
-                    shape = CircleShape,
-                    color = if (coreAvailable) SaveMint.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
-                ) {
-                    Box(Modifier.padding(8.dp), contentAlignment = Alignment.Center) {
-                        Box(
-                            Modifier
-                                .size(8.dp)
-                                .background(if (coreAvailable) SaveMint else MaterialTheme.colorScheme.outline, CircleShape)
-                        )
-                    }
-                }
+            }
+        },
+        navigationIcon = {
+            Box(Modifier.padding(start = 8.dp, end = 4.dp)) {
+                RetraLogoTile(size = 36.dp)
             }
         }
-    }
+    )
 }
 
 @Composable
@@ -575,57 +569,14 @@ private fun PremiumBottomBar(
     selected: Destination,
     onSelected: (Destination) -> Unit
 ) {
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 10.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        GlassPanel(
-            modifier = Modifier.fillMaxWidth(),
-            settings = settings,
-            cornerRadius = 28.dp,
-            contentPadding = PaddingValues(6.dp)
-        ) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                Destination.entries.forEach { item ->
-                    val selectedItem = selected == item
-                    GlassPill(
-                        modifier = Modifier
-                            .weight(1f)
-                            .heightIn(min = 48.dp)
-                            .clip(RoundedCornerShape(18.dp))
-                            .clickable { onSelected(item) }
-                            .semantics { contentDescription = item.label },
-                        selected = selectedItem
-                    ) {
-                        Column(
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 4.dp, vertical = 8.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(2.dp)
-                        ) {
-                            Icon(
-                                item.icon,
-                                contentDescription = null,
-                                modifier = Modifier.size(22.dp)
-                            )
-                            Text(
-                                item.label,
-                                style = MaterialTheme.typography.labelSmall,
-                                maxLines = 1,
-                                fontWeight = if (selectedItem) FontWeight.SemiBold else FontWeight.Medium,
-                                color = if (selectedItem) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                }
-                            )
-                        }
-                    }
-                }
-            }
+    NavigationBar(tonalElevation = 0.dp) {
+        Destination.entries.forEach { item ->
+            NavigationBarItem(
+                selected = selected == item,
+                onClick = { onSelected(item) },
+                icon = { Icon(item.icon, contentDescription = null) },
+                label = { Text(item.label, maxLines = 1) }
+            )
         }
     }
 }
@@ -636,43 +587,21 @@ private fun PremiumNavigationRail(
     selected: Destination,
     onSelected: (Destination) -> Unit
 ) {
-    Box(
-        Modifier
-            .fillMaxHeight()
-            .padding(start = 12.dp, top = 12.dp, bottom = 12.dp),
-        contentAlignment = Alignment.Center
+    NavigationRail(
+        header = {
+            RetraLogoTile(
+                modifier = Modifier.padding(vertical = 12.dp),
+                size = 44.dp
+            )
+        }
     ) {
-        GlassPanel(
-            settings = settings,
-            cornerRadius = 30.dp,
-            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 12.dp)
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                RetraLogoTile(size = 46.dp)
-                Spacer(Modifier.height(8.dp))
-                Destination.entries.forEach { item ->
-                    GlassPill(
-                        modifier = Modifier
-                            .width(78.dp)
-                            .heightIn(min = 48.dp)
-                            .clip(RoundedCornerShape(18.dp))
-                            .clickable { onSelected(item) },
-                        selected = selected == item
-                    ) {
-                        Column(
-                            Modifier.fillMaxWidth().padding(vertical = 10.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(item.icon, contentDescription = item.label, modifier = Modifier.size(22.dp))
-                            Text(item.label, style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
-                }
-            }
+        Destination.entries.forEach { item ->
+            NavigationRailItem(
+                selected = selected == item,
+                onClick = { onSelected(item) },
+                icon = { Icon(item.icon, contentDescription = null) },
+                label = { Text(item.label) }
+            )
         }
     }
 }
@@ -693,38 +622,18 @@ private fun HomeScreen(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         item {
             HeroCard(game = games.firstOrNull(), settings = settings, coreAvailable = coreAvailable, coreStatus = coreStatus, onImportFile, onGameSelected)
         }
-        if (settings.showStatistics) {
-            item { SectionTitle("Your Retra") }
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                    StatCard("Games", games.size.toString(), Icons.Default.Gamepad, Modifier.weight(1f))
-                    StatCard("Core", if (coreAvailable) "Native" else "Pending", Icons.Default.Memory, Modifier.weight(1f))
-                    StatCard("Favorites", games.count(GameRecord::favorite).toString(), Icons.Default.Star, Modifier.weight(1f))
-                }
-            }
-        }
-        val favorites = games.filter(GameRecord::favorite)
-        if (favorites.isNotEmpty()) {
-            item { SectionTitle("Favorites") }
-            items(favorites.take(4), key = { "favorite:${it.id}" }) { game ->
+        if (games.size > 1) {
+            item { SectionTitle("Recently added") }
+            items(games.drop(1).take(5), key = { it.id }) { game ->
                 GameListRow(game, onGameSelected)
             }
         }
-        item { SectionTitle("Recently added") }
-        if (games.isEmpty()) {
-            item { EmptyLibraryCard(onImportFile) }
-        } else {
-            items(games.take(6), key = { it.id }) { game ->
-                GameListRow(game, onGameSelected)
-            }
-        }
-        item { StatusCard() }
     }
 }
 
@@ -738,57 +647,57 @@ private fun HeroCard(
     onGameSelected: (GameRecord) -> Unit
 ) {
     val feedback = LocalRetraFeedback.current
-    GlassPanel(
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        settings = settings,
-        cornerRadius = 30.dp,
-        contentPadding = PaddingValues(22.dp)
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surface,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(18.dp), modifier = Modifier.fillMaxWidth()) {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+        Row(
+            modifier = Modifier.padding(20.dp),
+            horizontalArrangement = Arrangement.spacedBy(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (game == null) {
+                RetraLogoTile(size = 88.dp)
+            } else {
+                GameArtwork(
+                    game = game,
+                    modifier = Modifier.size(104.dp).clip(MaterialTheme.shapes.medium)
+                )
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                StatusPill(
-                    text = if (game == null) "PRIVATE LIBRARY" else "CONTINUE PLAYING",
-                    icon = if (game == null) Icons.Default.Security else Icons.Default.PlayArrow
-                )
-                RetraLogoTile(size = 50.dp)
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 Text(
-                    game?.title ?: "Private library, ready when you are.",
-                    style = MaterialTheme.typography.headlineLarge
+                    if (game == null) "Your games, on your device" else game.title,
+                    style = MaterialTheme.typography.headlineMedium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    if (game == null) {
-                        "Import a personal GBA backup. Retra checks the header, hashes the file, and keeps everything on-device by default."
-                    } else if (coreAvailable) {
-                        "Resume with your display, audio, controls, cheats, and save profile intact."
-                    } else {
-                        coreStatus
+                    when {
+                        game == null -> "Import a .gba backup or a supported patch."
+                        coreAvailable -> "Ready to continue"
+                        else -> coreStatus
                     },
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (!coreAvailable && game != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 Button(
                     onClick = {
                         feedback(FeedbackCue.CONFIRM)
                         if (game == null) onImportFile() else onGameSelected(game)
-                    }
+                    },
+                    modifier = Modifier.heightIn(min = 48.dp)
                 ) {
                     Icon(if (game == null) Icons.Default.Add else Icons.Default.PlayArrow, null)
                     Spacer(Modifier.width(8.dp))
-                    Text(if (game == null) "Import game" else "Continue")
+                    Text(if (game == null) "Add games" else "Open game")
                 }
-                Text(
-                    if (coreAvailable) "Core ready" else "Library available",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = if (coreAvailable) SaveMint else MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }
@@ -816,13 +725,13 @@ private fun LibraryScreen(
 ) {
     val edgePadding = when (density) {
         ContentDensity.COMFORTABLE -> 24.dp
-        ContentDensity.BALANCED -> 20.dp
+        ContentDensity.BALANCED -> 16.dp
         ContentDensity.COMPACT -> 12.dp
     }
     val itemSpacing = when (density) {
-        ContentDensity.COMFORTABLE -> 14.dp
-        ContentDensity.BALANCED -> 10.dp
-        ContentDensity.COMPACT -> 6.dp
+        ContentDensity.COMFORTABLE -> 16.dp
+        ContentDensity.BALANCED -> 12.dp
+        ContentDensity.COMPACT -> 8.dp
     }
     var query by rememberSaveable { mutableStateOf("") }
     var filterName by rememberSaveable { mutableStateOf(LibraryFilter.ALL.name) }
@@ -867,8 +776,22 @@ private fun LibraryScreen(
             horizontalArrangement = Arrangement.spacedBy(itemSpacing),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Button(onClick = onImportFile) { Icon(Icons.Default.Add, null); Spacer(Modifier.width(6.dp)); Text("File") }
-            FilledTonalButton(onClick = onImportFolder) { Icon(Icons.Default.FolderOpen, null); Spacer(Modifier.width(6.dp)); Text("Folder") }
+            Button(
+                onClick = onImportFile,
+                modifier = Modifier.heightIn(min = 48.dp)
+            ) {
+                Icon(Icons.Default.Add, null)
+                Spacer(Modifier.width(8.dp))
+                Text("Add games")
+            }
+            FilledTonalButton(
+                onClick = onImportFolder,
+                modifier = Modifier.heightIn(min = 48.dp)
+            ) {
+                Icon(Icons.Default.FolderOpen, null)
+                Spacer(Modifier.width(8.dp))
+                Text("Scan folder")
+            }
         }
         if (games.isNotEmpty()) {
             OutlinedTextField(
@@ -877,8 +800,7 @@ private fun LibraryScreen(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = edgePadding),
                 singleLine = true,
                 leadingIcon = { Icon(Icons.Default.Search, null) },
-                placeholder = { Text("Search title, tags, or collections") },
-                label = { Text("Find in library") }
+                placeholder = { Text("Search games") }
             )
             Spacer(Modifier.height(itemSpacing))
             LazyRow(
@@ -934,14 +856,14 @@ private fun GameGridCard(game: GameRecord, onGameSelected: (GameRecord) -> Unit)
             feedback(FeedbackCue.TAP)
             onGameSelected(game)
         },
-        cornerRadius = 24.dp
+        cornerRadius = 12.dp
     ) {
         Column {
             Box(modifier = Modifier.fillMaxWidth().aspectRatio(0.86f)) {
                 GameArtwork(game = game, modifier = Modifier.fillMaxSize())
                 if (game.favorite) {
                     Surface(
-                        modifier = Modifier.align(Alignment.TopEnd).padding(9.dp),
+                        modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.74f)
                     ) {
@@ -949,12 +871,12 @@ private fun GameGridCard(game: GameRecord, onGameSelected: (GameRecord) -> Unit)
                             Icons.Default.Star,
                             contentDescription = "Favorite",
                             tint = AdventureGold,
-                            modifier = Modifier.padding(7.dp).size(18.dp)
+                            modifier = Modifier.padding(8.dp).size(18.dp)
                         )
                     }
                 }
             }
-            Column(Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(game.title, maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleMedium)
                 Text(
                     game.gameCode.ifBlank { "Unknown code" },
@@ -975,13 +897,13 @@ private fun GameListRow(game: GameRecord, onGameSelected: (GameRecord) -> Unit) 
             feedback(FeedbackCue.TAP)
             onGameSelected(game)
         },
-        cornerRadius = 22.dp,
-        contentPadding = PaddingValues(13.dp)
+        cornerRadius = 12.dp,
+        contentPadding = PaddingValues(12.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             GameArtwork(
                 game = game,
-                modifier = Modifier.size(58.dp).clip(RoundedCornerShape(16.dp))
+                modifier = Modifier.size(60.dp).clip(RoundedCornerShape(8.dp))
             )
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(game.title, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -1043,7 +965,7 @@ private fun DiscoverScreen(
     val feedback = LocalRetraFeedback.current
     val context = LocalContext.current
     val curated by viewModel.curatedReleases.collectAsStateWithLifecycle()
-    val visibleCatalogs = if (showOnlineRecommendations) catalogs else catalogs.filterNot(StoredCatalog::builtIn)
+    val visibleCatalogs = catalogs.filterNot(StoredCatalog::builtIn)
     LaunchedEffect(Unit) { viewModel.refreshCuratedReleases() }
     fun openExternal(url: String) {
         runCatching {
@@ -1052,150 +974,97 @@ private fun DiscoverScreen(
     }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(20.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
-            GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 24.dp, contentPadding = PaddingValues(17.dp)) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Retra Curated", style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        "Pinned community and homebrew destinations. Retra never bundles commercial ROMs.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    viewModel.catalogRepository.curatedLinks.forEach { link ->
-                        OutlinedButton(
-                            onClick = {
-                                feedback(FeedbackCue.CONFIRM)
-                                openExternal(link.sourcePageUrl)
-                            },
-                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                        ) {
-                            Icon(Icons.Default.OpenInNew, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text(link.title)
-                        }
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("Find games made for GBA", style = MaterialTheme.typography.headlineMedium)
+                Text(
+                    "Retra links only to official creator pages and authorized homebrew. Download a .gba file, choose Open with Retra, and it is verified and added to your library.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        if (showOnlineRecommendations) {
+            items(
+                items = viewModel.catalogRepository.curatedLinks,
+                key = { "discovery:${it.id}" }
+            ) { link ->
+                DiscoveryLinkCard(
+                    title = link.title,
+                    description = link.description,
+                    creator = link.creator,
+                    onOpen = {
+                        feedback(FeedbackCue.CONFIRM)
+                        openExternal(link.sourcePageUrl)
                     }
-                }
+                )
             }
         }
         item {
-            GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 24.dp, contentPadding = PaddingValues(17.dp)) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("Official creator releases", style = MaterialTheme.typography.titleMedium)
-                            Text(
-                                "One-tap download appears only when GitHub publishes a SHA-256 digest. Otherwise open the creator page.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        IconButton(
-                            onClick = {
-                                feedback(FeedbackCue.TAP)
-                                viewModel.refreshCuratedReleases()
-                            },
-                            enabled = !curated.refreshing
-                        ) {
-                            Icon(Icons.Default.Refresh, contentDescription = "Refresh official releases")
-                        }
-                    }
-                    curated.links.forEach { link ->
-                        OutlinedButton(
-                            onClick = {
-                                feedback(FeedbackCue.CONFIRM)
-                                openExternal(link.sourcePageUrl)
-                            },
-                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                        ) {
-                            Icon(Icons.Default.OpenInNew, null)
-                            Spacer(Modifier.width(8.dp))
-                            Text(link.title)
-                        }
-                    }
-                    if (curated.refreshing) {
-                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                    }
-                    curated.lastError?.let {
-                        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                    }
-                    curated.downloadableEntries.forEach { entry ->
-                        CatalogCard(
-                            entry = entry,
-                            progress = downloads[entry.sha256.lowercase()],
-                            downloadable = true,
-                            onDownload = onDownload,
-                            onOpenSource = { openExternal(it) }
-                        )
-                    }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Verified downloads", style = MaterialTheme.typography.titleLarge)
+                IconButton(
+                    onClick = {
+                        feedback(FeedbackCue.TAP)
+                        viewModel.refreshCuratedReleases()
+                    },
+                    enabled = !curated.refreshing
+                ) {
+                    Icon(Icons.Default.Refresh, contentDescription = "Refresh verified downloads")
                 }
             }
         }
-        item { OnlineCatalogImportCard(viewModel) }
-        item {
-            GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 24.dp, contentPadding = PaddingValues(17.dp)) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Surface(shape = CircleShape, color = SaveMint.copy(alpha = 0.13f)) {
-                            Icon(Icons.Default.Security, null, tint = SaveMint, modifier = Modifier.padding(9.dp).size(20.dp))
-                        }
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text("SHA-256 pinned custom manifests", style = MaterialTheme.typography.titleMedium)
-                            Text(
-                                "Import reviewed public-domain, open-source, licensed homebrew, demos, and synthetic fixtures only.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                    OutlinedButton(
-                        onClick = {
-                            feedback(FeedbackCue.CONFIRM)
-                            onImportCatalog()
-                        },
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                    ) {
-                        Icon(Icons.Default.Add, null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Import catalog")
-                    }
-                }
+        if (curated.refreshing) {
+            item { LinearProgressIndicator(modifier = Modifier.fillMaxWidth()) }
+        }
+        curated.lastError?.let { error ->
+            item { Text(error, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+        }
+        if (!curated.refreshing && curated.downloadableEntries.isEmpty()) {
+            item {
+                Text(
+                    "No creator release currently exposes both a supported file and a published SHA-256. Use the official links above.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
-        item {
-            val valid = validation is CatalogValidationResult.Valid
-            StatusPill(
-                text = if (valid) "${visibleCatalogs.size} validated catalog source${if (visibleCatalogs.size == 1) "" else "s"}" else "Catalog validation failed",
-                icon = if (valid) Icons.Default.VerifiedUser else Icons.Default.Info
+        items(curated.downloadableEntries, key = { "verified:${it.id}" }) { entry ->
+            CatalogCard(
+                entry = entry,
+                progress = downloads[entry.sha256.lowercase()],
+                downloadable = true,
+                onDownload = onDownload,
+                onOpenSource = { openExternal(it) }
             )
         }
         visibleCatalogs.forEach { source ->
             item(key = "catalog:${source.manifest.catalogId}") {
-                GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 22.dp, contentPadding = PaddingValues(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text(source.manifest.name, style = MaterialTheme.typography.titleLarge)
-                            Text(
-                                "${source.manifest.owner} · ${source.manifest.games.size} entries · ${if (source.builtIn) "Built in" else "Imported"}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(source.manifest.description, style = MaterialTheme.typography.bodySmall)
-                        }
-                        if (!source.builtIn) {
-                            IconButton(onClick = {
-                                feedback(FeedbackCue.TAP)
-                                onDeleteCatalog(source)
-                            }) {
-                                Icon(Icons.Default.DeleteOutline, contentDescription = "Delete ${source.manifest.name}")
-                            }
-                        }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(source.manifest.name, style = MaterialTheme.typography.titleLarge)
+                        Text(
+                            "${source.manifest.owner} · ${source.manifest.games.size} entries",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    IconButton(onClick = {
+                        feedback(FeedbackCue.TAP)
+                        onDeleteCatalog(source)
+                    }) {
+                        Icon(Icons.Default.DeleteOutline, contentDescription = "Delete ${source.manifest.name}")
                     }
                 }
             }
@@ -1213,17 +1082,51 @@ private fun DiscoverScreen(
             }
         }
         item {
-            GlassPanel(modifier = Modifier.fillMaxWidth(), cornerRadius = 22.dp, contentPadding = PaddingValues(17.dp)) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Secure by construction", style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        "Catalogs are strict UTF-8 JSON. Retra blocks private targets, cross-host redirects, unknown fields, oversized files, invalid hashes, and missing license provenance. External creator links open in the browser.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    StatusPill("Downloader ready", Icons.Default.Security)
-                }
+            OutlinedButton(
+                onClick = {
+                    feedback(FeedbackCue.CONFIRM)
+                    onImportCatalog()
+                },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+            ) {
+                Icon(Icons.Default.Add, null)
+                Spacer(Modifier.width(8.dp))
+                Text("Import a verified catalog")
             }
+        }
+    }
+}
+
+@Composable
+private fun DiscoveryLinkCard(
+    title: String,
+    description: String,
+    creator: String,
+    onOpen: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onOpen),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surface,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(title, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(creator, style = MaterialTheme.typography.labelMedium)
+            }
+            Icon(Icons.Default.OpenInNew, contentDescription = "Open $title")
         }
     }
 }
@@ -1419,7 +1322,7 @@ private fun SettingsScreen(
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Preferences", style = MaterialTheme.typography.titleLarge)
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(SettingsCategory.entries, key = { it.name }) { category ->
+                items(primarySettingsCategories, key = { it.name }) { category ->
                     FilterChip(
                         selected = category == selected,
                         onClick = {
@@ -1677,13 +1580,9 @@ private fun GameDetailsScreen(
                     IconButton(onClick = { metadataDialog = true }) {
                         Icon(Icons.Default.Edit, "Edit library details")
                     }
-                    IconButton(onClick = { organizationDialog = true }) {
-                        Icon(Icons.Default.LibraryBooks, "Edit collections and tags")
-                    }
                     IconButton(onClick = onToggleFavorite) {
                         Icon(if (game.favorite) Icons.Default.Star else Icons.Default.StarBorder, if (game.favorite) "Remove favorite" else "Add favorite")
                     }
-                    IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Default.DeleteOutline, "Remove from library") }
                 }
             )
         },
@@ -1695,10 +1594,12 @@ private fun GameDetailsScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                GameArtwork(
-                    game = game,
-                    modifier = Modifier.fillMaxWidth().aspectRatio(1.65f).clip(RoundedCornerShape(28.dp))
-                )
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    GameArtwork(
+                        game = game,
+                        modifier = Modifier.widthIn(max = 360.dp).aspectRatio(0.76f).clip(MaterialTheme.shapes.large)
+                    )
+                }
             }
             item {
                 Text(game.title, style = MaterialTheme.typography.headlineLarge)
@@ -1733,7 +1634,11 @@ private fun GameDetailsScreen(
                 }
             }
             item {
-                Button(onClick = onPlay, enabled = coreAvailable, modifier = Modifier.fillMaxWidth()) {
+                Button(
+                    onClick = onPlay,
+                    enabled = coreAvailable,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
+                ) {
                     Icon(Icons.Default.PlayArrow, null)
                     Spacer(Modifier.width(8.dp))
                     Text(when {
@@ -1742,7 +1647,14 @@ private fun GameDetailsScreen(
                         else -> "Open native diagnostics"
                     })
                 }
-                if (!coreAvailable) Text(coreStatus, Modifier.padding(top = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (!coreAvailable) {
+                    Text(
+                        coreStatus,
+                        Modifier.padding(top = 8.dp),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
                 OutlinedButton(
                     onClick = { patchPicker.launch(arrayOf("application/octet-stream", "*/*")) },
                     modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
@@ -1767,6 +1679,23 @@ private fun GameDetailsScreen(
                     ) { Text(if (game.coverArtPath == null) "Add cover art" else "Replace cover art") }
                     if (game.coverArtPath != null) {
                         OutlinedButton(onClick = onRemoveCoverArt, modifier = Modifier.weight(1f)) { Text("Remove cover") }
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { organizationDialog = true },
+                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                    ) {
+                        Text("Organize")
+                    }
+                    OutlinedButton(
+                        onClick = { confirmDelete = true },
+                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                    ) {
+                        Text("Remove")
                     }
                 }
             }
@@ -1857,24 +1786,6 @@ private fun GameDetailsScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    }
-                }
-            }
-            item {
-                Card {
-                    Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Feature readiness", style = MaterialTheme.typography.titleLarge)
-                        DetailRow("Local metadata", "Implemented")
-                        DetailRow("Duplicate detection", "Implemented")
-                        DetailRow("Native frame pipeline", "Implemented")
-                        DetailRow("Touch and gamepad input", "Implemented")
-                        DetailRow("Atomic state snapshots", "Implemented")
-                        DetailRow("IPS / UPS / BPS patching", "Implemented and host-tested")
-                        DetailRow("Retra Codes pack import", "Implemented and host-tested")
-                        DetailRow("Legal catalog downloads", "Implemented; live provider required")
-                        DetailRow("Cheat activation", if (gameplayAvailable) "Implemented; device validation pending" else "Requires gameplay core")
-                        DetailRow("GBA instruction execution", if (gameplayAvailable) "Gameplay core loaded" else "Awaiting reviewed mGBA library")
-                        DetailRow("Battery saves", if (gameplayAvailable) "Gameplay core available; device validation pending" else "Awaiting reviewed mGBA library")
                     }
                 }
             }
