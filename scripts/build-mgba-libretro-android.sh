@@ -105,6 +105,7 @@ cp "$SOURCE/LICENSE" "$ROOT/third_party/mgba/notices/LICENSE-mGBA-MPL-2.0.txt"
 for ABI in $ABIS; do
   BUILD="$OUT_ROOT/$ABI"
   echo "Configuring mGBA libretro for $ABI..."
+  CONFIG_LOG="$BUILD/configure.log"
   if ! "$CMAKE_BIN" -S "$SOURCE" -B "$BUILD" -G Ninja \
     -DCMAKE_MAKE_PROGRAM="$NINJA_BIN" \
     -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake" \
@@ -112,30 +113,13 @@ for ABI in $ABIS; do
     -DANDROID_ABI="$ABI" \
     -DANDROID_PLATFORM="android-$ANDROID_PLATFORM" \
     -DANDROID_STL=c++_static \
-    -DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_LIBRETRO=ON \
     -DSKIP_LIBRARY=ON \
-    -DBUILD_QT=OFF \
-    -DBUILD_SDL=OFF \
-    -DBUILD_GL=OFF \
-    -DBUILD_GLES2=OFF \
-    -DBUILD_GLES3=OFF \
-    -DUSE_DEBUGGERS=OFF \
-    -DUSE_GDB_STUB=OFF \
-    -DUSE_EDITLINE=OFF \
-    -DUSE_FFMPEG=OFF \
-    -DUSE_LIBZIP=OFF \
-    -DUSE_LUA=OFF \
-    -DENABLE_SCRIPTING=OFF \
-    -DUSE_DISCORD_RPC=OFF \
-    -DBUILD_TEST=OFF \
-    -DBUILD_SUITE=OFF \
-    -DBUILD_EXAMPLE=OFF \
-    -DBUILD_LTO=OFF \
-    -DSKIP_GIT=ON \
-    -DDISABLE_DEPS=ON; then
+    -DDISABLE_DEPS=ON \
+    2>&1 | tee "$CONFIG_LOG"; then
     echo "::error::CMake configure failed for $ABI" >&2
+    tail -n 120 "$CONFIG_LOG" >&2 || true
     for log in "$BUILD/CMakeFiles/CMakeError.log" "$BUILD/CMakeFiles/CMakeOutput.log"; do
       if [ -f "$log" ]; then
         echo "---- $log ----" >&2
@@ -147,8 +131,10 @@ for ABI in $ABIS; do
 
   JOBS=${CMAKE_BUILD_PARALLEL_LEVEL:-$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)}
   echo "Building mGBA libretro for $ABI with $JOBS parallel jobs..."
-  if ! "$CMAKE_BIN" --build "$BUILD" --parallel "$JOBS" --target mgba_libretro; then
+  BUILD_LOG="$BUILD/build.log"
+  if ! "$CMAKE_BIN" --build "$BUILD" --parallel "$JOBS" --target mgba_libretro 2>&1 | tee "$BUILD_LOG"; then
     echo "::error::CMake build failed for $ABI" >&2
+    tail -n 120 "$BUILD_LOG" >&2 || true
     exit 1
   fi
 

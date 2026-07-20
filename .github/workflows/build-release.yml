@@ -88,6 +88,8 @@ jobs:
         with:
           name: mgba-build-debug
           path: |
+            third_party/mgba/android-build/**/configure.log
+            third_party/mgba/android-build/**/build.log
             third_party/mgba/android-build/**/CMakeFiles/CMakeError.log
             third_party/mgba/android-build/**/CMakeFiles/CMakeOutput.log
           if-no-files-found: ignore
