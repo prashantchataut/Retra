@@ -1,0 +1,27 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -333,10 +333,12 @@
+ find_function(freelocale)
+ find_function(newlocale)
+ find_function(setlocale)
+-find_function(snprintf_l)
+ find_function(uselocale)
+ 
+-find_function(popcount32)
++if(NOT ANDROID)
++find_function(snprintf_l)
++find_function(popcount32)
++endif()
+ 
+ find_function(futimens)
+ find_function(futimes)
+@@ -604,7 +606,9 @@
+ else()
+ 	# zlib pulls in crc32
+-	check_function_exists(crc32 HAVE_CRC32)
++	if(NOT ANDROID)
++	check_function_exists(crc32 HAVE_CRC32)
++	endif()
+ endif()
+ 
+ if(HAVE_CRC32)

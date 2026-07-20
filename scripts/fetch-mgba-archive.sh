@@ -43,6 +43,17 @@ grep -qi "Mozilla Public License" "$SOURCE/LICENSE" || {
   exit 1
 }
 mv "$SOURCE" "$DEST"
+INIH_DIR="$DEST/src/third-party/inih"
+if [ ! -f "$INIH_DIR/ini.h" ]; then
+  echo "DFSG archive omitted bundled inih; fetching pinned upstream copy." >&2
+  mkdir -p "$INIH_DIR"
+  MGBA_TAG_COMMIT="26b7884bc25a5933960f3cdcd98bac1ae14d42e2"
+  for inih_file in ini.h ini.c; do
+    # shellcheck disable=SC2086
+    $FETCH "$INIH_DIR/$inih_file" \
+      "https://raw.githubusercontent.com/mgba-emu/mgba/${MGBA_TAG_COMMIT}/src/third-party/inih/${inih_file}"
+  done
+fi
 cat > "$ROOT/third_party/mgba/SOURCE_LOCK.txt" <<LOCK
 source=debian-dfsg-archive
 url=$URL
