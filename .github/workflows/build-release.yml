@@ -16,7 +16,7 @@ concurrency:
 
 env:
   NDK_VERSION: "28.2.13676358"
-  CMAKE_VERSION: "3.22.1"
+  CMAKE_VERSION: "3.30.3"
 
 jobs:
   release:
@@ -68,7 +68,7 @@ jobs:
       - name: Install native build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build patch
+          sudo apt-get install -y ninja-build
 
       - name: Make project scripts executable
         run: chmod +x scripts/*.sh tools/*/run.sh
@@ -80,11 +80,11 @@ jobs:
         shell: bash
         env:
           ABIS: "arm64-v8a armeabi-v7a x86_64"
-          CMAKE_VERSION: "3.22.1"
+          CMAKE_VERSION: "3.30.3"
         run: |
           set -euo pipefail
           test -f "${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake"
-          test -x "${ANDROID_SDK_ROOT}/cmake/${CMAKE_VERSION}/bin/cmake"
+          test -f "${ANDROID_SDK_ROOT}/cmake/${CMAKE_VERSION}/bin/cmake"
           command -v ninja
           ./scripts/build-mgba-libretro-android.sh
 
