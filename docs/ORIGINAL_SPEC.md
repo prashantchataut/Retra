@@ -1,3 +1,5 @@
+> **Archived input:** This document records an earlier design direction and is not the active Retra 0.8 specification. See `RETRA_FINAL_UI_UX_SPEC.md` and `../design-system/retra/MASTER.md`.
+
 # RETRA
 
 ## Autonomous One-Shot Development Prompt for a Premium Android GBA Emulator

@@ -12,6 +12,7 @@ import app.retra.core.patching.InvalidPatchException
 import app.retra.core.patching.PatchEngine
 import app.retra.core.rom.GbaRomParser
 import app.retra.core.rom.InvalidRomException
+import app.retra.core.rom.Sha1
 import app.retra.core.rom.Sha256
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.ByteArrayOutputStream
@@ -27,15 +28,19 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 @Singleton
 class GameRepository @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val gameDao: GameDao
+    private val gameDao: GameDao,
+    private val metadataRepository: LibretroMetadataRepository
 ) {
     private val resolver: ContentResolver get() = context.contentResolver
     private val libraryRoot = File(context.filesDir, "library-roms")
     private val patchInbox = File(context.filesDir, "patch-inbox")
+    private val importMutex = Mutex()
 
     fun observeGames(): Flow<List<GameRecord>> = gameDao.observeAll().map { list -> list.map(GameEntity::toRecord) }
 
@@ -201,8 +206,9 @@ class GameRepository @Inject constructor(
         if (!hash.equals(entity.sha256, ignoreCase = true)) return@withContext game
         val managed = writeManagedRom(hash, bytes)
         val crc = PatchEngine.crc32Of(bytes)
-        gameDao.updateManagedStorage(entity.id, managed.toURI().toString(), managed.absolutePath, crc)
-        entity.copy(uri = managed.toURI().toString(), managedPath = managed.absolutePath, crc32 = crc).toRecord()
+        val sha1 = Sha1.of(bytes)
+        gameDao.updateManagedStorage(entity.id, managed.toURI().toString(), managed.absolutePath, crc, sha1)
+        entity.copy(uri = managed.toURI().toString(), managedPath = managed.absolutePath, crc32 = crc, sha1 = sha1).toRecord()
     }
 
     private suspend fun importGba(uri: Uri, displayName: String): ImportOutcome {
@@ -222,17 +228,24 @@ class GameRepository @Inject constructor(
         sourceUrl: String? = null,
         license: String? = null,
         distributionPermission: String? = null
-    ): ImportOutcome {
+    ): ImportOutcome = importMutex.withLock {
         val header = try {
             GbaRomParser.parse(bytes)
         } catch (error: InvalidRomException) {
-            return ImportOutcome.Rejected(error.message ?: "Invalid GBA file.")
+            return@withLock ImportOutcome.Rejected(error.message ?: "Invalid GBA file.")
         }
         val hash = Sha256.of(bytes)
         if (gameDao.countBySha256(hash) > 0) {
-            return ImportOutcome.Duplicate(header.title)
+            return@withLock ImportOutcome.Duplicate(header.title)
         }
-        val managed = writeManagedRom(hash, bytes)
+
+        val expectedPath = File(libraryRoot, "$hash.gba")
+        val existedBeforeImport = expectedPath.exists()
+        val managed = try {
+            writeManagedRom(hash, bytes)
+        } catch (error: Exception) {
+            return@withLock ImportOutcome.Rejected(error.message ?: "Retra could not store the imported game safely.")
+        }
         val entity = GameEntity(
             uri = managed.toURI().toString(),
             displayName = displayName.take(180),
@@ -249,10 +262,22 @@ class GameRepository @Inject constructor(
             license = license,
             distributionPermission = distributionPermission,
             crc32 = PatchEngine.crc32Of(bytes),
+            sha1 = Sha1.of(bytes),
             managedPath = managed.absolutePath
         )
-        val id = gameDao.insert(entity)
-        return ImportOutcome.Imported(entity.copy(id = id).toRecord())
+        val id = try {
+            gameDao.insert(entity)
+        } catch (error: Exception) {
+            val duplicateNowExists = runCatching { gameDao.countBySha256(hash) > 0 }.getOrDefault(false)
+            if (!existedBeforeImport && !duplicateNowExists) runCatching { managed.delete() }
+            return@withLock if (duplicateNowExists) {
+                ImportOutcome.Duplicate(header.title)
+            } else {
+                ImportOutcome.Rejected(error.message ?: "Retra could not add the game to its library database.")
+            }
+        }
+        val enriched = metadataRepository.enrich(entity.copy(id = id))
+        ImportOutcome.Imported(enriched.toRecord())
     }
 
     private suspend fun importPatch(uri: Uri, displayName: String): ImportOutcome {

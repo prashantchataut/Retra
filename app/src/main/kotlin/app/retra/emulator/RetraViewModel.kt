@@ -8,6 +8,7 @@ import app.retra.core.achievements.AchievementEvent
 import app.retra.core.achievements.AchievementEventType
 import app.retra.core.achievements.AchievementIntegrity
 import app.retra.core.cheats.CheatCategory
+import app.retra.core.cheats.CheatCatalogEntry
 import app.retra.core.cheats.CheatConflictAnalyzer
 import app.retra.core.cheats.CheatFormat
 import app.retra.core.cheats.CheatProfile
@@ -34,10 +35,17 @@ import app.retra.emulator.data.CatalogDownloadOutcome
 import app.retra.emulator.data.CatalogDownloadRepository
 import app.retra.emulator.data.CatalogImportOutcome
 import app.retra.emulator.data.CatalogRepository
+import app.retra.emulator.data.CheatCatalogImportOutcome
+import app.retra.emulator.data.CheatCatalogRepository
 import app.retra.emulator.data.CheatPackImportOutcome
 import app.retra.emulator.data.CheatRepository
 import app.retra.emulator.data.CuratedReleaseRepository
 import app.retra.emulator.data.GameRepository
+import app.retra.emulator.data.HomebrewHubEntry
+import app.retra.emulator.data.HomebrewHubRepository
+import app.retra.emulator.data.HomebrewInstallOutcome
+import app.retra.emulator.data.LibretroCheatRepository
+import app.retra.emulator.data.LibretroMetadataRepository
 import app.retra.emulator.data.ImportOutcome
 import app.retra.emulator.data.KnownPatchHints
 import app.retra.emulator.data.MultiplayerRepository
@@ -47,6 +55,7 @@ import app.retra.emulator.data.PatchRepository
 import app.retra.emulator.data.SettingsRepository
 import app.retra.emulator.data.ScreenshotRepository
 import app.retra.emulator.data.SocialRepository
+import app.retra.emulator.data.StoredCheatCatalog
 import app.retra.emulator.data.StoredCheatPack
 import app.retra.emulator.data.StoredCatalog
 import app.retra.emulator.data.VaultRepository
@@ -74,6 +83,9 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class RetraViewModel @Inject constructor(
     private val gameRepository: GameRepository,
+    private val homebrewHubRepository: HomebrewHubRepository,
+    private val libretroMetadataRepository: LibretroMetadataRepository,
+    private val libretroCheatRepository: LibretroCheatRepository,
     private val artworkRepository: ArtworkRepository,
     private val settingsRepository: SettingsRepository,
     val catalogRepository: CatalogRepository,
@@ -82,6 +94,7 @@ class RetraViewModel @Inject constructor(
     private val vaultRepository: VaultRepository,
     private val patchRepository: PatchRepository,
     private val cheatRepository: CheatRepository,
+    private val cheatCatalogRepository: CheatCatalogRepository,
     private val achievementRepository: AchievementRepository,
     private val socialRepository: SocialRepository,
     private val multiplayerRepository: MultiplayerRepository,
@@ -106,9 +119,12 @@ class RetraViewModel @Inject constructor(
     val runtimeMetrics = emulationCore.metrics
     val vaultRecords = vaultRepository.records
     val cheatPacks = cheatRepository.packs
+    val cheatCatalogs = cheatCatalogRepository.catalogs
     val catalogDownloads = catalogDownloadRepository.progress
     val catalogSources = catalogRepository.catalogs
     val curatedReleases = curatedReleaseRepository.state
+    val homebrewHub = homebrewHubRepository.state
+    val metadataSync = libretroMetadataRepository.state
     private val mutablePendingPatch = MutableStateFlow<PendingPatch?>(null)
     val pendingPatch: StateFlow<PendingPatch?> = mutablePendingPatch
     private val mutableCompatiblePatchGames = MutableStateFlow<List<GameRecord>>(emptyList())
@@ -274,6 +290,34 @@ class RetraViewModel @Inject constructor(
     fun refreshCuratedReleases() = viewModelScope.launch {
         curatedReleaseRepository.refresh()
         curatedReleaseRepository.state.value.lastError?.let { _messages.emit(it) }
+    }
+
+
+    fun refreshHomebrewHub(query: String = homebrewHub.value.query, page: Int = 1) = viewModelScope.launch {
+        homebrewHubRepository.refresh(query, page)
+        homebrewHub.value.error?.let { _messages.emit(it) }
+    }
+
+    fun installHomebrew(entry: HomebrewHubEntry) = viewModelScope.launch {
+        when (val outcome = homebrewHubRepository.install(entry)) {
+            is HomebrewInstallOutcome.Imported -> {
+                selectedGame.value = outcome.game
+                recordAchievement(AchievementEventType.GAME_IMPORTED, uniqueKey = outcome.game.sha256, game = outcome.game)
+                feedbackEngine.emit(FeedbackCue.CONFIRM)
+                _messages.emit("Installed ${outcome.game.title} from Homebrew Hub.")
+            }
+            is HomebrewInstallOutcome.Duplicate -> _messages.emit("${outcome.title} is already in the library.")
+            is HomebrewInstallOutcome.Rejected -> _messages.emit(outcome.reason)
+        }
+    }
+
+    fun syncGameMetadata() = viewModelScope.launch {
+        val result = libretroMetadataRepository.syncGba()
+        if (result.error != null) {
+            _messages.emit(result.error)
+        } else {
+            _messages.emit("Indexed ${result.indexedRecords} verified GBA records and matched ${result.matchedGames} library games.")
+        }
     }
 
     fun importCatalog(uri: Uri) = viewModelScope.launch {
@@ -549,6 +593,33 @@ class RetraViewModel @Inject constructor(
 
     fun importCheatPack(game: GameRecord, uri: Uri) = viewModelScope.launch {
         emitCheatImport(game, cheatRepository.import(game, uri))
+    }
+
+
+    fun importRetroArchCheats(game: GameRecord, uri: Uri) = viewModelScope.launch {
+        emitCheatImport(game, cheatRepository.importRetroArch(game, uri))
+    }
+
+    fun installLibretroCheats(game: GameRecord) = viewModelScope.launch {
+        emitCheatImport(game, libretroCheatRepository.installFor(game))
+    }
+
+    fun compatibleCheatCatalogEntries(game: GameRecord): List<CheatCatalogEntry> =
+        cheatCatalogRepository.compatibleEntries(game)
+
+    fun importCheatCatalog(uri: Uri) = viewModelScope.launch {
+        when (val outcome = cheatCatalogRepository.import(uri)) {
+            is CheatCatalogImportOutcome.Imported -> _messages.emit(
+                "Imported ${outcome.catalog.catalog.entries.size} checksum-pinned cheat packs from ${outcome.catalog.catalog.name}."
+            )
+            is CheatCatalogImportOutcome.Duplicate -> _messages.emit("The ${outcome.name} cheat index is already installed.")
+            is CheatCatalogImportOutcome.Rejected -> _messages.emit(outcome.reason)
+        }
+    }
+
+    fun deleteCheatCatalog(stored: StoredCheatCatalog) {
+        val deleted = runCatching { cheatCatalogRepository.delete(stored) }.getOrDefault(false)
+        _messages.tryEmit(if (deleted) "Removed the local cheat index." else "The cheat index could not be removed.")
     }
 
     fun createCustomCheat(game: GameRecord, name: String, format: CheatFormat, codeText: String) = viewModelScope.launch {

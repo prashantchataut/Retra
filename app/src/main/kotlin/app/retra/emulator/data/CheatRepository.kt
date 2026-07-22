@@ -12,6 +12,8 @@ import app.retra.core.cheats.CheatRisk
 import app.retra.core.cheats.InvalidCheatPackException
 import app.retra.core.cheats.RetraCodesDownloadPolicy
 import app.retra.core.cheats.RetraCodesParser
+import app.retra.core.cheats.RetroArchCheatParser
+import app.retra.core.cheats.InvalidRetroArchCheatException
 import app.retra.core.model.GameRecord
 import app.retra.core.rom.Sha256
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -102,6 +104,36 @@ class CheatRepository @Inject constructor(
         CheatPackImportOutcome.Imported(stored)
     }
 
+    suspend fun importRetroArch(game: GameRecord, uri: Uri): CheatPackImportOutcome = withContext(Dispatchers.IO) {
+        val fileName = queryDisplayName(uri)?.take(160) ?: "RetroArch cheats.cht"
+        val bytes = try {
+            readLimited(uri)
+        } catch (error: Exception) {
+            return@withContext CheatPackImportOutcome.Rejected(error.message ?: "The RetroArch cheat file could not be read.")
+        }
+        importRetroArchBytes(game, fileName, bytes, "RetroArch user import")
+    }
+
+    internal fun importRetroArchBytes(
+        game: GameRecord,
+        fileName: String,
+        bytes: ByteArray,
+        provider: String
+    ): CheatPackImportOutcome {
+        val pack = try {
+            RetroArchCheatParser.parseForGame(
+                bytes = bytes,
+                provider = provider,
+                gameSha256 = game.sha256,
+                gameCode = game.gameCode,
+                revision = game.softwareVersion
+            )
+        } catch (error: InvalidRetroArchCheatException) {
+            return CheatPackImportOutcome.Rejected(error.message ?: "The RetroArch cheat file is invalid.")
+        }
+        return storeBytes(game, fileName.substringBeforeLast('.') + ".rcc", RetroArchCheatParser.encodeRetraCodes(pack))
+    }
+
     suspend fun createCustom(
         game: GameRecord,
         name: String,
@@ -158,7 +190,7 @@ class CheatRepository @Inject constructor(
                 connection.requestMethod = "GET"
                 connection.setRequestProperty("Accept", "text/plain, application/octet-stream")
                 connection.setRequestProperty("Accept-Encoding", "identity")
-                connection.setRequestProperty("User-Agent", "Retra/0.6.0 Android")
+                connection.setRequestProperty("User-Agent", "Retra/2.0 Android")
                 val code = connection.responseCode
                 if (code in setOf(301, 302, 303, 307, 308)) {
                     if (redirectIndex == 3) return@withContext CheatPackImportOutcome.Rejected("Cheat-pack download exceeded three redirects.")

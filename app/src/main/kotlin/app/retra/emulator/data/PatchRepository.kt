@@ -12,6 +12,7 @@ import app.retra.core.patching.PatchEngine
 import app.retra.core.patching.PatchFormat
 import app.retra.core.rom.GbaRomParser
 import app.retra.core.rom.InvalidRomException
+import app.retra.core.rom.Sha1
 import app.retra.core.rom.Sha256
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.ByteArrayOutputStream
@@ -140,6 +141,7 @@ class PatchRepository @Inject constructor(
                 patchFormat = result.format.name,
                 patchDisplayName = cleanPatchName,
                 crc32 = PatchEngine.crc32Of(result.output),
+                sha1 = Sha1.of(result.output),
                 managedPath = outputFile.absolutePath,
                 tagsCsv = GameEntity.encodeCsv(listOf("patched"))
             )

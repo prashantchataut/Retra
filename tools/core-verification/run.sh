@@ -8,6 +8,8 @@ kotlinc \
   "$ROOT/core/model/src/main/kotlin/app/retra/core/model/GameModels.kt" \
   "$ROOT/core/rom/src/main/kotlin/app/retra/core/rom/GbaRomParser.kt" \
   "$ROOT/core/rom/src/main/kotlin/app/retra/core/rom/Sha256.kt" \
+  "$ROOT/core/rom/src/main/kotlin/app/retra/core/rom/Sha1.kt" \
+  "$ROOT/core/rom/src/main/kotlin/app/retra/core/rom/LibretroDat.kt" \
   "$ROOT/core/rom/src/main/kotlin/app/retra/core/rom/DuplicateDetector.kt" \
   "$ROOT/core/rom/src/main/kotlin/app/retra/core/rom/CatalogValidator.kt" \
   "$ROOT/core/emulation/src/main/kotlin/app/retra/core/emulation/EmulationModels.kt" \
@@ -15,6 +17,8 @@ kotlinc \
   "$ROOT/core/emulation/src/main/kotlin/app/retra/core/emulation/RewindBuffer.kt" \
   "$ROOT/core/patching/src/main/kotlin/app/retra/core/patching/PatchEngine.kt" \
   "$ROOT/core/cheats/src/main/kotlin/app/retra/core/cheats/RetraCodes.kt" \
+  "$ROOT/core/cheats/src/main/kotlin/app/retra/core/cheats/RetraCheatCatalog.kt" \
+  "$ROOT/core/cheats/src/main/kotlin/app/retra/core/cheats/RetroArchCheats.kt" \
   "$ROOT/core/download/src/main/kotlin/app/retra/core/download/CatalogDownloadPolicy.kt" \
   "$ROOT/core/catalog/src/main/kotlin/app/retra/core/catalog/CatalogManifestJson.kt" \
   "$ROOT/core/achievements/src/main/kotlin/app/retra/core/achievements/Achievements.kt" \

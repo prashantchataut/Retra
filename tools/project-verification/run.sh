@@ -59,6 +59,41 @@ for migration_token in [
     if migration_token not in app_module:
         raise SystemExit(f"Database patch provenance migration is incomplete: {migration_token}")
 
+for migration_token in ["MIGRATION_5_6", "sha1", "canonicalTitle", "metadataSource", "index_games_sha1"]:
+    if migration_token not in app_module:
+        raise SystemExit(f"Database v6 metadata migration is incomplete: {migration_token}")
+if "version = 6" not in (root / "app/src/main/kotlin/app/retra/emulator/data/RetraDatabase.kt").read_text():
+    raise SystemExit("Room database version 6 is not active")
+
+v2_capabilities = {
+    "core/rom/src/main/kotlin/app/retra/core/rom/Sha1.kt": ["MessageDigest", "SHA-1"],
+    "core/rom/src/main/kotlin/app/retra/core/rom/LibretroDat.kt": ["LibretroDatParser", "canonicalTitle", "match"],
+    "core/cheats/src/main/kotlin/app/retra/core/cheats/RetroArchCheats.kt": ["RetroArchCheatParser", "mapNotNull", "no supported concrete codes"],
+    "app/src/main/kotlin/app/retra/emulator/data/HomebrewHubRepository.kt": ["HomebrewHubRepository", "directInstallEligible", "HttpsURLConnection"],
+    "app/src/main/kotlin/app/retra/emulator/data/LibretroMetadataRepository.kt": ["LibretroMetadataRepository", "applyCanonicalMetadata", "HttpsURLConnection"],
+    "app/src/main/kotlin/app/retra/emulator/data/LibretroCheatRepository.kt": ["LibretroCheatRepository", "RetroArchCheatParser", "HttpsURLConnection"],
+}
+for relative, tokens in v2_capabilities.items():
+    source = (root / relative).read_text()
+    for token in tokens:
+        if token not in source:
+            raise SystemExit(f"Retra v2 capability missing from {relative}: {token}")
+
+onboarding = (root / "app/src/main/kotlin/app/retra/emulator/OnboardingUi.kt").read_text()
+for token in ["ONBOARDING_STEPS = 4", "VerifiedSourcesStep", "TRUST THE\\nSOURCE.", "No commercial ROM storefront"]:
+    if token not in onboarding:
+        raise SystemExit(f"Retra v2 onboarding capability missing: {token}")
+experience = (root / "app/src/main/kotlin/app/retra/emulator/RetraFinalExperienceUi.kt").read_text()
+for token in ["Prashant Chataut", "Library health", "Commercial ROM catalog", "Sync official checksum metadata"]:
+    if token not in experience:
+        raise SystemExit(f"Retra v2 settings/profile capability missing: {token}")
+details = (root / "app/src/main/kotlin/app/retra/emulator/RetraUi.kt").read_text()
+for token in ["Install matching community cheats", "Import a RetroArch .cht file", "canonicalTitle"]:
+    if token not in details:
+        raise SystemExit(f"Retra v2 game details capability missing: {token}")
+if (root / "app/retra-sideload.jks").exists() or "storePassword" in (root / "app/build.gradle.kts").read_text():
+    raise SystemExit("A reusable app signing key or password must not be committed")
+
 patch_engine = (root / "core/patching/src/main/kotlin/app/retra/core/patching/PatchEngine.kt").read_text()
 for signature in ["PATCH", "UPS1", "BPS1", "validatePatchCrc", "MAX_OUTPUT_SIZE_BYTES"]:
     if signature not in patch_engine:
@@ -69,13 +104,26 @@ for token in ["RETRA-CODES-1", "MAX_PACK_SIZE_BYTES", "gameSha256", "CheatConfli
     if token not in codes:
         raise SystemExit(f"Retra Codes capability missing: {token}")
 
+
+cheat_catalog = (root / "core/cheats/src/main/kotlin/app/retra/core/cheats/RetraCheatCatalog.kt").read_text()
+for token in ["RETRA-CHEAT-INDEX-1", "MAX_CATALOG_BYTES", "RetraCodesDownloadPolicy", "distributionPermission"]:
+    if token not in cheat_catalog:
+        raise SystemExit(f"Trusted cheat-index capability missing: {token}")
+cheat_catalog_repository = (root / "app/src/main/kotlin/app/retra/emulator/data/CheatCatalogRepository.kt").read_text()
+for token in ["writeAtomically", "RetraCheatCatalogParser.parse", "compatibleEntries"]:
+    if token not in cheat_catalog_repository:
+        raise SystemExit(f"Cheat-index persistence capability missing: {token}")
+for final_ui in ["RetraFinalExperienceUi.kt", "RetraFinalDiscoverUi.kt"]:
+    if not (root / "app/src/main/kotlin/app/retra/emulator" / final_ui).is_file():
+        raise SystemExit(f"Final Retra UI surface is missing: {final_ui}")
+
 download_policy = (root / "core/download/src/main/kotlin/app/retra/core/download/CatalogDownloadPolicy.kt").read_text()
 for token in ["https", "MAX_DOWNLOAD_BYTES", "MAX_REDIRECTS", "validateRedirect", "validateResponse", "validateCompletedSize"]:
     if token not in download_policy:
         raise SystemExit(f"Secure catalog-download capability missing: {token}")
 
 download_repository = (root / "app/src/main/kotlin/app/retra/emulator/data/CatalogDownloadRepository.kt").read_text()
-for token in ["HttpsURLConnection", "instanceFollowRedirects = false", "Accept-Encoding", "fd.sync()", "moveAtomically"]:
+for token in ["HttpsURLConnection", "instanceFollowRedirects = false", "Accept-Encoding", "fd.sync()", "sha256(temporary)", "importVerifiedCatalogFile"]:
     if token not in download_repository:
         raise SystemExit(f"Catalog download executor is incomplete: {token}")
 
@@ -131,7 +179,7 @@ for token in ["NotificationChannel", "CHANNEL_ACHIEVEMENTS", "CHANNEL_DOWNLOADS"
     if token not in notifications:
         raise SystemExit(f"Notification capability missing: {token}")
 glass = (root / "app/src/main/kotlin/app/retra/emulator/GlassUi.kt").read_text()
-for token in ["RetraBackdrop", "GlassPanel", "LocalRetraSettings", "RetraAnimatedContent", "reduceTransparency", "BlurredEdgeTreatment.Unbounded"]:
+for token in ["RetraBackdrop", "GlassPanel", "LocalRetraSettings", "RetraAnimatedContent", "reduceTransparency", "Modifier.blur", "glassIntensity"]:
     if token not in glass:
         raise SystemExit(f"Premium glass design capability missing: {token}")
 
@@ -144,8 +192,8 @@ for skill in skills:
 
 
 branding = (root / "branding/retra-logo.svg")
-if not branding.is_file() or "abstract R" not in branding.read_text():
-    raise SystemExit("Retra brand source is missing or undocumented")
+if not branding.is_file() or "Portal and Save Core" not in branding.read_text():
+    raise SystemExit("Retra Portal / Save Core brand source is missing or undocumented")
 for asset in [
     "app/src/main/res/drawable-nodpi/retra_logo.png",
     "app/src/main/res/drawable/ic_retra_foreground.xml",
@@ -208,7 +256,7 @@ for token in ["retro_load_game", "retro_serialize", "retro_get_memory_data", "RT
     if token not in mgba_adapter:
         raise SystemExit(f"mGBA/libretro adapter capability missing: {token}")
 
-print("PASS project structure, TOML, XML, public Compose APIs, glass UI, feedback, notifications, migrations, patching, codes, catalogs, achievements, social, multiplayer, requested skill snapshots, DI, and emulation checks")
+print("PASS project structure, TOML, XML, public Compose APIs, final glass UI, feedback, notifications, migrations, patching, codes, trusted cheat indexes, catalogs, achievements, social, multiplayer, requested skill snapshots, DI, and emulation checks")
 PY
 
 for script in "$ROOT"/scripts/*.sh "$ROOT"/tools/*/run.sh; do

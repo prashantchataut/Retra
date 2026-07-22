@@ -1,6 +1,10 @@
 PASS: valid GBA header parsing
 PASS: invalid fixed byte rejection
 PASS: SHA-256 known vector
+PASS: SHA-1 known vector
+PASS: Libretro DAT exact checksum match
+PASS: RetroArch cheat import is converted and ROM-bound
+PASS: RetroArch import skips placeholder cheats but keeps concrete codes
 PASS: case-insensitive duplicate detection
 PASS: authorized HTTPS catalog validation
 PASS: unsafe HTTP catalog rejection
@@ -20,6 +24,9 @@ PASS: Retra Codes declarative pack parsing
 PASS: Retra Codes exact ROM matching
 PASS: Retra Codes raw-write conflict detection
 PASS: Retra Codes rejects executable text
+PASS: Retra cheat index parsing and exact match
+PASS: Retra cheat index rejects insecure pack URL
+PASS: Retra cheat index rejects duplicate fields
 PASS: catalog download HTTPS and response policy
 PASS: catalog download rejects cross-host redirects
 PASS: catalog download rejects metadata length mismatch
@@ -34,4 +41,4 @@ PASS: social friend code and privacy-safe share
 PASS: multiplayer compatibility exact identity
 PASS: multiplayer packet CRC and ordered buffer
 PASS: multiplayer LAN transport loopback framing
-RESULT: 36 passed, 0 failed
+RESULT: 43 passed, 0 failed

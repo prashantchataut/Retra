@@ -5,7 +5,7 @@
         <item name="android:windowLightNavigationBar">false</item>
         <item name="android:windowActionModeOverlay">true</item>
         <item name="android:fontFamily">sans</item>
-        <item name="android:colorAccent">#5B54E8</item>
-        <item name="android:windowBackground">#0B0C10</item>
+        <item name="android:colorAccent">@color/retra_accent</item>
+        <item name="android:windowBackground">@color/retra_splash_background</item>
     </style>
 </resources>

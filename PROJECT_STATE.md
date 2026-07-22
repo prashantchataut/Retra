@@ -2,44 +2,38 @@
 
 ## Current milestone
 
-**Retra 0.7.1 — premium UI rebuild, honest gameplay packaging, and legal discovery handoff.**
+**Retra 2.0.0 — provenance-first personal GBA archive.**
 
-## Stable foundations
+Developer: **Prashant Chataut**
 
-- modular Kotlin/Compose architecture;
-- platform-neutral ROM, catalog, patch, cheat, achievement, social, multiplayer, save, and rewind systems;
-- JNI reference engine and mGBA/libretro frontend with CI-required ABI packaging;
-- Room/DataStore persistence with explicit migrations through schema 5;
-- Material Home / Library / Discover / Settings shell;
-- offline-first Google-optional identity;
-- restrained graphite/indigo brand system, PNG negative-space mark, and quieter sound/haptic cues.
+## Delivered in this milestone
 
-## Exact continuation point
+- Real Homebrew Hub search and eligible GBA install flow.
+- Libretro No-Intro metadata synchronization using exact ROM checksums.
+- One-click matching Libretro cheat lookup plus local RetroArch `.cht` import.
+- Strict conversion to ROM-bound Retra Codes, including safe skipping of placeholder definitions.
+- SHA-1 added to SHA-256/CRC-32 identity; Room schema advanced to 6.
+- Serialized, atomic, content-addressed imports with duplicate and failed-persistence handling.
+- Four-stage onboarding and rebuilt separate Profile and Settings experiences.
+- About page naming Prashant Chataut and crediting external open data sources.
+- Reusable signing key and credentials removed from the source tree.
 
-1. Push/commit 0.7.1 locally when ready, then confirm GitHub Actions `Build and release Retra` stages mGBA for all three ABIs and refuses to publish without them.
-2. Install either the CI APK or the local debug APK at `app/build/outputs/apk/debug/app-debug.apk` on arm64 hardware after uninstalling any differently signed Retra build.
-3. Verify:
-   - a GBA ROM (including large ROM hacks ≤64 MiB) plays with the packaged mGBA core;
-   - `.nds` HeartGold/SoulSilver imports are rejected with a clear message;
-   - Discover creator links open in the browser and downloaded `.gba` files import via Open with Retra;
-   - library padding/navigation feel correct on compact phone and ≥600dp tablet.
-4. Capture screenshots across dark/light and reduced-motion settings.
-5. Replace debug signing with a private upload key only if/when preparing a store build.
+## Security and product invariants
 
-## Local verification already done (2026-07-19)
+- No commercial ROM downloads, pirate indexes, proprietary BIOS files, or pre-patched copyrighted games.
+- Local gameplay never requires identity or network access.
+- Metadata identity comes from checksums, not filenames or artwork.
+- Cheats are data-only, exact-ROM-bound, reversible, and visibly sourced.
+- Remote content uses HTTPS, strict origin/redirect rules, bounded reads, and atomic persistence.
+- Emulator native code is packaged at build time, never downloaded at runtime.
 
-- Microsoft JDK 17.0.10 hotspot configured for Gradle
-- `:app:assembleDebug` BUILD SUCCESSFUL (~25 MB APK)
-- `:core:download:test`, `:core:patching:test`, `:core:catalog:test` BUILD SUCCESSFUL
+## Verification completed
 
-## Non-negotiable invariants
+- Platform-neutral core suite: **43 passed, 0 failed**.
+- Native reference runtime host suite: passed.
+- mGBA/libretro mock-core host suite: passed.
+- Project/static, XML, shell, JNI, and libretro C++20 checks: passed.
 
-- save integrity outranks visual effects;
-- surfaces stay opaque and high-contrast; glass is no longer a default language;
-- reduced transparency and reduced motion are respected;
-- frequent haptics stay subtle and can be disabled;
-- notification permission is requested in context and notifications remain optional;
-- local gameplay never requires Google or network access;
-- no commercial ROMs, proprietary BIOS, Heart & Soul binaries, or unreviewed native binaries are bundled;
-- library deletion removes only Retra-managed copies;
-- an APK without packaged mGBA must not claim gameplay readiness.
+## Unverified in this environment
+
+Android Gradle compilation, Room schema export, APK assembly, Android tests, installation, physical-device UI, controller behavior, and packaged mGBA gameplay. See `BUILD_REPORT.md`.

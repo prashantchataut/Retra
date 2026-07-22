@@ -1,5 +1,61 @@
 # Changelog
 
+## 2.0.0 — 2026-07-22
+
+### Real library and identity
+- Added live Homebrew Hub search, pagination, source pages, and eligible one-tap GBA homebrew installs.
+- Added SHA-1 ROM identity, Libretro No-Intro DAT parsing, exact canonical metadata matching, and Room schema 6 with a non-destructive 5→6 migration.
+- Added clear Nintendo DS rejection for HeartGold, SoulSilver, Platinum, and other `.nds` files while the app remains GBA-only.
+
+### Cheats
+- Added matching Libretro `.cht` lookup and local RetroArch `.cht` import.
+- Convert community files into restricted Retra Codes bound to the exact ROM SHA-256, game code, and revision.
+- Skip placeholder definitions such as `????` while preserving supported concrete cheats.
+
+### Reliability and product hardening
+- Serialized ROM imports, retained SHA-256 uniqueness, and cleaned up newly created managed files when database persistence fails.
+- Preserved established user title edits during later canonical metadata refreshes.
+- Removed the committed sideload signing key and credentials; release signing is now a private CI/store responsibility.
+- Expanded the platform-neutral suite to 43 passing checks and expanded static gates for v2 capabilities.
+
+### Experience
+- Expanded onboarding to four stages, including source provenance and the commercial-ROM boundary.
+- Rebuilt separate Profile and Settings experiences; About identifies **Prashant Chataut** as developer.
+- Added Library Health and Content Sources sections.
+
+### Honest release state
+- Commercial Pokémon ROMs are not bundled or downloaded. FireRed/Emerald use the lawful-backup → exact metadata → matching cheat flow.
+- Android Gradle compilation could not start in this sandbox because the Gradle distribution host could not be resolved.
+
+## 0.8.0 — 2026-07-21
+
+### Final product redesign
+- Rebuilt the visible app from scratch around Home, Library, Discover, and You, with contextual Settings rather than preserving the previous layout.
+- Added the Archive Glass Material 3 system with mineral black/navy foundations, ice/aqua/coral/mint accents, static ambient blur, and opaque accessibility fallbacks.
+- Removed purple/violet and visible multicolor-gradient direction from the active theme and launcher resources.
+- Rebuilt onboarding, Home, Library, profile, settings, game details, and cheat surfaces with adaptive navigation and two-pane settings.
+- Retained system typography instead of bundling unlicensed font binaries.
+
+### Brand
+- Replaced the previous letter/negative-space concepts with the supplied Portal / Save Core mark.
+- Regenerated SVG, PNG, launcher, monochrome, splash, and Compose assets.
+
+### Legal library and patches
+- Added official Heart & Soul project releases as patch-only discovery entries requiring a user-supplied compatible base ROM.
+- Added Minicraft GBA official open-source release discovery and corrected Butano licensing metadata.
+- Kept direct downloads disabled unless an official release exposes a usable SHA-256 digest.
+- Explicitly excluded Poke Harbor and other unauthorized commercial ROM indexes.
+
+### Trusted cheat indexes
+- Added strict `RETRA-CHEAT-INDEX-1` / `.rci` parsing with bounded UTF-8 input, safe identifiers, duplicate/unknown-field rejection, HTTPS enforcement, exact ROM matching, license/permission metadata, and SHA-256-pinned `.rcc` packs.
+- Added atomic index persistence, game-specific compatible-pack discovery, and one-tap verified pack installation from game details.
+- Expanded the platform-neutral suite to 39 passing checks.
+
+### Verification and release state
+- Bumped the app to versionCode 10 / versionName 0.8.0.
+- Updated static verification for Archive Glass, Portal / Save Core branding, trusted cheat indexes, and the final experience file.
+- Android Gradle compilation was not run in this sandbox because the Gradle distribution was unavailable and DNS access to `services.gradle.org` failed; host/static suites are reported separately.
+
 ## 0.7.1 — 2026-07-19
 
 ### Premium UI phase

@@ -11,6 +11,9 @@ interface GameDao {
     @Query("SELECT * FROM games ORDER BY COALESCE(lastPlayedAtEpochMillis, importedAtEpochMillis) DESC")
     fun observeAll(): Flow<List<GameEntity>>
 
+    @Query("SELECT * FROM games")
+    suspend fun getAll(): List<GameEntity>
+
     @Query("SELECT * FROM games WHERE id = :id LIMIT 1")
     suspend fun getById(id: Long): GameEntity?
 
@@ -35,14 +38,17 @@ interface GameDao {
     @Query("UPDATE games SET title = :title, notes = :notes WHERE id = :id")
     suspend fun updateMetadata(id: Long, title: String, notes: String?)
 
+    @Query("UPDATE games SET title = CASE WHEN canonicalTitle IS NULL OR title = canonicalTitle THEN :title ELSE title END, canonicalTitle = :canonicalTitle, metadataSource = :metadataSource WHERE id = :id")
+    suspend fun applyCanonicalMetadata(id: Long, title: String, canonicalTitle: String, metadataSource: String)
+
     @Query("UPDATE games SET collectionsCsv = :collectionsCsv, tagsCsv = :tagsCsv WHERE id = :id")
     suspend fun updateOrganization(id: Long, collectionsCsv: String, tagsCsv: String)
 
     @Query("UPDATE games SET favorite = :favorite WHERE id = :id")
     suspend fun setFavorite(id: Long, favorite: Boolean)
 
-    @Query("UPDATE games SET uri = :uri, managedPath = :managedPath, crc32 = :crc32 WHERE id = :id")
-    suspend fun updateManagedStorage(id: Long, uri: String, managedPath: String?, crc32: Long?)
+    @Query("UPDATE games SET uri = :uri, managedPath = :managedPath, crc32 = :crc32, sha1 = :sha1 WHERE id = :id")
+    suspend fun updateManagedStorage(id: Long, uri: String, managedPath: String?, crc32: Long?, sha1: String?)
 
     @Query("DELETE FROM games WHERE id = :id")
     suspend fun deleteById(id: Long)

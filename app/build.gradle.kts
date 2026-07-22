@@ -20,21 +20,12 @@ android {
         }
     }
 
-    signingConfigs {
-        create("sideload") {
-            storeFile = file("retra-sideload.jks")
-            storePassword = "retra-sideload"
-            keyAlias = "retra"
-            keyPassword = "retra-sideload"
-        }
-    }
-
     defaultConfig {
         applicationId = "app.retra.emulator"
         minSdk = 26
         targetSdk = 37
-        versionCode = 9
-        versionName = "0.7.1"
+        versionCode = 20
+        versionName = "2.0.0"
         buildConfigField("String", "RETRA_GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -43,9 +34,8 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            // FOSS sideload builds: one stable test key across CI and local release APKs.
-            // Replace with a private upload key before Play Store distribution.
-            signingConfig = signingConfigs.getByName("sideload")
+            // Release signing is intentionally supplied by a private CI/store configuration.
+            // Never commit a reusable signing key or credentials to the source archive.
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

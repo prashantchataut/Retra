@@ -1,16 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 520">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#7567ff"/><stop offset="0.55" stop-color="#b38bff"/><stop offset="1" stop-color="#45d9ff"/>
-    </linearGradient>
-  </defs>
-  <rect width="1600" height="520" rx="80" fill="#07080d"/>
-  <g transform="translate(80,40)">
-    <rect width="440" height="440" rx="120" fill="#101424"/>
-    <path d="M95 88h142c78 0 126 40 126 101 0 43-23 75-67 91l79 91H274l-72-84h-25v84H95V88zm82 68v68h56c31 0 48-12 48-34s-17-34-48-34h-56z" fill="url(#g)" fill-rule="evenodd"/>
-    <path d="M300 68l66 12-43 50z" fill="#45d9ff"/>
-    <circle cx="362" cy="140" r="12" fill="#ffc766"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 520" role="img" aria-labelledby="title desc">
+  <title id="title">Retra Portal and Save Core wordmark</title>
+  <desc id="desc">The Retra Portal and Save Core mark beside the Retra name and relive the games that made you tagline.</desc>
+  <rect width="1600" height="520" rx="80" fill="#050A0D"/>
+  <g transform="translate(76 62) scale(.39)">
+    <path d="M760 320V620C760 762 660 840 500 840H370C230 840 150 740 150 590V350C150 218 250 140 390 140H580"
+          fill="none" stroke="#FFFFFF" stroke-width="150" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="290" y="375" width="365" height="315" rx="78" fill="#FFFFFF"/>
+    <rect x="365" y="505" width="58" height="64" rx="18" fill="#050A0D"/>
+    <rect x="515" y="505" width="58" height="64" rx="18" fill="#050A0D"/>
+    <rect x="610" y="215" width="106" height="106" rx="18" fill="#FFFFFF"/>
+    <rect x="705" y="120" width="106" height="106" rx="18" fill="#FFFFFF"/>
+    <rect x="800" y="25" width="106" height="106" rx="18" fill="#FF806F"/>
   </g>
-  <text x="600" y="285" fill="#f5f6ff" font-size="220" font-family="Manrope, Inter, Arial, sans-serif" font-weight="750" letter-spacing="-8">Retra</text>
-  <text x="610" y="370" fill="#9da4c8" font-size="44" font-family="Inter, Arial, sans-serif" letter-spacing="2">RELIVE THE GAMES THAT MADE YOU</text>
+  <text x="565" y="286" fill="#F5FAFC" font-size="218" font-family="sans-serif" font-weight="700" letter-spacing="-8">Retra</text>
+  <text x="578" y="372" fill="#B7C8D1" font-size="42" font-family="sans-serif" font-weight="500" letter-spacing="3">RELIVE THE GAMES THAT MADE YOU</text>
 </svg>

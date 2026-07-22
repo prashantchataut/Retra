@@ -89,6 +89,9 @@ data class GameRecord(
     val notes: String? = null,
     val coverArtPath: String? = null,
     val crc32: Long? = null,
+    val sha1: String? = null,
+    val canonicalTitle: String? = null,
+    val metadataSource: String? = null,
     val managedPath: String? = null,
     val collections: List<String> = emptyList(),
     val tags: List<String> = emptyList()

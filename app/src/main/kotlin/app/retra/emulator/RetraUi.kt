@@ -59,6 +59,7 @@ import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
@@ -112,7 +113,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -127,6 +127,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.retra.core.emulation.SaveKind
 import app.retra.core.emulation.VaultSaveRecord
+import app.retra.core.cheats.CheatCatalogEntry
 import app.retra.core.cheats.CheatFormat
 import app.retra.core.model.AccentPalette
 import app.retra.core.model.AppSettings
@@ -144,11 +145,8 @@ import app.retra.emulator.data.CatalogDownloadProgress
 import app.retra.emulator.data.StoredCheatPack
 import app.retra.emulator.data.StoredCatalog
 import app.retra.emulator.ui.theme.AdventureGold
-import app.retra.emulator.ui.theme.Graphite
-import app.retra.emulator.ui.theme.RetraIndigo
 import app.retra.emulator.ui.theme.RetraTheme
 import app.retra.emulator.ui.theme.SaveMint
-import app.retra.emulator.ui.theme.SoftViolet
 import app.retra.emulator.data.PendingPatch
 import java.text.DateFormat
 import java.util.Date
@@ -158,7 +156,7 @@ private enum class Destination(val label: String, val icon: ImageVector) {
     HOME("Home", Icons.Default.Home),
     LIBRARY("Library", Icons.Default.LibraryBooks),
     DISCOVER("Discover", Icons.Default.Search),
-    SETTINGS("Settings", Icons.Default.Settings)
+    PROFILE("You", Icons.Default.Person)
 }
 
 private enum class SettingsCategory(val label: String, val icon: ImageVector) {
@@ -200,6 +198,7 @@ fun RetraRoot(viewModel: RetraViewModel = viewModel()) {
     val activeGame by viewModel.activeGame.collectAsStateWithLifecycle()
     val vaultRecords by viewModel.vaultRecords.collectAsStateWithLifecycle()
     val cheatPacksByGame by viewModel.cheatPacks.collectAsStateWithLifecycle()
+    val cheatCatalogs by viewModel.cheatCatalogs.collectAsStateWithLifecycle()
     val catalogDownloads by viewModel.catalogDownloads.collectAsStateWithLifecycle()
     val catalogSources by viewModel.catalogSources.collectAsStateWithLifecycle()
     val account by viewModel.account.collectAsStateWithLifecycle()
@@ -238,10 +237,16 @@ fun RetraRoot(viewModel: RetraViewModel = viewModel()) {
                 coreStatus = viewModel.coreStatus,
                 gameplayAvailable = viewModel.gameplayAvailable,
                 cheatPacks = cheatPacksByGame[selectedGame!!.sha256.lowercase()].orEmpty(),
+                cheatCatalogEntries = remember(selectedGame, cheatCatalogs) {
+                    viewModel.compatibleCheatCatalogEntries(selectedGame!!)
+                },
                 onBack = { viewModel.selectGame(null) },
                 onPlay = { viewModel.launchGame(selectedGame!!) },
                 onApplyPatch = { uri -> viewModel.applyPatch(selectedGame!!, uri) },
                 onImportCheatPack = { uri -> viewModel.importCheatPack(selectedGame!!, uri) },
+                onImportRetroArchCheats = { uri -> viewModel.importRetroArchCheats(selectedGame!!, uri) },
+                onInstallLibretroCheats = { viewModel.installLibretroCheats(selectedGame!!) },
+                onImportCheatCatalog = viewModel::importCheatCatalog,
                 onCreateCustomCheat = { name, format, codes -> viewModel.createCustomCheat(selectedGame!!, name, format, codes) },
                 onDownloadCheatPack = { url, hash -> viewModel.downloadCheatPack(selectedGame!!, url, hash) },
                 onDeleteCheatPack = viewModel::deleteCheatPack,
@@ -344,10 +349,12 @@ private fun MainShell(
         StartupDestination.CONTINUE_PLAYING -> if (games.isEmpty()) Destination.LIBRARY else Destination.HOME
     }
     var destinationName by rememberSaveable { mutableStateOf(initialDestination.name) }
+    var settingsOpen by rememberSaveable { mutableStateOf(false) }
     val destination = runCatching { Destination.valueOf(destinationName) }.getOrElse {
         destinationName = Destination.HOME.name
         Destination.HOME
     }
+    BackHandler(enabled = settingsOpen) { settingsOpen = false }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val useRail = maxWidth >= 600.dp
@@ -356,15 +363,19 @@ private fun MainShell(
                 PremiumNavigationRail(
                     settings = settings,
                     selected = destination,
+                    settingsSelected = settingsOpen,
                     onSelected = { item ->
                         viewModel.emitFeedback(FeedbackCue.TAP)
+                        settingsOpen = false
                         destinationName = item.name
-                    }
+                    },
+                    onSettings = { settingsOpen = true }
                 )
                 MainScaffold(
                     viewModel = viewModel,
                     modifier = Modifier.weight(1f),
                     destination = destination,
+                    settingsOpen = settingsOpen,
                     showBottomNavigation = false,
                     games = games,
                     settings = settings,
@@ -376,7 +387,12 @@ private fun MainShell(
                     coreStatus = coreStatus,
                     vaultRecords = vaultRecords,
                     snackbarHostState = snackbarHostState,
-                    onDestination = { destinationName = it.name },
+                    onDestination = {
+                        settingsOpen = false
+                        destinationName = it.name
+                    },
+                    onOpenSettings = { settingsOpen = true },
+                    onCloseSettings = { settingsOpen = false },
                     onImportFile = onImportFile,
                     onImportFolder = onImportFolder,
                     onImportCatalog = onImportCatalog,
@@ -398,6 +414,7 @@ private fun MainShell(
                 viewModel = viewModel,
                 modifier = Modifier.fillMaxSize(),
                 destination = destination,
+                settingsOpen = settingsOpen,
                 showBottomNavigation = true,
                 games = games,
                 settings = settings,
@@ -409,7 +426,12 @@ private fun MainShell(
                 coreStatus = coreStatus,
                 vaultRecords = vaultRecords,
                 snackbarHostState = snackbarHostState,
-                onDestination = { destinationName = it.name },
+                onDestination = {
+                    settingsOpen = false
+                    destinationName = it.name
+                },
+                onOpenSettings = { settingsOpen = true },
+                onCloseSettings = { settingsOpen = false },
                 onImportFile = onImportFile,
                 onImportFolder = onImportFolder,
                 onImportCatalog = onImportCatalog,
@@ -435,6 +457,7 @@ private fun MainScaffold(
     viewModel: RetraViewModel,
     modifier: Modifier,
     destination: Destination,
+    settingsOpen: Boolean,
     showBottomNavigation: Boolean,
     games: List<GameRecord>,
     settings: AppSettings,
@@ -447,6 +470,8 @@ private fun MainScaffold(
     vaultRecords: List<VaultSaveRecord>,
     snackbarHostState: SnackbarHostState,
     onDestination: (Destination) -> Unit,
+    onOpenSettings: () -> Unit,
+    onCloseSettings: () -> Unit,
     onImportFile: () -> Unit,
     onImportFolder: () -> Unit,
     onImportCatalog: () -> Unit,
@@ -468,12 +493,15 @@ private fun MainScaffold(
         topBar = {
             PremiumTopBar(
                 settings = settings,
-                title = destination.label,
-                coreAvailable = coreAvailable
+                title = if (settingsOpen) "Settings" else destination.label,
+                coreAvailable = coreAvailable,
+                showBack = settingsOpen,
+                onBack = onCloseSettings,
+                onSettings = onOpenSettings
             )
         },
         bottomBar = {
-            if (showBottomNavigation) {
+            if (showBottomNavigation && !settingsOpen) {
                 PremiumBottomBar(
                     settings = settings,
                     selected = destination,
@@ -494,7 +522,7 @@ private fun MainScaffold(
             contentAlignment = Alignment.TopCenter
         ) {
             RetraAnimatedContent(
-                targetState = destination,
+                targetState = if (settingsOpen) "SETTINGS" else destination.name,
                 reduceMotion = settings.reduceMotion,
                 label = "destination",
                 modifier = Modifier
@@ -502,9 +530,21 @@ private fun MainScaffold(
                     .widthIn(max = 1200.dp)
             ) { target ->
                 when (target) {
-                    Destination.HOME -> HomeScreen(games, settings, coreAvailable, coreStatus, onImportFile, onGameSelected)
-                    Destination.LIBRARY -> LibraryScreen(games, settings.libraryLayout, settings.contentDensity, onImportFile, onImportFolder, onGameSelected)
-                    Destination.DISCOVER -> DiscoverScreen(
+                    "SETTINGS" -> RetraSettingsScreenV3(
+                        settings,
+                        games,
+                        onThemeChanged,
+                        onLayoutChanged,
+                        onDynamicColorChanged,
+                        onReduceMotionChanged,
+                        onReduceTransparencyChanged,
+                        onFastForwardChanged,
+                        onPerformanceChanged,
+                        viewModel
+                    )
+                    Destination.HOME.name -> RetraHomeScreenV3(games, settings, coreAvailable, coreStatus, onImportFile, onGameSelected)
+                    Destination.LIBRARY.name -> RetraLibraryScreenV3(games, settings.libraryLayout, settings.contentDensity, onImportFile, onImportFolder, onGameSelected)
+                    Destination.DISCOVER.name -> RetraDiscoverScreenV3(
                         catalogSources,
                         catalogValidation,
                         catalogDownloads,
@@ -515,20 +555,8 @@ private fun MainScaffold(
                         settings.showOnlineRecommendations,
                         viewModel
                     )
-                    Destination.SETTINGS -> SettingsScreen(
-                        settings,
-                        games,
-                        vaultRecords,
-                        onThemeChanged,
-                        onLayoutChanged,
-                        onDynamicColorChanged,
-                        onReduceMotionChanged,
-                        onReduceTransparencyChanged,
-                        onFastForwardChanged,
-                        onPerformanceChanged,
-                        onDeleteVaultRecord,
-                        viewModel
-                    )
+                    Destination.PROFILE.name -> RetraProfileScreenV3(viewModel, games, onOpenSettings)
+                    else -> RetraHomeScreenV3(games, settings, coreAvailable, coreStatus, onImportFile, onGameSelected)
                 }
             }
         }
@@ -540,24 +568,58 @@ private fun MainScaffold(
 private fun PremiumTopBar(
     settings: AppSettings,
     title: String,
-    coreAvailable: Boolean
+    coreAvailable: Boolean,
+    showBack: Boolean,
+    onBack: () -> Unit,
+    onSettings: () -> Unit
 ) {
-    TopAppBar(
-        title = {
-            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                Text(title, style = MaterialTheme.typography.titleLarge)
-                if (!coreAvailable) {
-                    Text(
-                        "Gameplay core unavailable",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
+    CenterAlignedTopAppBar(
+        colors = androidx.compose.material3.TopAppBarDefaults.centerAlignedTopAppBarColors(
+            containerColor = Color.Transparent,
+            scrolledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = if (settings.reduceTransparency) 1f else 0.86f)
+        ),
+        navigationIcon = {
+            if (showBack) {
+                IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
+            } else {
+                Box(Modifier.padding(start = 12.dp)) { RetraLogoTile(size = 38.dp) }
             }
         },
-        navigationIcon = {
-            Box(Modifier.padding(start = 8.dp, end = 4.dp)) {
-                RetraLogoTile(size = 36.dp)
+        title = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text("Retra", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black)
+                Text(title, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        },
+        actions = {
+            if (!coreAvailable) {
+                Surface(
+                    modifier = Modifier.padding(end = 12.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.84f)
+                ) {
+                    Icon(
+                        Icons.Default.CloudOff,
+                        contentDescription = "Gameplay core unavailable",
+                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(9.dp).size(18.dp)
+                    )
+                }
+            } else {
+                Surface(
+                    modifier = Modifier.padding(end = 12.dp),
+                    shape = CircleShape,
+                    color = SaveMint.copy(alpha = 0.14f)
+                ) {
+                    Box(Modifier.size(36.dp), contentAlignment = Alignment.Center) {
+                        Box(Modifier.size(8.dp).background(SaveMint, CircleShape))
+                    }
+                }
+            }
+            if (!showBack) {
+                IconButton(onClick = onSettings) {
+                    Icon(Icons.Default.Settings, contentDescription = "Open settings")
+                }
             }
         }
     )
@@ -569,14 +631,22 @@ private fun PremiumBottomBar(
     selected: Destination,
     onSelected: (Destination) -> Unit
 ) {
-    NavigationBar(tonalElevation = 0.dp) {
-        Destination.entries.forEach { item ->
-            NavigationBarItem(
-                selected = selected == item,
-                onClick = { onSelected(item) },
-                icon = { Icon(item.icon, contentDescription = null) },
-                label = { Text(item.label, maxLines = 1) }
-            )
+    Surface(
+        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = if (settings.reduceTransparency) 1f else 0.82f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f)),
+        shadowElevation = if (settings.reduceTransparency) 0.dp else 12.dp
+    ) {
+        NavigationBar(containerColor = Color.Transparent, tonalElevation = 0.dp) {
+            Destination.entries.forEach { item ->
+                NavigationBarItem(
+                    selected = selected == item,
+                    onClick = { onSelected(item) },
+                    icon = { Icon(item.icon, contentDescription = null) },
+                    label = { Text(item.label, maxLines = 1, style = MaterialTheme.typography.labelSmall) }
+                )
+            }
         }
     }
 }
@@ -585,22 +655,35 @@ private fun PremiumBottomBar(
 private fun PremiumNavigationRail(
     settings: AppSettings,
     selected: Destination,
-    onSelected: (Destination) -> Unit
+    settingsSelected: Boolean,
+    onSelected: (Destination) -> Unit,
+    onSettings: () -> Unit
 ) {
-    NavigationRail(
-        header = {
-            RetraLogoTile(
-                modifier = Modifier.padding(vertical = 12.dp),
-                size = 44.dp
-            )
-        }
+    Surface(
+        modifier = Modifier.fillMaxHeight().padding(12.dp),
+        shape = RoundedCornerShape(30.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = if (settings.reduceTransparency) 1f else 0.84f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f)),
+        shadowElevation = if (settings.reduceTransparency) 0.dp else 10.dp
     ) {
-        Destination.entries.forEach { item ->
+        NavigationRail(
+            containerColor = Color.Transparent,
+            header = { RetraLogoTile(modifier = Modifier.padding(vertical = 14.dp), size = 48.dp) }
+        ) {
+            Destination.entries.forEach { item ->
+                NavigationRailItem(
+                    selected = selected == item,
+                    onClick = { onSelected(item) },
+                    icon = { Icon(item.icon, contentDescription = null) },
+                    label = { Text(item.label) }
+                )
+            }
+            Spacer(Modifier.weight(1f))
             NavigationRailItem(
-                selected = selected == item,
-                onClick = { onSelected(item) },
-                icon = { Icon(item.icon, contentDescription = null) },
-                label = { Text(item.label) }
+                selected = settingsSelected,
+                onClick = onSettings,
+                icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+                label = { Text("Settings") }
             )
         }
     }
@@ -1529,10 +1612,14 @@ private fun GameDetailsScreen(
     coreStatus: String,
     gameplayAvailable: Boolean,
     cheatPacks: List<StoredCheatPack>,
+    cheatCatalogEntries: List<CheatCatalogEntry>,
     onBack: () -> Unit,
     onPlay: () -> Unit,
     onApplyPatch: (Uri) -> Unit,
     onImportCheatPack: (Uri) -> Unit,
+    onImportRetroArchCheats: (Uri) -> Unit,
+    onInstallLibretroCheats: () -> Unit,
+    onImportCheatCatalog: (Uri) -> Unit,
     onCreateCustomCheat: (String, CheatFormat, String) -> Unit,
     onDownloadCheatPack: (String, String) -> Unit,
     onDeleteCheatPack: (StoredCheatPack) -> Unit,
@@ -1567,6 +1654,12 @@ private fun GameDetailsScreen(
     }
     val cheatPackPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri?.let(onImportCheatPack)
+    }
+    val retroArchCheatPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+        uri?.let(onImportRetroArchCheats)
+    }
+    val cheatCatalogPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+        uri?.let(onImportCheatCatalog)
     }
     val artworkPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri?.let(onImportCoverArt)
@@ -1709,6 +1802,12 @@ private fun GameDetailsScreen(
                         DetailRow("Size", formatBytes(game.sizeBytes))
                         Text("SHA-256", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(game.sha256, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodyMedium)
+                        game.sha1?.let {
+                            Text("SHA-1", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(it, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodyMedium)
+                        }
+                        game.canonicalTitle?.let { DetailRow("Canonical title", it) }
+                        game.metadataSource?.let { DetailRow("Metadata source", it) }
                         if (game.origin == "LOCAL_PATCH") {
                             HorizontalDivider()
                             Text("Patch provenance", style = MaterialTheme.typography.titleMedium)
@@ -1733,36 +1832,126 @@ private fun GameDetailsScreen(
                 }
             }
             item {
-                Card {
-                    Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                GlassPanel(
+                    modifier = Modifier.fillMaxWidth(),
+                    cornerRadius = 28.dp,
+                    contentPadding = PaddingValues(18.dp)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Code, null, tint = MaterialTheme.colorScheme.secondary)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Retra Codes", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                            Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.13f)) {
+                                Icon(Icons.Default.Code, null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(10.dp).size(22.dp))
+                            }
+                            Spacer(Modifier.width(10.dp))
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text("Cheats & modifiers", style = MaterialTheme.typography.titleLarge)
+                                Text("Exact-ROM matching, declarative data, reversible sessions", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                         }
                         Text(
-                            "Only declarative, ROM-hash-bound code packs are accepted. Retra never executes downloaded scripts.",
+                            "Retra accepts only ROM-hash-bound code packs. Downloaded packs cannot contain scripts or executable fields.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Button(
+                            onClick = onInstallLibretroCheats,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
+                        ) {
+                            Icon(Icons.Default.Download, null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Install matching community cheats")
+                        }
+                        Text(
+                            "Retra looks up the canonical game title in the Libretro Database, then converts the matching .cht file into a local pack bound to this ROM's exact SHA-256.",
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         OutlinedButton(
-                            onClick = { cheatPackPicker.launch(arrayOf("text/plain", "application/octet-stream", "*/*")) },
-                            modifier = Modifier.fillMaxWidth()
+                            onClick = { retroArchCheatPicker.launch(arrayOf("text/plain", "application/octet-stream", "*/*")) },
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
                         ) {
-                            Icon(Icons.Default.Add, null)
+                            Icon(Icons.Default.Code, null)
                             Spacer(Modifier.width(8.dp))
-                            Text("Import Retra Codes pack")
+                            Text("Import a RetroArch .cht file")
                         }
+
+                        if (cheatCatalogEntries.isNotEmpty()) {
+                            Text("Compatible one-tap packs", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                            cheatCatalogEntries.forEach { entry ->
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.66f),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                                ) {
+                                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                            Surface(shape = CircleShape, color = SaveMint.copy(alpha = 0.15f)) {
+                                                Icon(Icons.Default.VerifiedUser, null, tint = SaveMint, modifier = Modifier.padding(8.dp).size(18.dp))
+                                            }
+                                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                                Text(entry.title, style = MaterialTheme.typography.titleMedium)
+                                                Text("By ${entry.provider} · ${entry.license}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                                                Text(entry.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            }
+                                        }
+                                        Button(
+                                            onClick = { onDownloadCheatPack(entry.downloadUrl, entry.packSha256) },
+                                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                                        ) {
+                                            Icon(Icons.Default.Download, null)
+                                            Spacer(Modifier.width(8.dp))
+                                            Text("Verify and add pack")
+                                        }
+                                        Text(entry.distributionPermission, style = MaterialTheme.typography.labelSmall, color = SaveMint)
+                                    }
+                                }
+                            }
+                        } else {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(20.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f)
+                            ) {
+                                Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                                    Text("No trusted index match yet", style = MaterialTheme.typography.titleMedium)
+                                    Text(
+                                        "Install a Retra cheat index (.rci). Retra will show only packs matching this ROM's SHA-256, game code, and revision.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+
+                        FilledTonalButton(
+                            onClick = { cheatCatalogPicker.launch(arrayOf("text/plain", "application/octet-stream", "*/*")) },
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
+                        ) {
+                            Icon(Icons.Default.LibraryBooks, null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Install trusted cheat index")
+                        }
+
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            OutlinedButton(onClick = { customCheatDialog = true }, modifier = Modifier.weight(1f)) {
-                                Text("Create custom")
-                            }
-                            OutlinedButton(onClick = { onlinePackDialog = true }, modifier = Modifier.weight(1f)) {
-                                Text("Download pack")
-                            }
+                            OutlinedButton(
+                                onClick = { cheatPackPicker.launch(arrayOf("text/plain", "application/octet-stream", "*/*")) },
+                                modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                            ) { Text("Import pack") }
+                            OutlinedButton(
+                                onClick = { customCheatDialog = true },
+                                modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                            ) { Text("Create custom") }
                         }
+                        OutlinedButton(
+                            onClick = { onlinePackDialog = true },
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                        ) { Text("Advanced: checksum-pinned URL") }
+
                         if (cheatPacks.isEmpty()) {
                             Text("No compatible local code packs are stored for this exact ROM.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         } else {
+                            Text("Installed for this ROM", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                             cheatPacks.forEach { stored ->
                                 HorizontalDivider()
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -1781,7 +1970,7 @@ private fun GameDetailsScreen(
                             }
                         }
                         Text(
-                            if (gameplayAvailable) "Launch the game, open the session menu, and choose Retra Codes to activate a verified code. A protected pre-cheat state is created automatically."
+                            if (gameplayAvailable) "Launch the game and open Retra Codes from the session menu. Retra creates a protected pre-cheat state before activation."
                             else "Pack management works now; activation requires the gameplay core.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1981,17 +2170,6 @@ private fun StatusPill(text: String, icon: ImageVector? = null) {
 
 @Composable
 private fun SectionTitle(title: String) { Text(title, style = MaterialTheme.typography.titleLarge) }
-
-internal fun gameArtworkBrush(game: GameRecord): Brush {
-    val seed = game.sha256.take(8).toLongOrNull(16) ?: game.title.hashCode().toLong()
-    val palettes = listOf(
-        listOf(RetraIndigo.copy(alpha = 0.82f), SoftViolet.copy(alpha = 0.28f)),
-        listOf(RetraIndigo.copy(alpha = 0.58f), Graphite.copy(alpha = 0.55f)),
-        listOf(SaveMint.copy(alpha = 0.42f), RetraIndigo.copy(alpha = 0.28f)),
-        listOf(AdventureGold.copy(alpha = 0.40f), SoftViolet.copy(alpha = 0.22f))
-    )
-    return Brush.linearGradient(palettes[kotlin.math.abs(seed % palettes.size).toInt()])
-}
 
 private fun formatBytes(bytes: Long): String = when {
     bytes >= 1024L * 1024L -> "%.1f MiB".format(bytes / (1024.0 * 1024.0))

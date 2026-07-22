@@ -1,0 +1,20 @@
+RETRA-CHEAT-INDEX-1
+catalogId=example-homebrew-index
+name=Example Homebrew Cheat Index
+provider=Example Publisher
+sourcePageUrl=https://example.com/retra-cheats
+
+[pack]
+id=example-homebrew-accessibility
+title=Example Accessibility Pack
+description=Fictional sample entry for a legally distributed homebrew game.
+provider=Example Publisher
+gameSha256=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+gameCode=DEMO
+revision=0
+downloadUrl=https://example.com/downloads/example-homebrew-accessibility.rcc
+packSha256=cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+license=CC0-1.0
+distributionPermission=Fictional example only; replace with documented permission before publishing.
+sourcePageUrl=https://example.com/retra-cheats/example-homebrew-accessibility
+[/pack]

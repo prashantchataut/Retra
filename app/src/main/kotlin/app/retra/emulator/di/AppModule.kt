@@ -53,11 +53,19 @@ object AppModule {
             db.execSQL("CREATE INDEX IF NOT EXISTS index_games_crc32 ON games(crc32)")
         }
     }
+    private val MIGRATION_5_6 = object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE games ADD COLUMN sha1 TEXT")
+            db.execSQL("ALTER TABLE games ADD COLUMN canonicalTitle TEXT")
+            db.execSQL("ALTER TABLE games ADD COLUMN metadataSource TEXT")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_games_sha1 ON games(sha1)")
+        }
+    }
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): RetraDatabase =
         Room.databaseBuilder(context, RetraDatabase::class.java, "retra.db")
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
             .build()
 
     @Provides

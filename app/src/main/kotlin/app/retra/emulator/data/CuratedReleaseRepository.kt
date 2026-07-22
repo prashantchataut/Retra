@@ -43,13 +43,35 @@ private data class CuratedGitHubRelease(
 class CuratedReleaseRepository @Inject constructor() {
     private val sources = listOf(
         CuratedGitHubRelease(
+            id = "heart-and-soul",
+            owner = "PokemonHnS-Development",
+            repository = "pokemonHnS",
+            title = "Heart & Soul — official patch releases",
+            description = "Official UPS patch releases from the project team. Retra applies the patch only after you provide a compatible, legally obtained Emerald backup.",
+            creator = "Pokémon Heart & Soul team",
+            license = "Project terms",
+            distributionPermission = "The upstream project publishes patch assets from its official GitHub release page; no base ROM is included.",
+            tags = listOf("official-patch", "rom-hack", "requires-base-rom")
+        ),
+        CuratedGitHubRelease(
+            id = "minicraft-gba",
+            owner = "Vulcalien",
+            repository = "minicraft-gba",
+            title = "Minicraft GBA",
+            description = "An open-source GBA port with creator-hosted releases. Retra only enables one-tap import when GitHub supplies a verifiable SHA-256 digest.",
+            creator = "Vulcalien",
+            license = "GPL-3.0",
+            distributionPermission = "Release assets are published by the upstream open-source project under its repository license.",
+            tags = listOf("homebrew", "open-source", "survival")
+        ),
+        CuratedGitHubRelease(
             id = "butano",
             owner = "GValiente",
             repository = "butano",
             title = "Butano Engine Releases",
             description = "Open-source GBA engine releases and examples. Downloads appear only when GitHub supplies an asset SHA-256 digest.",
             creator = "GValiente",
-            license = "MIT",
+            license = "Zlib",
             distributionPermission = "Assets are offered by the upstream project under its published open-source release terms.",
             tags = listOf("homebrew", "open-source", "development")
         )
@@ -88,7 +110,7 @@ class CuratedReleaseRepository @Inject constructor() {
             connection.setRequestProperty("Accept", "application/vnd.github+json")
             connection.setRequestProperty("Accept-Encoding", "identity")
             connection.setRequestProperty("X-GitHub-Api-Version", "2022-11-28")
-            connection.setRequestProperty("User-Agent", "Retra/0.7 Android")
+            connection.setRequestProperty("User-Agent", "Retra/2.0 Android")
             val status = connection.responseCode
             require(status == HttpURLConnection.HTTP_OK) { "GitHub returned HTTP $status." }
             val encoding = connection.contentEncoding?.trim()?.lowercase()

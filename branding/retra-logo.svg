@@ -1,32 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
-  <title id="title">Retra Prism logo</title>
-  <desc id="desc">An original rounded cartridge-like mark containing an abstract R and a prism trail.</desc>
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#11152a"/>
-      <stop offset="0.52" stop-color="#25185f"/>
-      <stop offset="1" stop-color="#07111c"/>
-    </linearGradient>
-    <linearGradient id="r" x1="0.12" y1="0.08" x2="0.9" y2="0.92">
-      <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="0.45" stop-color="#dcd6ff"/>
-      <stop offset="0.72" stop-color="#79e9ff"/>
-      <stop offset="1" stop-color="#846cff"/>
-    </linearGradient>
-    <linearGradient id="trail" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#45d9ff"/>
-      <stop offset="0.5" stop-color="#b38bff"/>
-      <stop offset="1" stop-color="#ffc766"/>
-    </linearGradient>
-    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
-      <feGaussianBlur stdDeviation="18" result="blur"/>
-      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-  </defs>
-  <rect x="72" y="72" width="880" height="880" rx="238" fill="url(#bg)"/>
-  <rect x="90" y="90" width="844" height="844" rx="220" fill="none" stroke="#8ea0ff" stroke-opacity="0.2" stroke-width="10"/>
-  <path d="M278 228h300c165 0 260 83 260 212 0 91-48 157-139 190l166 190H652L500 642h-52v178H278V228zm170 142v142h118c65 0 99-24 99-70 0-47-34-72-99-72H448z" fill="url(#r)" fill-rule="evenodd"/>
-  <path d="M694 185l136 24-88 104z" fill="url(#trail)" filter="url(#glow)" opacity="0.96"/>
-  <circle cx="822" cy="326" r="24" fill="#ffc766" filter="url(#glow)"/>
-  <path d="M807 326h30M822 311v30" stroke="#fff7d3" stroke-width="8" stroke-linecap="round"/>
+  <title id="title">Retra Portal and Save Core</title>
+  <desc id="desc">A rounded return portal surrounding a small save core with a three-pixel interruption.</desc>
+  <rect x="18" y="18" width="988" height="988" rx="250" fill="#050A0D"/>
+  <path d="M760 320V620C760 762 660 840 500 840H370C230 840 150 740 150 590V350C150 218 250 140 390 140H580"
+        fill="none" stroke="#FFFFFF" stroke-width="150" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="290" y="375" width="365" height="315" rx="78" fill="#FFFFFF"/>
+  <rect x="365" y="505" width="58" height="64" rx="18" fill="#050A0D"/>
+  <rect x="515" y="505" width="58" height="64" rx="18" fill="#050A0D"/>
+  <rect x="610" y="215" width="106" height="106" rx="18" fill="#FFFFFF"/>
+  <rect x="705" y="120" width="106" height="106" rx="18" fill="#FFFFFF"/>
+  <rect x="800" y="25" width="106" height="106" rx="18" fill="#FF806F"/>
 </svg>

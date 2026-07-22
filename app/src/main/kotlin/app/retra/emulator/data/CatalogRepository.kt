@@ -82,6 +82,42 @@ class CatalogRepository @Inject constructor(
             sourcePageUrl = "https://dreamnoid.itch.io/aereven-advance",
             license = "Creator-authorized download",
             tags = listOf("homebrew", "adventure", "gba-jam")
+        ),
+        CuratedDiscoveryLink(
+            id = "heart-and-soul-official",
+            title = "Heart & Soul — official patch releases",
+            description = "Open the project team's official release page, then apply its patch locally to a compatible Emerald backup you provide.",
+            creator = "Pokémon Heart & Soul team",
+            sourcePageUrl = "https://github.com/PokemonHnS-Development/pokemonHnS/releases",
+            license = "Project terms; patch only",
+            tags = listOf("official-patch", "requires-base-rom", "rom-hack")
+        ),
+        CuratedDiscoveryLink(
+            id = "radical-red-official-patcher",
+            title = "Radical Red — official patcher",
+            description = "Open the official browser patcher. Retra does not provide the FireRed base ROM; you must supply your own compatible backup.",
+            creator = "Radical Red project",
+            sourcePageUrl = "https://patch.radicalred.net/",
+            license = "Project terms; browser patcher",
+            tags = listOf("official-patcher", "requires-base-rom", "rom-hack")
+        ),
+        CuratedDiscoveryLink(
+            id = "minicraft-gba-official",
+            title = "Minicraft GBA",
+            description = "Official open-source GBA port releases and source from the project author.",
+            creator = "Vulcalien",
+            sourcePageUrl = "https://github.com/Vulcalien/minicraft-gba/releases",
+            license = "GPL-3.0",
+            tags = listOf("homebrew", "open-source", "survival")
+        ),
+        CuratedDiscoveryLink(
+            id = "butano-official",
+            title = "Butano Engine & examples",
+            description = "Official open-source GBA engine releases, examples, and project resources.",
+            creator = "GValiente",
+            sourcePageUrl = "https://github.com/GValiente/butano/releases",
+            license = "Zlib",
+            tags = listOf("homebrew", "open-source", "development")
         )
     )
 
@@ -149,7 +185,7 @@ class CatalogRepository @Inject constructor(
                 connection.requestMethod = "GET"
                 connection.setRequestProperty("Accept", "application/json, text/json, text/plain")
                 connection.setRequestProperty("Accept-Encoding", "identity")
-                connection.setRequestProperty("User-Agent", "Retra/0.7 Android")
+                connection.setRequestProperty("User-Agent", "Retra/2.0 Android")
                 val status = connection.responseCode
                 if (status in REDIRECT_CODES) {
                     if (redirectIndex == MAX_MANIFEST_REDIRECTS) {

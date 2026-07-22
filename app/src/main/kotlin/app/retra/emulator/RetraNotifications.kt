@@ -139,7 +139,7 @@ class RetraNotificationCoordinator @Inject constructor(
             .setContentIntent(openAppIntent())
             .setCategory(category)
             .setAutoCancel(true)
-            .setColor(ContextCompat.getColor(context, R.color.retra_indigo))
+            .setColor(ContextCompat.getColor(context, R.color.retra_accent))
             .build()
         NotificationManagerCompat.from(context).notify(notificationIds.incrementAndGet(), notification)
     }

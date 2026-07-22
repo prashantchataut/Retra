@@ -11,7 +11,8 @@ import app.retra.core.model.GameRecord
     indices = [
         Index(value = ["sha256"], unique = true),
         Index(value = ["gameCode"]),
-        Index(value = ["crc32"])
+        Index(value = ["crc32"]),
+        Index(value = ["sha1"])
     ]
 )
 data class GameEntity(
@@ -40,6 +41,9 @@ data class GameEntity(
     val notes: String? = null,
     val coverArtPath: String? = null,
     val crc32: Long? = null,
+    val sha1: String? = null,
+    val canonicalTitle: String? = null,
+    val metadataSource: String? = null,
     val managedPath: String? = null,
     val collectionsCsv: String = "",
     val tagsCsv: String = ""
@@ -71,6 +75,9 @@ data class GameEntity(
         notes = notes,
         coverArtPath = coverArtPath,
         crc32 = crc32,
+        sha1 = sha1,
+        canonicalTitle = canonicalTitle,
+        metadataSource = metadataSource,
         managedPath = managedPath,
         collections = decodeCsv(collectionsCsv),
         tags = decodeCsv(tagsCsv)

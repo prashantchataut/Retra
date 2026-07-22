@@ -24,8 +24,11 @@ import app.retra.core.download.DownloadResponseMetadata
 import app.retra.core.download.UnsafeDownloadException
 import app.retra.core.cheats.CheatConflictAnalyzer
 import app.retra.core.cheats.CheatProfile
+import app.retra.core.cheats.InvalidCheatCatalogException
 import app.retra.core.cheats.InvalidCheatPackException
+import app.retra.core.cheats.RetraCheatCatalogParser
 import app.retra.core.cheats.RetraCodesParser
+import app.retra.core.cheats.RetroArchCheatParser
 import app.retra.core.emulation.EmulatorButton
 import app.retra.core.emulation.InputSnapshot
 import app.retra.core.emulation.SaveEnvelope
@@ -44,6 +47,8 @@ import app.retra.core.rom.DuplicateDetector
 import app.retra.core.rom.GbaRomParser
 import app.retra.core.rom.InvalidRomException
 import app.retra.core.rom.Sha256
+import app.retra.core.rom.Sha1
+import app.retra.core.rom.LibretroDatParser
 import app.retra.core.patching.InvalidPatchException
 import app.retra.core.patching.PatchEngine
 import java.io.ByteArrayOutputStream
@@ -73,6 +78,58 @@ fun main() {
 
     test("SHA-256 known vector") {
         check(Sha256.of("abc".encodeToByteArray()) == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
+    }
+
+    test("SHA-1 known vector") {
+        check(Sha1.of("abc".encodeToByteArray()) == "a9993e364706816aba3e25717850c26c9cd0d89d")
+    }
+
+    test("Libretro DAT exact checksum match") {
+        val dat = """
+            clrmamepro ( name "Retra fixture" )
+            game (
+              name "Fixture Quest (USA)"
+              rom ( name "Fixture Quest (USA).gba" size 1024 crc A1B2C3D4 md5 0123456789ABCDEF0123456789ABCDEF sha1 0123456789ABCDEF0123456789ABCDEF01234567 status verified )
+            )
+        """.trimIndent()
+        val index = LibretroDatParser.parse(dat)
+        val match = index.match("0123456789abcdef0123456789abcdef01234567", 0xA1B2C3D4, 1024)
+        check(match?.canonicalTitle == "Fixture Quest (USA)")
+        check(index.match("f".repeat(40), 0xA1B2C3D4, 2048) == null)
+    }
+
+    test("RetroArch cheat import is converted and ROM-bound") {
+        val source = """
+            cheats = 2
+            cheat0_desc = "Infinite money"
+            cheat0_code = "82000000 03E7"
+            cheat0_enable = false
+            cheat1_desc = "Walk through walls"
+            cheat1_code = "12345678 9ABCDEF0+11112222 33334444"
+            cheat1_enable = false
+        """.trimIndent().encodeToByteArray()
+        val pack = RetroArchCheatParser.parseForGame(source, "Fixture provider", "a".repeat(64), "RTRE", 0)
+        check(pack.gameSha256 == "a".repeat(64))
+        check(pack.cheats.size == 2)
+        check(pack.cheats.first().name == "Infinite money")
+        val reparsed = RetraCodesParser.parse(RetroArchCheatParser.encodeRetraCodes(pack))
+        check(reparsed.gameSha256 == "a".repeat(64))
+        check(reparsed.cheats.size == 2)
+    }
+
+    test("RetroArch import skips placeholder cheats but keeps concrete codes") {
+        val source = """
+            cheats = 2
+            cheat0_desc = "Runtime-selected encounter"
+            cheat0_code = "D0000000 ????"
+            cheat0_enable = false
+            cheat1_desc = "Concrete code"
+            cheat1_code = "82000000 03E7"
+            cheat1_enable = false
+        """.trimIndent().encodeToByteArray()
+        val pack = RetroArchCheatParser.parseForGame(source, "Fixture provider", "b".repeat(64))
+        check(pack.cheats.size == 1)
+        check(pack.cheats.single().name == "Concrete code")
     }
 
     test("case-insensitive duplicate detection") {
@@ -242,6 +299,25 @@ fun main() {
     test("Retra Codes rejects executable text") {
         val unsafe = validCheatPack().replace("02000000:4:00000064", "javascript:alert(1)")
         check(runCatching { RetraCodesParser.parse(unsafe.encodeToByteArray()) }.exceptionOrNull() is InvalidCheatPackException)
+    }
+
+    test("Retra cheat index parsing and exact match") {
+        val catalog = RetraCheatCatalogParser.parse(validCheatIndex().encodeToByteArray())
+        check(catalog.catalogId == "verification-index")
+        check(catalog.entries.size == 1)
+        val entry = catalog.entries.single()
+        check(RetraCheatCatalogParser.matches(entry, "a".repeat(64), "RTRE", 0))
+        check(!RetraCheatCatalogParser.matches(entry, "b".repeat(64), "RTRE", 0))
+    }
+
+    test("Retra cheat index rejects insecure pack URL") {
+        val unsafe = validCheatIndex().replace("https://example.com/retra-verification.rcc", "http://example.com/retra-verification.rcc")
+        check(runCatching { RetraCheatCatalogParser.parse(unsafe.encodeToByteArray()) }.exceptionOrNull() is InvalidCheatCatalogException)
+    }
+
+    test("Retra cheat index rejects duplicate fields") {
+        val duplicate = validCheatIndex().replace("name=Retra Verification Index", "name=Retra Verification Index\nname=Duplicate")
+        check(runCatching { RetraCheatCatalogParser.parse(duplicate.encodeToByteArray()) }.exceptionOrNull() is InvalidCheatCatalogException)
     }
 
 
@@ -584,4 +660,27 @@ format=RAW
 risk=EXPERIMENTAL
 code=02000000:4:00000032
 [/cheat]
+""".trimIndent()
+
+private fun validCheatIndex(): String = """
+RETRA-CHEAT-INDEX-1
+catalogId=verification-index
+name=Retra Verification Index
+provider=Retra Verification
+sourcePageUrl=https://example.com/retra
+
+[pack]
+id=verification-pack
+title=Verification Pack
+description=Checksum-pinned verification-only cheat pack.
+provider=Retra Verification
+gameSha256=${"a".repeat(64)}
+gameCode=RTRE
+revision=0
+downloadUrl=https://example.com/retra-verification.rcc
+packSha256=${"c".repeat(64)}
+license=CC0-1.0
+distributionPermission=Verification fixture distributed for test use.
+sourcePageUrl=https://example.com/retra/verification-pack
+[/pack]
 """.trimIndent()

@@ -51,3 +51,9 @@ The previously included Android skills were also retained and applied:
 
 The retained UI/UX, Android, adaptive-layout, Compose-style, edge-to-edge, and testing guidance was applied to the Prism Glass redesign. The release emphasizes a single visual grammar, adaptive navigation, crisp content over decorative blur, focused settings categories, accessible fallbacks, consistent 48dp-oriented interaction targets, and explicit host/static verification.
 
+
+## 0.8 application
+
+The repository’s dedicated `retra-product-redesign` skill was used as the controlling workflow and updated to the Archive Glass direction. It required repository inspection before visual work, preservation of functional state, adaptive Material 3 behavior, accessibility modes, provenance-first content discovery, and honest validation reporting. An additional overlapping skill was not created because the project-specific skill already covered the workflow.
+
+The final direction rejects purple/rainbow gaming-dashboard tropes, visible gradients, unlicensed font binaries, and unauthorized ROM indexes. The implementation instead uses the Portal / Save Core mark, mineral/ice color roles, artwork-led hierarchy, official project pages, checksum-pinned authorized files, user-supplied patch bases, and exact-ROM trusted cheat indexes.
