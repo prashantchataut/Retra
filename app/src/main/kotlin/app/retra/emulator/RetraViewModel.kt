@@ -15,10 +15,12 @@ import app.retra.core.cheats.CheatProfile
 import app.retra.core.cheats.CheatRisk
 import app.retra.core.emulation.EmulatorButton
 import app.retra.core.emulation.SessionPhase
+import app.retra.core.emulation.SaveKind
 import app.retra.core.emulation.VaultSaveRecord
 import app.retra.core.model.AccentPalette
 import app.retra.core.model.AppSettings
 import app.retra.core.model.ContentDensity
+import app.retra.core.model.CompatibilityStatus
 import app.retra.core.model.ControlLayoutPreset
 import app.retra.core.model.ControlVisualStyle
 import app.retra.core.model.GameRecord
@@ -45,7 +47,13 @@ import app.retra.emulator.data.CheatCatalogRepository
 import app.retra.emulator.data.CheatPackImportOutcome
 import app.retra.emulator.data.CheatRepository
 import app.retra.emulator.data.CuratedReleaseRepository
+import app.retra.emulator.data.ControllerCaptureEvent
+import app.retra.emulator.data.ControllerProfile
+import app.retra.emulator.data.ControllerProfileRepository
 import app.retra.emulator.data.GameRepository
+import app.retra.emulator.data.GameLaunchProfile
+import app.retra.emulator.data.GameLaunchProfileRepository
+import app.retra.emulator.data.PerformanceAdvisorRepository
 import app.retra.emulator.data.HomebrewHubEntry
 import app.retra.emulator.data.HomebrewHubRepository
 import app.retra.emulator.data.HomebrewInstallOutcome
@@ -58,6 +66,7 @@ import app.retra.emulator.data.PendingPatch
 import app.retra.emulator.data.PatchOutcome
 import app.retra.emulator.data.PatchRepository
 import app.retra.emulator.data.SettingsRepository
+import app.retra.emulator.data.SaveTimelineEntry
 import app.retra.emulator.data.ScreenshotRepository
 import app.retra.emulator.data.SocialRepository
 import app.retra.emulator.data.StoredCheatCatalog
@@ -84,6 +93,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 @HiltViewModel
 class RetraViewModel @Inject constructor(
@@ -98,6 +108,9 @@ class RetraViewModel @Inject constructor(
     val catalogRepository: CatalogRepository,
     private val catalogDownloadRepository: CatalogDownloadRepository,
     private val curatedReleaseRepository: CuratedReleaseRepository,
+    private val controllerProfileRepository: ControllerProfileRepository,
+    private val gameLaunchProfileRepository: GameLaunchProfileRepository,
+    private val performanceAdvisorRepository: PerformanceAdvisorRepository,
     private val vaultRepository: VaultRepository,
     private val patchRepository: PatchRepository,
     private val cheatRepository: CheatRepository,
@@ -126,6 +139,7 @@ class RetraViewModel @Inject constructor(
     val runtimeMetrics = emulationCore.metrics
     val vaultRecords = vaultRepository.records
     val vaultHealth = vaultRepository.health
+    val saveTimeline = vaultRepository.timeline
     val cheatPacks = cheatRepository.packs
     val cheatCatalogs = cheatCatalogRepository.catalogs
     val catalogDownloads = catalogDownloadRepository.progress
@@ -159,9 +173,22 @@ class RetraViewModel @Inject constructor(
         }
 
     private val inputLock = Any()
-    private val pressedButtons = linkedSetOf<EmulatorButton>()
+    private val touchButtons = linkedSetOf<EmulatorButton>()
+    private val touchAxisButtons = linkedSetOf<EmulatorButton>()
+    private val hardwareKeyButtons = linkedSetOf<EmulatorButton>()
+    private val hardwareAxisButtons = linkedSetOf<EmulatorButton>()
     private val mutableControllerInput = MutableStateFlow<Set<EmulatorButton>>(emptySet())
     val controllerInput: StateFlow<Set<EmulatorButton>> = mutableControllerInput
+    val controllerProfiles = controllerProfileRepository.profiles
+    val gameLaunchProfiles = gameLaunchProfileRepository.profiles
+    val performanceAdvice = performanceAdvisorRepository.advice
+    val controllerDevices = controllerProfileRepository.devices
+    private val mutableControllerCaptureTarget = MutableStateFlow<EmulatorButton?>(null)
+    val controllerCaptureTarget: StateFlow<EmulatorButton?> = mutableControllerCaptureTarget
+    private val mutableControllerCaptureGameSha256 = MutableStateFlow<String?>(null)
+    val controllerCaptureGameSha256: StateFlow<String?> = mutableControllerCaptureGameSha256
+    private val mutableLastControllerEvent = MutableStateFlow<ControllerCaptureEvent?>(null)
+    val lastControllerEvent: StateFlow<ControllerCaptureEvent?> = mutableLastControllerEvent
     private val mutableControllerTestEnabled = MutableStateFlow(false)
     val controllerTestEnabled: StateFlow<Boolean> = mutableControllerTestEnabled
     private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 24)
@@ -181,6 +208,14 @@ class RetraViewModel @Inject constructor(
             emulationCore.audioPackets.collect { packet ->
                 runCatching { audioOutput.write(packet) }
                     .onFailure { _messages.tryEmit(it.message ?: "Audio output failed.") }
+            }
+        }
+        viewModelScope.launch {
+            while (true) {
+                delay(1_000L)
+                if (activeGame.value != null && session.value.phase == SessionPhase.RUNNING) {
+                    performanceAdvisorRepository.record(runtimeMetrics.value)
+                }
             }
         }
     }
@@ -414,7 +449,9 @@ class RetraViewModel @Inject constructor(
             _messages.emit(coreStatus)
             return@launch
         }
-        emulationCore.setPerformanceProfile(settings.value.performanceProfile)
+        val launchProfile = gameLaunchProfileRepository.profileFor(game.sha256)
+        val effectivePerformanceProfile = launchProfile?.performanceProfile ?: settings.value.performanceProfile
+        emulationCore.setPerformanceProfile(effectivePerformanceProfile)
         emulationCore.setEmulationSpeed(1f)
         when (val result = emulationCore.loadGame(GameFile(game.uri, game.sha256))) {
             is LoadGameResult.Loaded -> {
@@ -423,6 +460,7 @@ class RetraViewModel @Inject constructor(
                 selectedGame.value = null
                 activeCheatIds.value = emptySet()
                 sessionStartedAtEpochMillis = System.currentTimeMillis()
+                performanceAdvisorRepository.beginSession(game.sha256, effectivePerformanceProfile)
                 selectedSessionSpeed = 1f
                 emulationCore.setEmulationSpeed(selectedSessionSpeed)
                 emulationCore.start()
@@ -444,6 +482,7 @@ class RetraViewModel @Inject constructor(
     fun closePlayer() {
         val game = activeGame.value
         recordElapsedPlaytime(game)
+        performanceAdvisorRepository.endSession()
         if (game != null) recordAchievement(AchievementEventType.SESSION_COMPLETED, uniqueKey = "${game.sha256}:${System.currentTimeMillis()}", game = game)
         audioOutput.pause()
         emulationCore.stop()
@@ -510,7 +549,22 @@ class RetraViewModel @Inject constructor(
         emulationCore.saveState(SaveSlot(slotNumber, "Quick Save"))
             .onSuccess {
                 vaultRepository.refresh()
-                recordAchievement(AchievementEventType.SAVE_CREATED, game = activeGame.value)
+                val game = activeGame.value
+                val record = game?.let { active ->
+                    vaultRepository.records.value.firstOrNull { candidate ->
+                        candidate.gameSha256.equals(active.sha256, ignoreCase = true) &&
+                            candidate.kind == SaveKind.STATE && candidate.slot == slotNumber
+                    }
+                }
+                if (record != null) {
+                    vaultRepository.createTimelineSnapshot(
+                        record = record,
+                        title = if (slotNumber == AUTO_SAVE_SLOT) "Automatic checkpoint" else "Manual checkpoint · slot $slotNumber",
+                        cheatsActive = activeCheatIds.value.isNotEmpty(),
+                        automatic = slotNumber == AUTO_SAVE_SLOT
+                    )
+                }
+                recordAchievement(AchievementEventType.SAVE_CREATED, game = game)
                 feedbackEngine.emit(FeedbackCue.SAVE)
                 _messages.tryEmit("Saved state to slot $slotNumber.")
             }
@@ -545,29 +599,157 @@ class RetraViewModel @Inject constructor(
             else -> Unit
         }
         synchronized(inputLock) {
-            if (pressed) pressedButtons += button else pressedButtons -= button
-            val snapshot = pressedButtons.toSet()
-            mutableControllerInput.value = snapshot
-            emulationCore.setInputState(EmulatorInputState(snapshot))
+            updateSourceButton(touchButtons, button, pressed)
+            publishInputLocked()
         }
     }
 
     fun setDirectionalAxes(horizontal: Float, vertical: Float) {
-        synchronized(inputLock) {
-            updateButton(EmulatorButton.LEFT, horizontal < -0.45f)
-            updateButton(EmulatorButton.RIGHT, horizontal > 0.45f)
-            updateButton(EmulatorButton.UP, vertical < -0.45f)
-            updateButton(EmulatorButton.DOWN, vertical > 0.45f)
-            val snapshot = pressedButtons.toSet()
-            mutableControllerInput.value = snapshot
-            emulationCore.setInputState(EmulatorInputState(snapshot))
+        applyDirectionalAxes(touchAxisButtons, horizontal, vertical, 0.45f)
+    }
+
+    fun handleControllerKeyEvent(
+        deviceDescriptor: String,
+        deviceName: String,
+        keyCode: Int,
+        pressed: Boolean,
+        repeatCount: Int
+    ): Boolean {
+        if (deviceDescriptor.isBlank() || keyCode <= 0) return false
+        controllerProfileRepository.registerDevice(deviceDescriptor, deviceName)
+        if (pressed && repeatCount == 0) {
+            mutableLastControllerEvent.value = ControllerCaptureEvent(
+                deviceDescriptor = deviceDescriptor,
+                deviceName = deviceName.ifBlank { "Game controller" },
+                keyCode = keyCode,
+                capturedAtEpochMillis = System.currentTimeMillis()
+            )
+            val captureTarget = mutableControllerCaptureTarget.value
+            if (captureTarget != null) {
+                controllerProfileRepository.bind(
+                    deviceDescriptor = deviceDescriptor,
+                    deviceName = deviceName,
+                    gameSha256 = mutableControllerCaptureGameSha256.value,
+                    keyCode = keyCode,
+                    button = captureTarget
+                )
+                mutableControllerCaptureTarget.value = null
+                mutableControllerCaptureGameSha256.value = null
+                _messages.tryEmit("Mapped key $keyCode to ${captureTarget.name.replace('_', ' ')}.")
+                return true
+            }
         }
+        val profile = controllerProfileRepository.resolve(deviceDescriptor, deviceName, activeGame.value?.sha256)
+        val button = profile.bindings[keyCode] ?: return false
+        if (button == EmulatorButton.MENU) {
+            if (pressed && repeatCount == 0) togglePause()
+            return true
+        }
+        synchronized(inputLock) {
+            updateSourceButton(hardwareKeyButtons, button, pressed)
+            publishInputLocked()
+        }
+        return true
+    }
+
+    fun handleControllerMotionEvent(
+        deviceDescriptor: String,
+        deviceName: String,
+        horizontal: Float,
+        vertical: Float,
+        leftTrigger: Float,
+        rightTrigger: Float
+    ): Boolean {
+        if (deviceDescriptor.isBlank()) return false
+        controllerProfileRepository.registerDevice(deviceDescriptor, deviceName)
+        val profile = controllerProfileRepository.resolve(deviceDescriptor, deviceName, activeGame.value?.sha256)
+        val triggerThreshold = profile.triggerThreshold.coerceIn(0.15f, 0.95f)
+        synchronized(inputLock) {
+            updateDirectionalSource(hardwareAxisButtons, horizontal, vertical, profile.deadZone)
+            updateSourceButton(hardwareAxisButtons, EmulatorButton.L, leftTrigger >= triggerThreshold)
+            updateSourceButton(hardwareAxisButtons, EmulatorButton.R, rightTrigger >= triggerThreshold)
+            publishInputLocked()
+        }
+        return true
+    }
+
+    fun beginControllerBindingCapture(button: EmulatorButton, gameSpecific: Boolean) {
+        val gameHash = if (gameSpecific) (activeGame.value ?: selectedGame.value)?.sha256 else null
+        if (gameSpecific && gameHash == null) {
+            _messages.tryEmit("Select or launch a game before creating a game-specific controller profile.")
+            return
+        }
+        mutableControllerCaptureGameSha256.value = gameHash
+        mutableControllerCaptureTarget.value = button
+    }
+
+    fun cancelControllerBindingCapture() {
+        mutableControllerCaptureTarget.value = null
+        mutableControllerCaptureGameSha256.value = null
+    }
+
+    fun resolveControllerProfile(deviceDescriptor: String, deviceName: String, gameSpecific: Boolean): ControllerProfile =
+        controllerProfileRepository.resolve(
+            deviceDescriptor,
+            deviceName,
+            if (gameSpecific) (activeGame.value ?: selectedGame.value)?.sha256 else null
+        )
+
+    fun setControllerCalibration(
+        deviceDescriptor: String,
+        deviceName: String,
+        gameSpecific: Boolean,
+        deadZone: Float,
+        triggerThreshold: Float
+    ) {
+        controllerProfileRepository.setCalibration(
+            deviceDescriptor,
+            deviceName,
+            if (gameSpecific) (activeGame.value ?: selectedGame.value)?.sha256 else null,
+            deadZone,
+            triggerThreshold
+        )
+    }
+
+    fun resetControllerProfile(deviceDescriptor: String, deviceName: String, gameSpecific: Boolean) {
+        controllerProfileRepository.reset(
+            deviceDescriptor,
+            deviceName,
+            if (gameSpecific) (activeGame.value ?: selectedGame.value)?.sha256 else null
+        )
+        _messages.tryEmit("Controller profile reset to Retra defaults.")
+    }
+
+    private fun applyDirectionalAxes(
+        target: MutableSet<EmulatorButton>,
+        horizontal: Float,
+        vertical: Float,
+        deadZone: Float
+    ) {
+        synchronized(inputLock) {
+            updateDirectionalSource(target, horizontal, vertical, deadZone)
+            publishInputLocked()
+        }
+    }
+
+    private fun updateDirectionalSource(
+        target: MutableSet<EmulatorButton>,
+        horizontal: Float,
+        vertical: Float,
+        deadZone: Float
+    ) {
+        val threshold = deadZone.coerceIn(0.05f, 0.65f)
+        updateSourceButton(target, EmulatorButton.LEFT, horizontal < -threshold)
+        updateSourceButton(target, EmulatorButton.RIGHT, horizontal > threshold)
+        updateSourceButton(target, EmulatorButton.UP, vertical < -threshold)
+        updateSourceButton(target, EmulatorButton.DOWN, vertical > threshold)
     }
 
     fun onHostBackgrounded() {
         if (activeGame.value == null) return
         pausedByHost = session.value.phase == SessionPhase.RUNNING
         recordElapsedPlaytime(activeGame.value)
+        performanceAdvisorRepository.endSession()
         clearInput()
         audioOutput.pause()
         if (settings.value.autoSuspendOnBackground) {
@@ -586,6 +768,10 @@ class RetraViewModel @Inject constructor(
         if (activeGame.value != null && pausedByHost && session.value.phase in setOf(SessionPhase.SUSPENDED, SessionPhase.PAUSED)) {
             pausedByHost = false
             sessionStartedAtEpochMillis = System.currentTimeMillis()
+            activeGame.value?.let { game ->
+                val profile = gameLaunchProfileRepository.profileFor(game.sha256)?.performanceProfile ?: settings.value.performanceProfile
+                performanceAdvisorRepository.beginSession(game.sha256, profile)
+            }
             emulationCore.resume()
             if (emulationCore.descriptor.supportsAudio && settings.value.audioEnabled) audioOutput.start()
         }
@@ -617,6 +803,31 @@ class RetraViewModel @Inject constructor(
     fun restorePreviousVaultRecord(record: VaultSaveRecord) {
         val restored = runCatching { vaultRepository.restorePrevious(record) }.getOrDefault(false)
         _messages.tryEmit(if (restored) "Restored the newest valid previous version of this save." else "No valid previous save version was available.")
+    }
+
+    fun createNamedTimelineSnapshot(record: VaultSaveRecord, title: String) {
+        vaultRepository.createTimelineSnapshot(
+            record = record,
+            title = title,
+            cheatsActive = activeCheatIds.value.isNotEmpty(),
+            automatic = false
+        ).onSuccess {
+            recordAchievement(AchievementEventType.SAVE_CREATED, uniqueKey = it.id, game = games.value.firstOrNull { game -> game.sha256.equals(it.gameSha256, true) })
+            _messages.tryEmit("Created timeline checkpoint: ${it.title}.")
+        }.onFailure { error ->
+            _messages.tryEmit(error.message ?: "The timeline checkpoint could not be created.")
+        }
+    }
+
+    fun restoreTimelineSnapshot(entry: SaveTimelineEntry) {
+        vaultRepository.restoreTimeline(entry)
+            .onSuccess { _messages.tryEmit("Restored ${entry.title}. The previous current save remains in rotating backup history.") }
+            .onFailure { error -> _messages.tryEmit(error.message ?: "Timeline restore failed.") }
+    }
+
+    fun deleteTimelineSnapshot(entry: SaveTimelineEntry) {
+        val deleted = vaultRepository.deleteTimeline(entry)
+        _messages.tryEmit(if (deleted) "Deleted ${entry.title}." else "The timeline checkpoint could not be deleted.")
     }
 
     fun applyPatch(base: GameRecord, patchUri: Uri) = viewModelScope.launch {
@@ -892,6 +1103,61 @@ class RetraViewModel @Inject constructor(
         )
     }
 
+    fun effectivePlayerSettings(game: GameRecord, base: AppSettings): AppSettings {
+        val profile = gameLaunchProfileRepository.profileFor(game.sha256) ?: return base
+        return base.copy(
+            performanceProfile = profile.performanceProfile ?: base.performanceProfile,
+            screenScalingMode = profile.scalingMode ?: base.screenScalingMode,
+            displaySmoothing = profile.displaySmoothing ?: base.displaySmoothing,
+            controlLayoutPreset = profile.controlLayout ?: base.controlLayoutPreset,
+            showTouchControls = profile.showTouchControls ?: base.showTouchControls,
+            fastForwardSpeed = profile.fastForwardSpeed ?: base.fastForwardSpeed
+        )
+    }
+
+    fun saveGameLaunchProfile(profile: GameLaunchProfile) {
+        gameLaunchProfileRepository.save(profile)
+        activeGame.value?.takeIf { it.sha256.equals(profile.gameSha256, ignoreCase = true) }?.let { game ->
+            applyActivePerformanceProfile(game, profile.performanceProfile ?: settings.value.performanceProfile)
+        }
+        _messages.tryEmit("Saved a per-game launch profile.")
+    }
+
+    fun clearGameLaunchProfile(game: GameRecord) {
+        val removed = gameLaunchProfileRepository.clear(game.sha256)
+        if (removed && activeGame.value?.sha256.equals(game.sha256, ignoreCase = true)) {
+            applyActivePerformanceProfile(game, settings.value.performanceProfile)
+        }
+        _messages.tryEmit(if (removed) "Removed the per-game launch profile." else "No per-game launch profile was stored.")
+    }
+
+    fun applyPerformanceRecommendation(game: GameRecord) {
+        val advice = performanceAdvisorRepository.advice.value[game.sha256.lowercase()]
+        val recommendation = advice?.recommendedProfile
+        if (advice == null || !advice.ready || recommendation == null) {
+            _messages.tryEmit("Retra needs at least two measured minutes before applying a recommendation.")
+            return
+        }
+        val current = gameLaunchProfileRepository.profileFor(game.sha256) ?: GameLaunchProfile(game.sha256)
+        gameLaunchProfileRepository.save(current.copy(performanceProfile = recommendation))
+        if (activeGame.value?.sha256.equals(game.sha256, ignoreCase = true)) {
+            applyActivePerformanceProfile(game, recommendation)
+        }
+        _messages.tryEmit("Applied ${recommendation.name.lowercase().replace('_', ' ')} for ${game.title}.")
+    }
+
+    fun clearPerformanceEvidence(game: GameRecord) {
+        performanceAdvisorRepository.clear(game.sha256)
+        _messages.tryEmit("Cleared local performance evidence for ${game.title}.")
+    }
+
+    fun updateCompatibilityNotebook(game: GameRecord, status: CompatibilityStatus, notes: String) = viewModelScope.launch {
+        gameRepository.updateCompatibilityNotebook(game.id, status, notes)
+        val updated = game.copy(compatibility = status, notes = notes.trim().take(4_000).ifBlank { null })
+        selectedGame.value = updated
+        _messages.emit("Updated compatibility notes for ${game.title}.")
+    }
+
     fun setThemeMode(value: ThemeMode) = viewModelScope.launch { settingsRepository.setThemeMode(value) }
     fun setLibraryLayout(value: LibraryLayout) = viewModelScope.launch { settingsRepository.setLibraryLayout(value) }
     fun setDynamicColor(value: Boolean) = viewModelScope.launch { settingsRepository.setDynamicColor(value) }
@@ -938,11 +1204,23 @@ class RetraViewModel @Inject constructor(
     fun setPauseOnHeadphoneDisconnect(value: Boolean) = viewModelScope.launch { settingsRepository.setPauseOnHeadphoneDisconnect(value) }
     fun setFastForwardSpeed(value: Float) = viewModelScope.launch {
         settingsRepository.setFastForwardSpeed(value)
-        emulationCore.setEmulationSpeed(value)
     }
     fun setPerformanceProfile(value: PerformanceProfile) = viewModelScope.launch {
         settingsRepository.setPerformanceProfile(value)
-        emulationCore.setPerformanceProfile(value)
+        val game = activeGame.value
+        val gameOverride = game?.let { gameLaunchProfileRepository.profileFor(it.sha256)?.performanceProfile }
+        if (gameOverride == null) {
+            if (game != null) applyActivePerformanceProfile(game, value)
+            else emulationCore.setPerformanceProfile(value)
+        }
+    }
+
+    private fun applyActivePerformanceProfile(game: GameRecord, profile: PerformanceProfile) {
+        emulationCore.setPerformanceProfile(profile)
+        if (session.value.phase == SessionPhase.RUNNING) {
+            performanceAdvisorRepository.endSession()
+            performanceAdvisorRepository.beginSession(game.sha256, profile)
+        }
     }
 
     private fun recordElapsedPlaytime(game: GameRecord?) {
@@ -986,13 +1264,27 @@ class RetraViewModel @Inject constructor(
         }
     }
 
-    private fun updateButton(button: EmulatorButton, pressed: Boolean) {
-        if (pressed) pressedButtons += button else pressedButtons -= button
+    private fun updateSourceButton(target: MutableSet<EmulatorButton>, button: EmulatorButton, pressed: Boolean) {
+        if (pressed) target += button else target -= button
+    }
+
+    private fun publishInputLocked() {
+        val snapshot = buildSet {
+            addAll(touchButtons)
+            addAll(touchAxisButtons)
+            addAll(hardwareKeyButtons)
+            addAll(hardwareAxisButtons)
+        }
+        mutableControllerInput.value = snapshot
+        emulationCore.setInputState(EmulatorInputState(snapshot))
     }
 
     private fun clearInput() {
         synchronized(inputLock) {
-            pressedButtons.clear()
+            touchButtons.clear()
+            touchAxisButtons.clear()
+            hardwareKeyButtons.clear()
+            hardwareAxisButtons.clear()
             mutableControllerInput.value = emptySet()
             emulationCore.setInputState(EmulatorInputState(emptySet()))
         }
@@ -1000,6 +1292,7 @@ class RetraViewModel @Inject constructor(
 
     override fun onCleared() {
         recordElapsedPlaytime(activeGame.value)
+        performanceAdvisorRepository.endSession()
         clearInput()
         audioOutput.close()
         (emulationCore as? AutoCloseable)?.close()

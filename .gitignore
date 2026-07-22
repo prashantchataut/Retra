@@ -22,3 +22,15 @@ emulation/native/src/main/jniLibs/
 
 # CI build lock marker
 ANDROID_BUILD_LOCK.txt
+
+# Local/release signing material. CI should materialize keys outside the repository.
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.der
+*.key
+keystore.properties
+signing.properties
+release-signing.properties

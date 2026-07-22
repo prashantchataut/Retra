@@ -94,7 +94,7 @@ import app.retra.emulation.api.VideoFrame
 import kotlinx.coroutines.delay
 
 /**
- * Retra 2.2 player shell.
+ * Retra 2.3 player shell.
  *
  * The video surface remains the visual priority. Session actions are reachable in one tap,
  * touch controls adapt to compact and wide windows, and every visual control preference is
@@ -112,7 +112,11 @@ fun PlayerScreen(
     val metrics by viewModel.runtimeMetrics.collectAsStateWithLifecycle()
     val packsByGame by viewModel.cheatPacks.collectAsStateWithLifecycle()
     val activeCheatIds by viewModel.activeCheatIds.collectAsStateWithLifecycle()
-    val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val baseSettings by viewModel.settings.collectAsStateWithLifecycle()
+    val launchProfiles by viewModel.gameLaunchProfiles.collectAsStateWithLifecycle()
+    val settings = remember(baseSettings, launchProfiles, game.sha256) {
+        viewModel.effectivePlayerSettings(game, baseSettings)
+    }
     val activity = LocalContext.current as? Activity
 
     DisposableEffect(activity, settings.playerImmersiveMode) {
@@ -295,7 +299,9 @@ fun PlayerScreen(
 
     if (customizationOpen) {
         PlayerCustomizationSheet(
+            game = game,
             settings = settings,
+            hasPerGameProfile = launchProfiles.containsKey(game.sha256.lowercase()),
             viewModel = viewModel,
             onDismiss = { customizationOpen = false }
         )
@@ -753,7 +759,9 @@ private fun ControllerFirstHint() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PlayerCustomizationSheet(
+    game: GameRecord,
     settings: app.retra.core.model.AppSettings,
+    hasPerGameProfile: Boolean,
     viewModel: RetraViewModel,
     onDismiss: () -> Unit
 ) {
@@ -768,6 +776,24 @@ private fun PlayerCustomizationSheet(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            if (hasPerGameProfile) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.secondaryContainer
+                ) {
+                    Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Per-game profile active", fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Some values shown here are overridden for ${game.title}. Clear the profile to use global player settings only.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                        FilledTonalButton(onClick = { viewModel.clearGameLaunchProfile(game) }) {
+                            Text("Use global settings")
+                        }
+                    }
+                }
+            }
 
             SettingLabel("Layout")
             FlowChips(
@@ -830,6 +856,9 @@ private fun PlayerCustomizationSheet(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            HorizontalDivider()
+            Text("Hardware controller", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            ControllerStudioPanel(viewModel)
             Spacer(Modifier.height(20.dp))
         }
     }

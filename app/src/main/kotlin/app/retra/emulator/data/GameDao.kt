@@ -38,6 +38,9 @@ interface GameDao {
     @Query("UPDATE games SET title = :title, notes = :notes WHERE id = :id")
     suspend fun updateMetadata(id: Long, title: String, notes: String?)
 
+    @Query("UPDATE games SET compatibility = :compatibility, notes = :notes WHERE id = :id")
+    suspend fun updateCompatibilityNotebook(id: Long, compatibility: String, notes: String?)
+
     @Query("UPDATE games SET title = CASE WHEN canonicalTitle IS NULL OR title = canonicalTitle THEN :title ELSE title END, canonicalTitle = :canonicalTitle, metadataSource = :metadataSource WHERE id = :id")
     suspend fun applyCanonicalMetadata(id: Long, title: String, canonicalTitle: String, metadataSource: String)
 

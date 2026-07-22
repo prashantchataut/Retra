@@ -7,6 +7,7 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.documentfile.provider.DocumentFile
 import app.retra.core.model.CatalogEntry
+import app.retra.core.model.CompatibilityStatus
 import app.retra.core.model.GameRecord
 import app.retra.core.patching.InvalidPatchException
 import app.retra.core.patching.PatchEngine
@@ -158,6 +159,14 @@ class GameRepository @Inject constructor(
 
     suspend fun updateMetadata(id: Long, title: String, notes: String?) = withContext(Dispatchers.IO) {
         gameDao.updateMetadata(id, title.trim().take(120), notes?.trim()?.take(4_000)?.ifBlank { null })
+    }
+
+    suspend fun updateCompatibilityNotebook(id: Long, compatibility: CompatibilityStatus, notes: String?) = withContext(Dispatchers.IO) {
+        gameDao.updateCompatibilityNotebook(
+            id = id,
+            compatibility = compatibility.name,
+            notes = notes?.trim()?.replace(Regex("[\p{Cntrl}&&[^\n\t]]"), "")?.take(4_000)?.ifBlank { null }
+        )
     }
 
     suspend fun updateOrganization(id: Long, collections: List<String>, tags: List<String>) = withContext(Dispatchers.IO) {

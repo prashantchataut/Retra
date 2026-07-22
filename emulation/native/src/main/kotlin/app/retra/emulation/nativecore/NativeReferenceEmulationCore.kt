@@ -245,6 +245,7 @@ class NativeReferenceEmulationCore(context: Context) : EmulationCore, AutoClosea
                     NativeBridge.nativeStep(nativeHandle, input.mask, speedMultiplier)
                 }
                 sequence += 1
+                if (sequence % rewindCaptureInterval(profile) == 0L) captureRewindSnapshot()
                 val now = System.nanoTime()
                 mutableFrame.value = VideoFrame(240, 160, pixels, sequence, now)
                 mutableAudio.tryEmit(createDiagnosticAudio(sequence, input.mask))
@@ -253,9 +254,9 @@ class NativeReferenceEmulationCore(context: Context) : EmulationCore, AutoClosea
                     val seconds = (now - windowStartNanos) / 1_000_000_000f
                     val presented = framesInWindow / max(seconds, 0.001f)
                     mutableMetrics.value = RuntimeMetrics(
-                        emulatedFps = presented * speedMultiplier,
+                        emulatedFps = presented,
                         presentedFps = presented,
-                        speedPercent = speedMultiplier * 100f,
+                        speedPercent = presented / TARGET_FPS * 100f,
                         droppedFrames = 0,
                         audioUnderruns = 0,
                         frameTimeMillis = (now - start) / 1_000_000f
@@ -263,16 +264,25 @@ class NativeReferenceEmulationCore(context: Context) : EmulationCore, AutoClosea
                     framesInWindow = 0
                     windowStartNanos = now
                 }
-                val frameBudget = when (profile) {
-                    PerformanceProfile.BATTERY_SAVER -> 20_000_000L
-                    else -> 16_666_667L
+                val baseFrameBudget = when (profile) {
+                    PerformanceProfile.AUTHENTIC -> AUTHENTIC_FRAME_BUDGET_NANOS
+                    else -> BALANCED_FRAME_BUDGET_NANOS
                 }
+                val frameBudget = (baseFrameBudget / speedMultiplier.coerceIn(0.25f, 16f)).toLong()
                 val elapsed = System.nanoTime() - start
                 val delayNanos = frameBudget - elapsed
                 if (delayNanos > 0) delay(delayNanos / 1_000_000L)
                 lastFrameNanos = now
             }
         }
+    }
+
+    private fun rewindCaptureInterval(profile: PerformanceProfile): Long = when (profile) {
+        PerformanceProfile.AUTHENTIC -> 15L
+        PerformanceProfile.BALANCED -> 30L
+        PerformanceProfile.BATTERY_SAVER -> 90L
+        PerformanceProfile.BOOSTED -> 45L
+        PerformanceProfile.EXTREME -> 90L
     }
 
     private fun captureRewindSnapshot() {
@@ -324,7 +334,9 @@ class NativeReferenceEmulationCore(context: Context) : EmulationCore, AutoClosea
     }
 
     private companion object {
-        const val REWIND_CAPTURE_INTERVAL_FRAMES = 30L
+        const val TARGET_FPS = 59.7275f
+        const val AUTHENTIC_FRAME_BUDGET_NANOS = 16_742_706L
+        const val BALANCED_FRAME_BUDGET_NANOS = 16_666_667L
         const val MAX_REWIND_BYTES = 32 * 1024 * 1024
     }
 

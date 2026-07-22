@@ -86,7 +86,7 @@ class SettingsRepository @Inject constructor(
             reduceMotion = preferences[Keys.reduceMotion] ?: false,
             reduceTransparency = preferences[Keys.reduceTransparency] ?: false,
             fastForwardSpeed = preferences[Keys.fastForwardSpeed] ?: 2f,
-            performanceProfile = preferences[Keys.performanceProfile].enumOrDefault(PerformanceProfile.BALANCED),
+            performanceProfile = preferences[Keys.performanceProfile].performanceProfileOrDefault(),
             accentPalette = preferences[Keys.accentPalette].mapAccentPalette(),
             contentDensity = preferences[Keys.contentDensity].enumOrDefault(ContentDensity.COMFORTABLE),
             startupDestination = preferences[Keys.startupDestination].enumOrDefault(StartupDestination.HOME),
@@ -133,7 +133,7 @@ class SettingsRepository @Inject constructor(
     suspend fun setReduceMotion(value: Boolean) = edit { it[Keys.reduceMotion] = value }
     suspend fun setReduceTransparency(value: Boolean) = edit { it[Keys.reduceTransparency] = value }
     suspend fun setFastForwardSpeed(value: Float) = edit { it[Keys.fastForwardSpeed] = value.coerceIn(1f, 16f) }
-    suspend fun setPerformanceProfile(value: PerformanceProfile) = edit { it[Keys.performanceProfile] = value.name }
+    suspend fun setPerformanceProfile(value: PerformanceProfile) = edit { it[Keys.performanceProfile] = value.stableProfile().name }
     suspend fun setAccentPalette(value: AccentPalette) = edit { it[Keys.accentPalette] = value.name }
     suspend fun setContentDensity(value: ContentDensity) = edit { it[Keys.contentDensity] = value.name }
     suspend fun setStartupDestination(value: StartupDestination) = edit { it[Keys.startupDestination] = value.name }
@@ -180,7 +180,7 @@ class SettingsRepository @Inject constructor(
         preferences[Keys.reduceMotion] = value.reduceMotion
         preferences[Keys.reduceTransparency] = value.reduceTransparency
         preferences[Keys.fastForwardSpeed] = value.fastForwardSpeed.coerceIn(1f, 16f)
-        preferences[Keys.performanceProfile] = value.performanceProfile.name
+        preferences[Keys.performanceProfile] = value.performanceProfile.stableProfile().name
         preferences[Keys.accentPalette] = value.accentPalette.name
         preferences[Keys.contentDensity] = value.contentDensity.name
         preferences[Keys.startupDestination] = value.startupDestination.name
@@ -221,6 +221,21 @@ class SettingsRepository @Inject constructor(
 
     private suspend fun edit(block: (androidx.datastore.preferences.core.MutablePreferences) -> Unit) {
         context.retraDataStore.edit { preferences -> block(preferences) }
+    }
+
+    private fun PerformanceProfile.stableProfile(): PerformanceProfile = when (this) {
+        PerformanceProfile.BOOSTED, PerformanceProfile.EXTREME -> PerformanceProfile.BALANCED
+        else -> this
+    }
+
+    private fun String?.performanceProfileOrDefault(): PerformanceProfile = when (this) {
+        PerformanceProfile.AUTHENTIC.name -> PerformanceProfile.AUTHENTIC
+        PerformanceProfile.BATTERY_SAVER.name -> PerformanceProfile.BATTERY_SAVER
+        PerformanceProfile.BALANCED.name,
+        PerformanceProfile.BOOSTED.name,
+        PerformanceProfile.EXTREME.name,
+        null -> PerformanceProfile.BALANCED
+        else -> PerformanceProfile.BALANCED
     }
 
     private inline fun <reified T : Enum<T>> String?.enumOrDefault(default: T): T =

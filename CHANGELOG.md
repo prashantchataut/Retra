@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.3.0 — 2026-07-22
+
+### Build and signing repair
+- Replaced the false-positive signing check with a tracked-source policy that rejects committed keys and literal passwords while allowing Provider/environment-backed signing.
+- Added optional CI keystore materialization under `$RUNNER_TEMP`, all-or-none signing secret validation, Gradle wrapper validation, and wrapper-based build commands.
+- Debug builds continue to use Android debug signing; release compilation works unsigned without secrets and signs only when all four variables are supplied.
+
+### Controller Studio
+- Added real Android gamepad key, D-pad, joystick, hat, and analog-trigger handling.
+- Added per-device and optional per-game mappings, live input testing, remapping capture, dead-zone calibration, trigger calibration, and atomic profile persistence.
+- Separated touch and hardware input sources so releasing one input cannot cancel the same button still held by another source.
+
+### Saves and performance
+- Added named and automatic immutable Save Timeline checkpoints with bounded retention and reversible restore.
+- Added locally measured frame-time, FPS, speed, dropped-frame, audio-underrun, thermal, and battery evidence with recommendations only after meaningful samples.
+- Added per-game launch profiles and a compatibility notebook.
+- Corrected fast-forward frame pacing and GBA-target speed metrics; legacy Boosted/Extreme settings normalize to Balanced.
+
+### Experience
+- Added Controller Studio, Save Timeline, and Measured Performance Advisor to Settings.
+- Added compatibility and per-game profile tools to game details and controller customization to the player.
+- Improved small-screen chip rows and retained separate Profile/Settings pages with developer attribution to **Prashant Chataut**.
+
 ## 2.2.0 — 2026-07-22
 
 ### Build repair

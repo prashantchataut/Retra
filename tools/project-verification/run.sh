@@ -2,6 +2,8 @@
 set -eu
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 
+"$ROOT/tools/signing-verification/run.sh"
+
 if [ "${SKIP_EXECUTION_SUITES:-0}" != "1" ]; then
   "$ROOT/tools/core-verification/run.sh"
   "$ROOT/tools/native-verification/run.sh"
@@ -79,8 +81,6 @@ for relative, tokens in v2_capabilities.items():
         if token not in source:
             raise SystemExit(f"Retra v2 capability missing from {relative}: {token}")
 
-if (root / "app/retra-sideload.jks").exists() or "storePassword" in (root / "app/build.gradle.kts").read_text():
-    raise SystemExit("A reusable app signing key or password must not be committed")
 
 patch_engine = (root / "core/patching/src/main/kotlin/app/retra/core/patching/PatchEngine.kt").read_text()
 for signature in ["PATCH", "UPS1", "BPS1", "validatePatchCrc", "MAX_OUTPUT_SIZE_BYTES"]:
@@ -198,17 +198,39 @@ for filename in dead_ui:
     if (root / "app/src/main/kotlin/app/retra/emulator" / filename).exists():
         raise SystemExit(f"Legacy duplicate UI must not remain in the active source tree: {filename}")
 
-v22_ui = (root / "app/src/main/kotlin/app/retra/emulator/RetraV22Ui.kt").read_text()
-for token in ["RetraV22Root", "Prashant Chataut", "A library, not a storefront", "Playable homebrew", "Save Health Center", "Pokémon Heart & Soul"]:
-    if token not in v22_ui:
-        raise SystemExit(f"Retra 2.2 product surface missing: {token}")
+v23_ui = (root / "app/src/main/kotlin/app/retra/emulator/RetraV23Ui.kt").read_text()
+for token in ["RetraV23Root", "Prashant Chataut", "A library, not a storefront", "Playable homebrew", "Save Health Center", "Pokémon Heart & Soul", "Controller Studio", "Measured Performance Advisor"]:
+    if token not in v23_ui:
+        raise SystemExit(f"Retra 2.3 product surface missing: {token}")
 main_activity = (root / "app/src/main/kotlin/app/retra/emulator/MainActivity.kt").read_text()
-if "RetraV22Root" not in main_activity:
-    raise SystemExit("Retra 2.2 root is not active")
+if "RetraV23Root" not in main_activity:
+    raise SystemExit("Retra 2.3 root is not active")
 build_file = (root / "app/build.gradle.kts").read_text()
-for token in ['versionName = "2.2.0"', "alias(libs.plugins.room)", "schemaDirectory"]:
+for token in ['versionName = "2.3.0"', "alias(libs.plugins.room)", "schemaDirectory", "RETRA_SIGNING_STORE_FILE", "releaseSigningEnabled"]:
     if token not in build_file:
-        raise SystemExit(f"Retra 2.2 build hardening missing: {token}")
+        raise SystemExit(f"Retra 2.3 build hardening missing: {token}")
+workflow = (root / ".github/workflows/build-release.yml").read_text()
+for token in ["wrapper-validation@v4", "./gradlew --no-daemon --no-parallel", "Prepare optional release signing", "RETRA_SIGNING_KEYSTORE_B64", "Retra-2.3.0-debug"]:
+    if token not in workflow:
+        raise SystemExit(f"Retra 2.3 CI hardening missing: {token}")
+v23_capabilities = {
+    "app/src/main/kotlin/app/retra/emulator/data/ControllerProfileRepository.kt": ["ControllerProfile", "RETRA-CONTROLLER-1", "gameSha256", "writeAtomically"],
+    "app/src/main/kotlin/app/retra/emulator/data/VaultRepository.kt": ["SaveTimelineEntry", "createTimelineSnapshot", "restoreTimeline", "RETRA-TIMELINE-1"],
+    "app/src/main/kotlin/app/retra/emulator/data/GameExperienceRepository.kt": ["GameLaunchProfile", "RETRA-LAUNCH-PROFILE-1", "PerformanceAdvisorRepository", "MIN_ADVICE_SAMPLES", "frameTimeP95Millis"],
+    "app/src/main/kotlin/app/retra/emulator/RetraV23ToolsUi.kt": ["ControllerStudioPanel", "SaveTimelinePanel", "PerformanceAdvisorPanel", "CompatibilityNotebookDialog", "GameLaunchProfileDialog"],
+}
+for relative, tokens in v23_capabilities.items():
+    source = (root / relative).read_text()
+    for token in tokens:
+        if token not in source:
+            raise SystemExit(f"Retra 2.3 capability missing from {relative}: {token}")
+for token in ["dispatchKeyEvent", "onGenericMotionEvent", "handleControllerKeyEvent", "handleControllerMotionEvent"]:
+    if token not in main_activity:
+        raise SystemExit(f"Hardware controller input path missing: {token}")
+game_repository = (root / "app/src/main/kotlin/app/retra/emulator/data/GameRepository.kt").read_text()
+if "updateCompatibilityNotebook" not in game_repository:
+    raise SystemExit("Compatibility notebook persistence is missing")
+
 bundled_patch = root / "app/src/main/assets/patches/pokemon_hns_v1_2_1.ups"
 if not bundled_patch.is_file() or bundled_patch.stat().st_size != 32558217:
     raise SystemExit("Reviewed Heart & Soul v1.2.1 patch asset is missing or changed")
@@ -221,7 +243,7 @@ for token in ["RETRA-BACKUP", "romsIncluded", "AtomicSaveStore", "MAX_TOTAL_IMPO
     if token not in backup:
         raise SystemExit(f"Portable ROM-free backup capability missing: {token}")
 vault = (root / "app/src/main/kotlin/app/retra/emulator/data/VaultRepository.kt").read_text()
-for token in ["VaultHealthSummary", "corruptedRecords", "backupCount", "restorePrevious"]:
+for token in ["VaultHealthSummary", "corruptedRecords", "backupCount", "restorePrevious", "timelineSnapshots", "createTimelineSnapshot", "restoreTimeline"]:
     if token not in vault:
         raise SystemExit(f"Save Health capability missing: {token}")
 main_activity = (root / "app/src/main/kotlin/app/retra/emulator/MainActivity.kt").read_text()
@@ -229,7 +251,7 @@ for token in ["routeExternalIntent", "ACTION_SEND", "queueExternalImport", "onNe
     if token not in main_activity:
         raise SystemExit(f"External import review path missing: {token}")
 for token in ["Review external file", "confirmExternalImport", "dismissExternalImport"]:
-    if token not in v22_ui:
+    if token not in v23_ui:
         raise SystemExit(f"External import confirmation UI missing: {token}")
 rewind = (root / "core/emulation/src/main/kotlin/app/retra/core/emulation/RewindBuffer.kt").read_text()
 for token in ["maximumBytes", "snapshotCount", "copyOf", "Not enough rewind history"]:
@@ -240,7 +262,7 @@ for core in [
     root / "emulation/native/src/main/kotlin/app/retra/emulation/nativecore/NativeReferenceEmulationCore.kt",
 ]:
     text = core.read_text()
-    for token in ["supportsRewind = true", "RewindBuffer", "captureRewindSnapshot", "override fun rewind"]:
+    for token in ["supportsRewind = true", "RewindBuffer", "captureRewindSnapshot", "override fun rewind", "rewindCaptureInterval", "speedMultiplier.coerceIn", "TARGET_FPS"]:
         if token not in text:
             raise SystemExit(f"Rewind integration missing from {core.name}: {token}")
 screenshot = (root / "app/src/main/kotlin/app/retra/emulator/data/ScreenshotRepository.kt").read_text()
@@ -265,7 +287,7 @@ for token in ["retro_load_game", "retro_serialize", "retro_get_memory_data", "RT
     if token not in mgba_adapter:
         raise SystemExit(f"mGBA/libretro adapter capability missing: {token}")
 
-print("PASS Retra 2.2 structure, UI, player customization, Room schema hardening, patching, achievements, catalogs, DI, and emulation checks")
+print("PASS Retra 2.3 structure, signing policy, controller profiles, save timeline, measured performance, UI, Room schema hardening, patching, achievements, catalogs, DI, and emulation checks")
 PY
 
 for script in "$ROOT"/scripts/*.sh "$ROOT"/tools/*/run.sh; do

@@ -309,7 +309,7 @@ class MgbaLibretroEmulationCore(context: Context) : EmulationCore, AutoCloseable
                     nativeResult.pixels.size == nativeResult.width * nativeResult.height
                 ) {
                     sequence += 1
-                    if (sequence % REWIND_CAPTURE_INTERVAL_FRAMES == 0L) captureRewindSnapshot()
+                    if (sequence % rewindCaptureInterval(profile) == 0L) captureRewindSnapshot()
                     mutableFrame.value = VideoFrame(
                         nativeResult.width,
                         nativeResult.height,
@@ -331,9 +331,9 @@ class MgbaLibretroEmulationCore(context: Context) : EmulationCore, AutoCloseable
                     val seconds = (nowNanos - windowStartNanos) / 1_000_000_000f
                     val presented = framesInWindow / max(seconds, 0.001f)
                     mutableMetrics.value = RuntimeMetrics(
-                        emulatedFps = presented * speedMultiplier,
+                        emulatedFps = presented,
                         presentedFps = presented,
-                        speedPercent = speedMultiplier * 100f,
+                        speedPercent = presented / TARGET_FPS * 100f,
                         droppedFrames = 0,
                         audioUnderruns = 0,
                         frameTimeMillis = (nowNanos - start) / 1_000_000f
@@ -341,14 +341,23 @@ class MgbaLibretroEmulationCore(context: Context) : EmulationCore, AutoCloseable
                     framesInWindow = 0
                     windowStartNanos = nowNanos
                 }
-                val frameBudget = when (profile) {
-                    PerformanceProfile.BATTERY_SAVER -> 20_000_000L
-                    else -> 16_666_667L
+                val baseFrameBudget = when (profile) {
+                    PerformanceProfile.AUTHENTIC -> AUTHENTIC_FRAME_BUDGET_NANOS
+                    else -> BALANCED_FRAME_BUDGET_NANOS
                 }
+                val frameBudget = (baseFrameBudget / speedMultiplier.coerceIn(0.25f, 16f)).toLong()
                 val remainingNanos = frameBudget - (System.nanoTime() - start)
                 if (remainingNanos > 0) delay(remainingNanos / 1_000_000L)
             }
         }
+    }
+
+    private fun rewindCaptureInterval(profile: PerformanceProfile): Long = when (profile) {
+        PerformanceProfile.AUTHENTIC -> 15L
+        PerformanceProfile.BALANCED -> 30L
+        PerformanceProfile.BATTERY_SAVER -> 90L
+        PerformanceProfile.BOOSTED -> 45L
+        PerformanceProfile.EXTREME -> 90L
     }
 
     private fun captureRewindSnapshot() {
@@ -405,7 +414,9 @@ class MgbaLibretroEmulationCore(context: Context) : EmulationCore, AutoCloseable
         const val MAX_ROM_BYTES = 64 * 1024 * 1024
         const val BATTERY_FLUSH_INTERVAL_MILLIS = 30_000L
         const val PRE_CHEAT_BACKUP_SLOT = 99
-        const val REWIND_CAPTURE_INTERVAL_FRAMES = 30L
+        const val TARGET_FPS = 59.7275f
+        const val AUTHENTIC_FRAME_BUDGET_NANOS = 16_742_706L
+        const val BALANCED_FRAME_BUDGET_NANOS = 16_666_667L
         const val MAX_REWIND_BYTES = 32 * 1024 * 1024
     }
 }

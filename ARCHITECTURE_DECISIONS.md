@@ -56,3 +56,21 @@ Channels are created at app startup, but Android 13+ runtime permission is reque
 
 The profile remains visible, while preferences are partitioned into focused categories to reduce scanning cost and accidental changes.
 
+
+## ADR-009 — Signing configuration is source, credentials are not
+
+**Decision:** Keep release-signing DSL in `app/build.gradle.kts`, source values only from Gradle Providers/environment variables, and reject only tracked key material or literal credentials. CI may decode an encrypted/base64 secret into `$RUNNER_TEMP`; it must never copy the keystore into the checkout.
+
+**Reason:** Searching for the words `storePassword` or `keyPassword` creates false positives and blocks correct Android signing. The trust boundary is committed secret material, not the existence of signing code.
+
+## ADR-010 — Merge emulator input by source
+
+**Decision:** Track touch buttons, touch axes, hardware keys, and hardware axes independently and publish their union to the emulator core.
+
+**Reason:** A single shared set lets a release event from one source cancel a button still held by another source. Independent source state makes simultaneous touch/controller use deterministic.
+
+## ADR-011 — Performance advice requires evidence
+
+**Decision:** Persist bounded local session summaries and withhold recommendations until at least 120 one-second samples exist. Recommendations apply through a per-game profile.
+
+**Reason:** A decorative “boost” mode cannot diagnose frame pacing, audio underruns, thermal pressure, or device-specific behavior. Retra should expose measured evidence and keep user control.

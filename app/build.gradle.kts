@@ -1,10 +1,3 @@
-val googleWebClientId = providers.gradleProperty("RETRA_GOOGLE_WEB_CLIENT_ID")
-    .orElse(providers.environmentVariable("RETRA_GOOGLE_WEB_CLIENT_ID"))
-    .getOrElse("")
-    .replace("\\", "\\\\")
-    .replace("\"", "\\\"")
-
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -13,6 +6,22 @@ plugins {
     alias(libs.plugins.room)
 }
 
+val googleWebClientId = providers.gradleProperty("RETRA_GOOGLE_WEB_CLIENT_ID")
+    .orElse(providers.environmentVariable("RETRA_GOOGLE_WEB_CLIENT_ID"))
+    .getOrElse("")
+    .replace("\\", "\\\\")
+    .replace("\"", "\\\"")
+
+val releaseStoreFile = providers.environmentVariable("RETRA_SIGNING_STORE_FILE")
+val releaseStorePassword = providers.environmentVariable("RETRA_SIGNING_STORE_PASSWORD")
+val releaseKeyAlias = providers.environmentVariable("RETRA_SIGNING_KEY_ALIAS")
+val releaseKeyPassword = providers.environmentVariable("RETRA_SIGNING_KEY_PASSWORD")
+val releaseSigningEnabled = listOf(
+    releaseStoreFile,
+    releaseStorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword
+).all { !it.orNull.isNullOrBlank() }
 android {
     namespace = "app.retra.emulator"
     compileSdk {
@@ -25,18 +34,32 @@ android {
         applicationId = "app.retra.emulator"
         minSdk = 26
         targetSdk = 37
-        versionCode = 22
-        versionName = "2.2.0"
+        versionCode = 23
+        versionName = "2.3.0"
         buildConfigField("String", "RETRA_GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
 
+    signingConfigs {
+        if (releaseSigningEnabled) {
+            create("release") {
+                storeFile = file(releaseStoreFile.get())
+                storePassword = releaseStorePassword.get()
+                keyAlias = releaseKeyAlias.get()
+                keyPassword = releaseKeyPassword.get()
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
-            // Release signing is intentionally supplied by a private CI/store configuration.
-            // Never commit a reusable signing key or credentials to the source archive.
+            if (releaseSigningEnabled) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+            // Without all four RETRA_SIGNING_* variables, Gradle still compiles an
+            // unsigned release artifact. Debug builds use Android's standard debug key.
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

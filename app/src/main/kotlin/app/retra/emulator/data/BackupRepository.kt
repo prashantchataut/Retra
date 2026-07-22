@@ -93,7 +93,7 @@ class BackupRepository @Inject constructor(
                     val manifest = JSONObject()
                         .put("format", FORMAT)
                         .put("version", FORMAT_VERSION)
-                        .put("appVersion", "2.2.0")
+                        .put("appVersion", "2.3.0")
                         .put("createdAtEpochMillis", System.currentTimeMillis())
                         .put("romsIncluded", false)
                         .put("gameMetadataCount", games.size)
