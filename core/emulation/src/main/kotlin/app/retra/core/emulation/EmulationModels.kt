@@ -173,5 +173,6 @@ data class VaultSaveRecord(
     val coreVersion: String,
     val slot: Int,
     val createdAtEpochMillis: Long,
-    val sizeBytes: Long
+    val sizeBytes: Long,
+    val backupCount: Int = 0
 )

@@ -19,9 +19,12 @@ import app.retra.core.emulation.VaultSaveRecord
 import app.retra.core.model.AccentPalette
 import app.retra.core.model.AppSettings
 import app.retra.core.model.ContentDensity
+import app.retra.core.model.ControlLayoutPreset
+import app.retra.core.model.ControlVisualStyle
 import app.retra.core.model.GameRecord
 import app.retra.core.model.LibraryLayout
 import app.retra.core.model.PerformanceProfile
+import app.retra.core.model.ScreenScalingMode
 import app.retra.core.model.StartupDestination
 import app.retra.core.model.ThemeMode
 import app.retra.core.multiplayer.MultiplayerMode
@@ -30,6 +33,8 @@ import app.retra.core.social.SocialProvider
 import app.retra.core.social.SocialShareFactory
 import app.retra.emulator.data.AchievementRepository
 import app.retra.emulator.data.ArtworkRepository
+import app.retra.emulator.data.BundledPatchRepository
+import app.retra.emulator.data.BackupRepository
 import app.retra.emulator.data.AchievementStatus
 import app.retra.emulator.data.CatalogDownloadOutcome
 import app.retra.emulator.data.CatalogDownloadRepository
@@ -87,6 +92,8 @@ class RetraViewModel @Inject constructor(
     private val libretroMetadataRepository: LibretroMetadataRepository,
     private val libretroCheatRepository: LibretroCheatRepository,
     private val artworkRepository: ArtworkRepository,
+    private val bundledPatchRepository: BundledPatchRepository,
+    private val backupRepository: BackupRepository,
     private val settingsRepository: SettingsRepository,
     val catalogRepository: CatalogRepository,
     private val catalogDownloadRepository: CatalogDownloadRepository,
@@ -118,6 +125,7 @@ class RetraViewModel @Inject constructor(
     val latestFrame = emulationCore.latestFrame
     val runtimeMetrics = emulationCore.metrics
     val vaultRecords = vaultRepository.records
+    val vaultHealth = vaultRepository.health
     val cheatPacks = cheatRepository.packs
     val cheatCatalogs = cheatCatalogRepository.catalogs
     val catalogDownloads = catalogDownloadRepository.progress
@@ -127,6 +135,8 @@ class RetraViewModel @Inject constructor(
     val metadataSync = libretroMetadataRepository.state
     private val mutablePendingPatch = MutableStateFlow<PendingPatch?>(null)
     val pendingPatch: StateFlow<PendingPatch?> = mutablePendingPatch
+    private val mutableExternalImport = MutableStateFlow<Uri?>(null)
+    val externalImport: StateFlow<Uri?> = mutableExternalImport
     private val mutableCompatiblePatchGames = MutableStateFlow<List<GameRecord>>(emptyList())
     val compatibleBases: StateFlow<List<GameRecord>> = mutableCompatiblePatchGames
     val compatiblePatchGames: StateFlow<List<GameRecord>> = mutableCompatiblePatchGames
@@ -210,6 +220,52 @@ class RetraViewModel @Inject constructor(
 
     fun importFile(uri: Uri) = viewModelScope.launch {
         handleImportOutcome(gameRepository.importFile(uri))
+    }
+
+    fun queueExternalImport(uri: Uri) {
+        if (uri.scheme !in setOf("content", "file")) {
+            _messages.tryEmit("Retra only accepts local files from Android's document or share system.")
+            return
+        }
+        mutableExternalImport.value = uri
+    }
+
+    fun confirmExternalImport() = viewModelScope.launch {
+        val uri = mutableExternalImport.value ?: return@launch
+        mutableExternalImport.value = null
+        handleImportOutcome(gameRepository.importFile(uri))
+    }
+
+    fun dismissExternalImport() {
+        mutableExternalImport.value = null
+    }
+
+    fun prepareHeartAndSoulPatch() = viewModelScope.launch {
+        bundledPatchRepository.prepareHeartAndSoulV121()
+            .onSuccess { uri -> handleImportOutcome(gameRepository.importFile(uri)) }
+            .onFailure { error -> _messages.emit(error.message ?: "The reviewed patch could not be prepared.") }
+    }
+
+    fun exportBackup(uri: Uri) = viewModelScope.launch {
+        backupRepository.export(uri, settings.value)
+            .onSuccess { report ->
+                recordAchievement(AchievementEventType.BACKUP_EXPORTED)
+                _messages.emit(
+                    "Backup exported: ${report.saveCount} saves, ${report.artworkCount} covers, and ${report.gameMetadataCount} game metadata records. ROM files were excluded."
+                )
+            }
+            .onFailure { error -> _messages.emit(error.message ?: "The Retra backup could not be exported.") }
+    }
+
+    fun importBackup(uri: Uri) = viewModelScope.launch {
+        backupRepository.import(uri)
+            .onSuccess { report ->
+                _messages.emit(
+                    "Backup restored: ${report.savesRestored} saves, ${report.artworkRestored} covers, and ${report.achievementsMerged} achievement records" +
+                        if (report.skippedEntries > 0) "; ${report.skippedEntries} incompatible entries skipped." else "."
+                )
+            }
+            .onFailure { error -> _messages.emit(error.message ?: "The Retra backup could not be restored.") }
     }
 
     private suspend fun handleImportOutcome(result: ImportOutcome) {
@@ -298,6 +354,9 @@ class RetraViewModel @Inject constructor(
         homebrewHub.value.error?.let { _messages.emit(it) }
     }
 
+    suspend fun loadHomebrewPreview(entry: HomebrewHubEntry): ByteArray? =
+        homebrewHubRepository.loadPreview(entry)
+
     fun installHomebrew(entry: HomebrewHubEntry) = viewModelScope.launch {
         when (val outcome = homebrewHubRepository.install(entry)) {
             is HomebrewInstallOutcome.Imported -> {
@@ -385,6 +444,7 @@ class RetraViewModel @Inject constructor(
     fun closePlayer() {
         val game = activeGame.value
         recordElapsedPlaytime(game)
+        if (game != null) recordAchievement(AchievementEventType.SESSION_COMPLETED, uniqueKey = "${game.sha256}:${System.currentTimeMillis()}", game = game)
         audioOutput.pause()
         emulationCore.stop()
         clearInput()
@@ -418,6 +478,7 @@ class RetraViewModel @Inject constructor(
         audioOutput.pause()
         emulationCore.rewind(steps)
             .onSuccess { remaining ->
+                recordAchievement(AchievementEventType.REWIND_USED, game = activeGame.value)
                 _messages.tryEmit("Rewound the session. $remaining snapshots remain in memory.")
             }
             .onFailure { error ->
@@ -438,7 +499,10 @@ class RetraViewModel @Inject constructor(
             return@launch
         }
         screenshotRepository.save(game.title, frame)
-            .onSuccess { result -> _messages.emit("Saved ${result.displayName} to ${result.location}.") }
+            .onSuccess { result ->
+                recordAchievement(AchievementEventType.SCREENSHOT_CAPTURED, uniqueKey = result.displayName, game = game)
+                _messages.emit("Saved ${result.displayName} to ${result.location}.")
+            }
             .onFailure { error -> _messages.emit(error.message ?: "Screenshot capture failed.") }
     }
 
@@ -548,6 +612,11 @@ class RetraViewModel @Inject constructor(
     fun deleteVaultRecord(record: VaultSaveRecord) {
         val deleted = runCatching { vaultRepository.delete(record) }.getOrDefault(false)
         _messages.tryEmit(if (deleted) "Deleted the local save snapshot." else "The save snapshot could not be deleted.")
+    }
+
+    fun restorePreviousVaultRecord(record: VaultSaveRecord) {
+        val restored = runCatching { vaultRepository.restorePrevious(record) }.getOrDefault(false)
+        _messages.tryEmit(if (restored) "Restored the newest valid previous version of this save." else "No valid previous save version was available.")
     }
 
     fun applyPatch(base: GameRecord, patchUri: Uri) = viewModelScope.launch {
@@ -835,6 +904,17 @@ class RetraViewModel @Inject constructor(
     fun setCornerScale(value: Float) = viewModelScope.launch { settingsRepository.setCornerScale(value) }
     fun setFontScale(value: Float) = viewModelScope.launch { settingsRepository.setFontScale(value) }
     fun setTouchControlOpacity(value: Float) = viewModelScope.launch { settingsRepository.setTouchControlOpacity(value) }
+    fun setTouchControlScale(value: Float) = viewModelScope.launch { settingsRepository.setTouchControlScale(value) }
+    fun setTouchControlSpacing(value: Float) = viewModelScope.launch { settingsRepository.setTouchControlSpacing(value) }
+    fun setTouchDeadZone(value: Float) = viewModelScope.launch { settingsRepository.setTouchDeadZone(value) }
+    fun setControlLayoutPreset(value: ControlLayoutPreset) = viewModelScope.launch { settingsRepository.setControlLayoutPreset(value) }
+    fun setControlVisualStyle(value: ControlVisualStyle) = viewModelScope.launch { settingsRepository.setControlVisualStyle(value) }
+    fun setScreenScalingMode(value: ScreenScalingMode) = viewModelScope.launch { settingsRepository.setScreenScalingMode(value) }
+    fun setShowShoulderButtons(value: Boolean) = viewModelScope.launch { settingsRepository.setShowShoulderButtons(value) }
+    fun setShowQuickActions(value: Boolean) = viewModelScope.launch { settingsRepository.setShowQuickActions(value) }
+    fun setQuickSaveEnabled(value: Boolean) = viewModelScope.launch { settingsRepository.setQuickSaveEnabled(value) }
+    fun setAutoSaveIntervalMinutes(value: Int) = viewModelScope.launch { settingsRepository.setAutoSaveIntervalMinutes(value) }
+    fun setPlayerImmersiveMode(value: Boolean) = viewModelScope.launch { settingsRepository.setPlayerImmersiveMode(value) }
     fun setHapticsEnabled(value: Boolean) = viewModelScope.launch { settingsRepository.setHapticsEnabled(value) }
     fun setSoundEffectsEnabled(value: Boolean) = viewModelScope.launch { settingsRepository.setSoundEffectsEnabled(value) }
     fun setSoundEffectsVolume(value: Float) = viewModelScope.launch { settingsRepository.setSoundEffectsVolume(value) }

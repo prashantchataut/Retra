@@ -7,6 +7,10 @@ enum class AchievementEventType {
     SAVE_CREATED,
     PATCH_APPLIED,
     CHEAT_PACK_IMPORTED,
+    SCREENSHOT_CAPTURED,
+    REWIND_USED,
+    SESSION_COMPLETED,
+    BACKUP_EXPORTED,
     ACHIEVEMENT_SHARED,
     MULTIPLAYER_SESSION_COMPLETED,
     GAME_COMPLETED
@@ -188,6 +192,51 @@ object RetraAchievements {
             hidden = false,
             integrityPolicy = AchievementIntegrityPolicy.ANY,
             rule = AchievementRule.Count(AchievementEventType.SAVE_CREATED, 20)
+        ),
+        AchievementDefinition(
+            id = "patch.first-remix",
+            title = "New Timeline",
+            description = "Apply your first checksum-verified patch to a compatible base game.",
+            points = 20,
+            hidden = false,
+            integrityPolicy = AchievementIntegrityPolicy.ANY,
+            rule = AchievementRule.Count(AchievementEventType.PATCH_APPLIED, 1)
+        ),
+        AchievementDefinition(
+            id = "capture.memory-card",
+            title = "Memory Card",
+            description = "Capture ten screenshots from active gameplay sessions.",
+            points = 20,
+            hidden = false,
+            integrityPolicy = AchievementIntegrityPolicy.ANY,
+            rule = AchievementRule.Count(AchievementEventType.SCREENSHOT_CAPTURED, 10)
+        ),
+        AchievementDefinition(
+            id = "rewind.second-chance",
+            title = "Second Chance",
+            description = "Use rewind twenty-five times across your library.",
+            points = 25,
+            hidden = false,
+            integrityPolicy = AchievementIntegrityPolicy.ANY,
+            rule = AchievementRule.Count(AchievementEventType.REWIND_USED, 25)
+        ),
+        AchievementDefinition(
+            id = "session.regular",
+            title = "One More Run",
+            description = "Finish twenty play sessions cleanly so Retra can protect your progress.",
+            points = 30,
+            hidden = false,
+            integrityPolicy = AchievementIntegrityPolicy.ANY,
+            rule = AchievementRule.Count(AchievementEventType.SESSION_COMPLETED, 20)
+        ),
+        AchievementDefinition(
+            id = "vault.safekeeping",
+            title = "Safekeeping",
+            description = "Export a ROM-free Retra backup containing your saves and settings.",
+            points = 20,
+            hidden = false,
+            integrityPolicy = AchievementIntegrityPolicy.ANY,
+            rule = AchievementRule.Count(AchievementEventType.BACKUP_EXPORTED, 1)
         ),
         AchievementDefinition(
             id = "playtime.old-friend",

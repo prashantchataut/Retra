@@ -55,9 +55,19 @@ object KnownPatchHints {
         patchCrc32 = 0x58BD22C9L
     )
 
+    val HEART_AND_SOUL_V121 = Hint(
+        label = "Pokémon Emerald Version (U) · Heart & Soul v1.2.1",
+        resultTitle = "Pokémon Heart & Soul v1.2.1",
+        sourceSize = 16_777_216L,
+        sourceCrc32 = 0x1F1C08FBL,
+        targetSize = 33_554_432L,
+        targetCrc32 = 0x96A8425BL,
+        patchCrc32 = 0x39E2A0E4L
+    )
+
     fun match(descriptor: PatchDescriptor): Hint? {
         if (descriptor.format != PatchFormat.UPS && descriptor.format != PatchFormat.BPS) return null
-        val candidates = listOf(HEART_AND_SOUL)
+        val candidates = listOf(HEART_AND_SOUL_V121, HEART_AND_SOUL)
         return candidates.firstOrNull { hint ->
             descriptor.sourceSizeBytes == hint.sourceSize &&
                 descriptor.targetSizeBytes == hint.targetSize &&

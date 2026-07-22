@@ -5,13 +5,17 @@ import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import app.retra.core.model.AccentPalette
 import app.retra.core.model.AppSettings
 import app.retra.core.model.ContentDensity
+import app.retra.core.model.ControlLayoutPreset
+import app.retra.core.model.ControlVisualStyle
 import app.retra.core.model.LibraryLayout
 import app.retra.core.model.PerformanceProfile
+import app.retra.core.model.ScreenScalingMode
 import app.retra.core.model.StartupDestination
 import app.retra.core.model.ThemeMode
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -42,6 +46,17 @@ class SettingsRepository @Inject constructor(
         val cornerScale = floatPreferencesKey("corner_scale")
         val fontScale = floatPreferencesKey("font_scale")
         val touchControlOpacity = floatPreferencesKey("touch_control_opacity")
+        val touchControlScale = floatPreferencesKey("touch_control_scale")
+        val touchControlSpacing = floatPreferencesKey("touch_control_spacing")
+        val touchDeadZone = floatPreferencesKey("touch_dead_zone")
+        val controlLayoutPreset = stringPreferencesKey("control_layout_preset")
+        val controlVisualStyle = stringPreferencesKey("control_visual_style")
+        val screenScalingMode = stringPreferencesKey("screen_scaling_mode")
+        val showShoulderButtons = booleanPreferencesKey("show_shoulder_buttons")
+        val showQuickActions = booleanPreferencesKey("show_quick_actions")
+        val quickSaveEnabled = booleanPreferencesKey("quick_save_enabled")
+        val autoSaveIntervalMinutes = intPreferencesKey("auto_save_interval_minutes")
+        val playerImmersiveMode = booleanPreferencesKey("player_immersive_mode")
         val hapticsEnabled = booleanPreferencesKey("haptics_enabled")
         val soundEffectsEnabled = booleanPreferencesKey("sound_effects_enabled")
         val soundEffectsVolume = floatPreferencesKey("sound_effects_volume")
@@ -79,6 +94,17 @@ class SettingsRepository @Inject constructor(
             cornerScale = (preferences[Keys.cornerScale] ?: 1f).coerceIn(0.75f, 1.35f),
             fontScale = (preferences[Keys.fontScale] ?: 1f).coerceIn(0.85f, 1.3f),
             touchControlOpacity = (preferences[Keys.touchControlOpacity] ?: 0.72f).coerceIn(0.25f, 1f),
+            touchControlScale = (preferences[Keys.touchControlScale] ?: 1f).coerceIn(0.72f, 1.35f),
+            touchControlSpacing = (preferences[Keys.touchControlSpacing] ?: 1f).coerceIn(0.72f, 1.4f),
+            touchDeadZone = (preferences[Keys.touchDeadZone] ?: 0.18f).coerceIn(0.05f, 0.5f),
+            controlLayoutPreset = preferences[Keys.controlLayoutPreset].enumOrDefault(ControlLayoutPreset.CLASSIC),
+            controlVisualStyle = preferences[Keys.controlVisualStyle].enumOrDefault(ControlVisualStyle.GLASS),
+            screenScalingMode = preferences[Keys.screenScalingMode].enumOrDefault(ScreenScalingMode.INTEGER),
+            showShoulderButtons = preferences[Keys.showShoulderButtons] ?: true,
+            showQuickActions = preferences[Keys.showQuickActions] ?: true,
+            quickSaveEnabled = preferences[Keys.quickSaveEnabled] ?: true,
+            autoSaveIntervalMinutes = (preferences[Keys.autoSaveIntervalMinutes] ?: 5).coerceIn(0, 60),
+            playerImmersiveMode = preferences[Keys.playerImmersiveMode] ?: true,
             hapticsEnabled = preferences[Keys.hapticsEnabled] ?: true,
             soundEffectsEnabled = preferences[Keys.soundEffectsEnabled] ?: true,
             soundEffectsVolume = (preferences[Keys.soundEffectsVolume] ?: 0.45f).coerceIn(0f, 1f),
@@ -115,6 +141,17 @@ class SettingsRepository @Inject constructor(
     suspend fun setCornerScale(value: Float) = edit { it[Keys.cornerScale] = value.coerceIn(0.75f, 1.35f) }
     suspend fun setFontScale(value: Float) = edit { it[Keys.fontScale] = value.coerceIn(0.85f, 1.3f) }
     suspend fun setTouchControlOpacity(value: Float) = edit { it[Keys.touchControlOpacity] = value.coerceIn(0.25f, 1f) }
+    suspend fun setTouchControlScale(value: Float) = edit { it[Keys.touchControlScale] = value.coerceIn(0.72f, 1.35f) }
+    suspend fun setTouchControlSpacing(value: Float) = edit { it[Keys.touchControlSpacing] = value.coerceIn(0.72f, 1.4f) }
+    suspend fun setTouchDeadZone(value: Float) = edit { it[Keys.touchDeadZone] = value.coerceIn(0.05f, 0.5f) }
+    suspend fun setControlLayoutPreset(value: ControlLayoutPreset) = edit { it[Keys.controlLayoutPreset] = value.name }
+    suspend fun setControlVisualStyle(value: ControlVisualStyle) = edit { it[Keys.controlVisualStyle] = value.name }
+    suspend fun setScreenScalingMode(value: ScreenScalingMode) = edit { it[Keys.screenScalingMode] = value.name }
+    suspend fun setShowShoulderButtons(value: Boolean) = edit { it[Keys.showShoulderButtons] = value }
+    suspend fun setShowQuickActions(value: Boolean) = edit { it[Keys.showQuickActions] = value }
+    suspend fun setQuickSaveEnabled(value: Boolean) = edit { it[Keys.quickSaveEnabled] = value }
+    suspend fun setAutoSaveIntervalMinutes(value: Int) = edit { it[Keys.autoSaveIntervalMinutes] = value.coerceIn(0, 60) }
+    suspend fun setPlayerImmersiveMode(value: Boolean) = edit { it[Keys.playerImmersiveMode] = value }
     suspend fun setHapticsEnabled(value: Boolean) = edit { it[Keys.hapticsEnabled] = value }
     suspend fun setSoundEffectsEnabled(value: Boolean) = edit { it[Keys.soundEffectsEnabled] = value }
     suspend fun setSoundEffectsVolume(value: Float) = edit { it[Keys.soundEffectsVolume] = value.coerceIn(0f, 1f) }
@@ -133,6 +170,54 @@ class SettingsRepository @Inject constructor(
     suspend fun setMasterVolume(value: Float) = edit { it[Keys.masterVolume] = value.coerceIn(0f, 1f) }
     suspend fun setAutoSuspendOnBackground(value: Boolean) = edit { it[Keys.autoSuspendOnBackground] = value }
     suspend fun setPauseOnHeadphoneDisconnect(value: Boolean) = edit { it[Keys.pauseOnHeadphoneDisconnect] = value }
+
+    /** Replaces user-visible settings after a validated Retra backup import. */
+    suspend fun replace(value: AppSettings) = edit { preferences ->
+        preferences[Keys.onboardingComplete] = value.onboardingComplete
+        preferences[Keys.themeMode] = value.themeMode.name
+        preferences[Keys.libraryLayout] = value.libraryLayout.name
+        preferences[Keys.dynamicColor] = value.dynamicColor
+        preferences[Keys.reduceMotion] = value.reduceMotion
+        preferences[Keys.reduceTransparency] = value.reduceTransparency
+        preferences[Keys.fastForwardSpeed] = value.fastForwardSpeed.coerceIn(1f, 16f)
+        preferences[Keys.performanceProfile] = value.performanceProfile.name
+        preferences[Keys.accentPalette] = value.accentPalette.name
+        preferences[Keys.contentDensity] = value.contentDensity.name
+        preferences[Keys.startupDestination] = value.startupDestination.name
+        preferences[Keys.glassIntensity] = value.glassIntensity.coerceIn(0f, 1f)
+        preferences[Keys.cornerScale] = value.cornerScale.coerceIn(0.75f, 1.35f)
+        preferences[Keys.fontScale] = value.fontScale.coerceIn(0.85f, 1.3f)
+        preferences[Keys.touchControlOpacity] = value.touchControlOpacity.coerceIn(0.25f, 1f)
+        preferences[Keys.touchControlScale] = value.touchControlScale.coerceIn(0.72f, 1.35f)
+        preferences[Keys.touchControlSpacing] = value.touchControlSpacing.coerceIn(0.72f, 1.4f)
+        preferences[Keys.touchDeadZone] = value.touchDeadZone.coerceIn(0.05f, 0.5f)
+        preferences[Keys.controlLayoutPreset] = value.controlLayoutPreset.name
+        preferences[Keys.controlVisualStyle] = value.controlVisualStyle.name
+        preferences[Keys.screenScalingMode] = value.screenScalingMode.name
+        preferences[Keys.showShoulderButtons] = value.showShoulderButtons
+        preferences[Keys.showQuickActions] = value.showQuickActions
+        preferences[Keys.quickSaveEnabled] = value.quickSaveEnabled
+        preferences[Keys.autoSaveIntervalMinutes] = value.autoSaveIntervalMinutes.coerceIn(0, 60)
+        preferences[Keys.playerImmersiveMode] = value.playerImmersiveMode
+        preferences[Keys.hapticsEnabled] = value.hapticsEnabled
+        preferences[Keys.soundEffectsEnabled] = value.soundEffectsEnabled
+        preferences[Keys.soundEffectsVolume] = value.soundEffectsVolume.coerceIn(0f, 1f)
+        preferences[Keys.notificationsEnabled] = value.notificationsEnabled
+        preferences[Keys.notifyAchievements] = value.notifyAchievements
+        preferences[Keys.notifyDownloads] = value.notifyDownloads
+        preferences[Keys.notifyMultiplayer] = value.notifyMultiplayer
+        preferences[Keys.highContrast] = value.highContrast
+        preferences[Keys.showOnlineRecommendations] = value.showOnlineRecommendations
+        preferences[Keys.showStatistics] = value.showStatistics
+        preferences[Keys.integerScaling] = value.integerScaling
+        preferences[Keys.displaySmoothing] = value.displaySmoothing
+        preferences[Keys.showPerformanceOverlay] = value.showPerformanceOverlay
+        preferences[Keys.showTouchControls] = value.showTouchControls
+        preferences[Keys.audioEnabled] = value.audioEnabled
+        preferences[Keys.masterVolume] = value.masterVolume.coerceIn(0f, 1f)
+        preferences[Keys.autoSuspendOnBackground] = value.autoSuspendOnBackground
+        preferences[Keys.pauseOnHeadphoneDisconnect] = value.pauseOnHeadphoneDisconnect
+    }
 
     private suspend fun edit(block: (androidx.datastore.preferences.core.MutablePreferences) -> Unit) {
         context.retraDataStore.edit { preferences -> block(preferences) }

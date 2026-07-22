@@ -47,6 +47,25 @@ enum class StartupDestination {
     CONTINUE_PLAYING
 }
 
+enum class ControlLayoutPreset {
+    CLASSIC,
+    COMPACT,
+    LEFT_HANDED,
+    CONTROLLER_FIRST
+}
+
+enum class ControlVisualStyle {
+    GLASS,
+    SOLID,
+    MINIMAL
+}
+
+enum class ScreenScalingMode {
+    FIT,
+    FILL,
+    INTEGER
+}
+
 enum class CatalogContentKind {
     GAME,
     PATCH,
@@ -152,6 +171,17 @@ data class AppSettings(
     val cornerScale: Float = 1f,
     val fontScale: Float = 1f,
     val touchControlOpacity: Float = 0.72f,
+    val touchControlScale: Float = 1f,
+    val touchControlSpacing: Float = 1f,
+    val touchDeadZone: Float = 0.18f,
+    val controlLayoutPreset: ControlLayoutPreset = ControlLayoutPreset.CLASSIC,
+    val controlVisualStyle: ControlVisualStyle = ControlVisualStyle.GLASS,
+    val screenScalingMode: ScreenScalingMode = ScreenScalingMode.INTEGER,
+    val showShoulderButtons: Boolean = true,
+    val showQuickActions: Boolean = true,
+    val quickSaveEnabled: Boolean = true,
+    val autoSaveIntervalMinutes: Int = 5,
+    val playerImmersiveMode: Boolean = true,
     val hapticsEnabled: Boolean = true,
     val soundEffectsEnabled: Boolean = true,
     val soundEffectsVolume: Float = 0.45f,

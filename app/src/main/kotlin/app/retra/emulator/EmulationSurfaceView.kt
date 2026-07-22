@@ -9,6 +9,7 @@ import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+import app.retra.core.model.ScreenScalingMode
 import app.retra.emulation.api.VideoFrame
 
 /**
@@ -26,7 +27,7 @@ class EmulationSurfaceView @JvmOverloads constructor(
     private var bitmap: Bitmap? = null
     private var pendingFrame: VideoFrame? = null
     private var surfaceReady = false
-    private var integerScaling = true
+    private var scalingMode = ScreenScalingMode.INTEGER
     private var smoothing = false
 
     init {
@@ -36,8 +37,8 @@ class EmulationSurfaceView @JvmOverloads constructor(
         setBackgroundColor(Color.BLACK)
     }
 
-    fun configure(integerScaling: Boolean, smoothing: Boolean) {
-        this.integerScaling = integerScaling
+    fun configure(scalingMode: ScreenScalingMode, smoothing: Boolean) {
+        this.scalingMode = scalingMode
         this.smoothing = smoothing
         paint.isFilterBitmap = smoothing
         drawLatestFrame()
@@ -79,17 +80,17 @@ class EmulationSurfaceView @JvmOverloads constructor(
         val canvas = runCatching { holder.lockCanvas() }.getOrNull() ?: return
         try {
             canvas.drawColor(Color.BLACK)
-            val destination = aspectFit(source.width, source.height, canvas)
+            val destination = destinationRect(source.width, source.height, canvas)
             canvas.drawBitmap(source, null, destination, paint)
         } finally {
             holder.unlockCanvasAndPost(canvas)
         }
     }
 
-    private fun aspectFit(sourceWidth: Int, sourceHeight: Int, canvas: Canvas): RectF {
+    private fun destinationRect(sourceWidth: Int, sourceHeight: Int, canvas: Canvas): RectF {
         val canvasWidth = canvas.width.coerceAtLeast(1)
         val canvasHeight = canvas.height.coerceAtLeast(1)
-        if (integerScaling) {
+        if (scalingMode == ScreenScalingMode.INTEGER) {
             val fit = minOf(canvasWidth.toFloat() / sourceWidth, canvasHeight.toFloat() / sourceHeight)
             if (fit >= 1f) {
                 val scale = kotlin.math.floor(fit).coerceAtLeast(1f)
@@ -102,6 +103,17 @@ class EmulationSurfaceView @JvmOverloads constructor(
         }
         val sourceRatio = sourceWidth.toFloat() / sourceHeight
         val targetRatio = canvasWidth.toFloat() / canvasHeight
+        if (scalingMode == ScreenScalingMode.FILL) {
+            return if (targetRatio > sourceRatio) {
+                val height = canvasWidth / sourceRatio
+                val top = (canvasHeight - height) / 2f
+                RectF(0f, top, canvasWidth.toFloat(), top + height)
+            } else {
+                val width = canvasHeight * sourceRatio
+                val left = (canvasWidth - width) / 2f
+                RectF(left, 0f, left + width, canvasHeight.toFloat())
+            }
+        }
         return if (targetRatio > sourceRatio) {
             val width = canvasHeight * sourceRatio
             val left = (canvasWidth - width) / 2f

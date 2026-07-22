@@ -1,12 +1,18 @@
 package app.retra.emulator.data
 
+import android.content.Context
 import app.retra.core.rom.GbaRomParser
 import app.retra.core.rom.Sha256
+import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import javax.inject.Inject
 import javax.inject.Singleton
 import javax.net.ssl.HttpsURLConnection
@@ -77,7 +83,9 @@ sealed interface HomebrewInstallOutcome {
 
 @Singleton
 class HomebrewHubRepository @Inject constructor(
-    private val gameRepository: GameRepository
+    @ApplicationContext private val context: Context,
+    private val gameRepository: GameRepository,
+    private val artworkRepository: ArtworkRepository
 ) {
     private val mutableState = MutableStateFlow(HomebrewHubState())
     val state: StateFlow<HomebrewHubState> = mutableState
@@ -104,6 +112,41 @@ class HomebrewHubRepository @Inject constructor(
             )
         }
         mutableState.value = updated
+    }
+
+    suspend fun loadPreview(entry: HomebrewHubEntry): ByteArray? = withContext(Dispatchers.IO) {
+        val screenshot = entry.screenshots.firstOrNull() ?: return@withContext null
+        val url = entry.screenshotUrl(screenshot)
+        val key = Sha256.of(url.toByteArray(StandardCharsets.UTF_8))
+        val directory = File(context.cacheDir, "homebrew-previews").apply { mkdirs() }
+        val cached = File(directory, "$key.img")
+        if (cached.isFile && cached.length() in 1..MAX_ARTWORK_BYTES.toLong()) {
+            return@withContext runCatching { cached.readBytes() }.getOrNull()
+        }
+        runCatching {
+            val bytes = get(url, MAX_ARTWORK_BYTES, "image/avif,image/webp,image/png,image/jpeg")
+            require(bytes.isNotEmpty()) { "Homebrew preview was empty." }
+            val temporary = File(directory, ".$key.tmp")
+            try {
+                FileOutputStream(temporary).use { output ->
+                    output.write(bytes)
+                    output.fd.sync()
+                }
+                try {
+                    Files.move(
+                        temporary.toPath(),
+                        cached.toPath(),
+                        StandardCopyOption.REPLACE_EXISTING,
+                        StandardCopyOption.ATOMIC_MOVE
+                    )
+                } catch (_: Exception) {
+                    Files.move(temporary.toPath(), cached.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                }
+            } finally {
+                if (temporary.exists()) temporary.delete()
+            }
+            bytes
+        }.getOrNull()
     }
 
     suspend fun install(entry: HomebrewHubEntry): HomebrewInstallOutcome = withContext(Dispatchers.IO) {
@@ -133,7 +176,24 @@ class HomebrewHubRepository @Inject constructor(
                     distributionPermission = "Playable file served by Homebrew Hub for a non-hack-ROM entry with declared license metadata; Retra recorded local SHA-256 $sha256."
                 )
             ) {
-                is ImportOutcome.Imported -> HomebrewInstallOutcome.Imported(outcome.game)
+                is ImportOutcome.Imported -> {
+                    val withArtwork = entry.screenshots.firstOrNull()?.let { screenshot ->
+                        runCatching {
+                            val artworkBytes = get(
+                                entry.screenshotUrl(screenshot),
+                                MAX_ARTWORK_BYTES,
+                                "image/avif,image/webp,image/png,image/jpeg"
+                            )
+                            val path = artworkRepository.importCoverArtBytes(
+                                outcome.game.id,
+                                outcome.game.sha256,
+                                artworkBytes
+                            ).getOrThrow()
+                            outcome.game.copy(coverArtPath = path)
+                        }.getOrNull()
+                    } ?: outcome.game
+                    HomebrewInstallOutcome.Imported(withArtwork)
+                }
                 is ImportOutcome.Duplicate -> HomebrewInstallOutcome.Duplicate(outcome.title)
                 is ImportOutcome.Rejected -> HomebrewInstallOutcome.Rejected(outcome.reason)
                 else -> HomebrewInstallOutcome.Rejected("The downloaded release did not resolve to one GBA game.")
@@ -249,7 +309,7 @@ class HomebrewHubRepository @Inject constructor(
             connection.requestMethod = "GET"
             connection.setRequestProperty("Accept", accept)
             connection.setRequestProperty("Accept-Encoding", "identity")
-            connection.setRequestProperty("User-Agent", "Retra/2.0 Android")
+            connection.setRequestProperty("User-Agent", "Retra/2.2 Android")
             val code = connection.responseCode
             if (code != HttpURLConnection.HTTP_OK) {
                 throw IllegalArgumentException("Homebrew Hub returned HTTP $code.")
@@ -283,6 +343,7 @@ class HomebrewHubRepository @Inject constructor(
         const val API_BASE = "https://hh3.gbdev.io/api"
         const val WEB_BASE = "https://hh.gbdev.io"
         private const val MAX_JSON_BYTES = 2 * 1024 * 1024
+        private const val MAX_ARTWORK_BYTES = 8 * 1024 * 1024
         private val SAFE_SLUG = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,159}")
         private val SAFE_FILE = Regex("[A-Za-z0-9][A-Za-z0-9 ._()'&+,-]{0,239}")
     }

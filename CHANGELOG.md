@@ -1,5 +1,35 @@
 # Changelog
 
+## 2.2.0 — 2026-07-22
+
+### Build repair
+- Fixed the reported KAPT/Room failure by replacing the truncated schema 6 JSON with a complete schema.
+- Applied the Room Gradle plugin, added a 5→6 migration instrumentation test, and validates schemas before and after Android compilation.
+- Disabled parallel schema generation and split CI into strict, diagnosable stages.
+- CI now uploads an installable debug APK for private testing while separately compiling the unsigned release variant; it no longer publishes an unsigned production release.
+
+### Player and customization
+- Rebuilt the active player for portrait and landscape play with screen-first layout hierarchy.
+- Added classic, compact, left-handed, and controller-first presets plus glass, solid, and minimal control styles.
+- Added control scale, spacing, opacity, dead zone, shoulder-button visibility, quick actions, immersive mode, fit/fill/integer scaling, save/load, screenshot, rewind, speed, audio, reset, cheats, and autosave controls.
+
+### Library, content, and artwork
+- Added legal Homebrew Hub GBA discovery with real provider screenshots, bounded HTTPS loading, one-tap eligible installs, local SHA-256, and retained creator/license/source provenance.
+- Kept commercial Pokémon titles as owned-game guides and exact-checksum import workflows rather than ROM downloads.
+- Added user artwork and preserves artwork as presentation metadata rather than game identity.
+- Bundled the user-supplied Pokémon Heart & Soul v1.2.1 UPS patch with creator credit and SHA-256 validation; no commercial base ROM is included.
+
+### Progress and safety
+- Added working local achievements for imports, saves, patches, screenshots, rewind, sessions, playtime, and backup export.
+- Added Save Health metrics, previous-backup restore, and bounded ROM-free portable backup import/export.
+- Added explicit review before importing files received through Android VIEW/SEND intents.
+- Removed legacy duplicate UI files and obsolete project-state scratch documents.
+
+### Product identity
+- Rebuilt onboarding, Home, Library, Discover, Profile, Settings, game details, and About around the active Archive Glass system.
+- Settings and Profile are separate. About identifies **Prashant Chataut** as developer and credits Homebrew Hub/gbdev for legal homebrew discovery.
+- Added a critical 2.2 product review, roadmap status, content policy, build-failure analysis, and 2.3 recommendations.
+
 ## 2.0.0 — 2026-07-22
 
 ### Real library and identity

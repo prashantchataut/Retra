@@ -1,0 +1,233 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 6,
+    "identityHash": "3feba575f600ed83780aaf007c100232",
+    "entities": [
+      {
+        "tableName": "games",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `uri` TEXT NOT NULL, `displayName` TEXT NOT NULL, `title` TEXT NOT NULL, `gameCode` TEXT NOT NULL, `makerCode` TEXT NOT NULL, `softwareVersion` INTEGER NOT NULL, `sha256` TEXT NOT NULL, `sizeBytes` INTEGER NOT NULL, `importedAtEpochMillis` INTEGER NOT NULL, `lastPlayedAtEpochMillis` INTEGER, `compatibility` TEXT NOT NULL, `origin` TEXT NOT NULL, `baseSha256` TEXT, `patchSha256` TEXT, `patchFormat` TEXT, `patchDisplayName` TEXT, `creator` TEXT, `sourceUrl` TEXT, `license` TEXT, `distributionPermission` TEXT, `favorite` INTEGER NOT NULL, `notes` TEXT, `coverArtPath` TEXT, `crc32` INTEGER, `sha1` TEXT, `canonicalTitle` TEXT, `metadataSource` TEXT, `managedPath` TEXT, `collectionsCsv` TEXT NOT NULL, `tagsCsv` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "uri",
+            "columnName": "uri",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "displayName",
+            "columnName": "displayName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gameCode",
+            "columnName": "gameCode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "makerCode",
+            "columnName": "makerCode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "softwareVersion",
+            "columnName": "softwareVersion",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sha256",
+            "columnName": "sha256",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sizeBytes",
+            "columnName": "sizeBytes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "importedAtEpochMillis",
+            "columnName": "importedAtEpochMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastPlayedAtEpochMillis",
+            "columnName": "lastPlayedAtEpochMillis",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "compatibility",
+            "columnName": "compatibility",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "origin",
+            "columnName": "origin",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "baseSha256",
+            "columnName": "baseSha256",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "patchSha256",
+            "columnName": "patchSha256",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "patchFormat",
+            "columnName": "patchFormat",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "patchDisplayName",
+            "columnName": "patchDisplayName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "creator",
+            "columnName": "creator",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sourceUrl",
+            "columnName": "sourceUrl",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "license",
+            "columnName": "license",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "distributionPermission",
+            "columnName": "distributionPermission",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "favorite",
+            "columnName": "favorite",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "coverArtPath",
+            "columnName": "coverArtPath",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "crc32",
+            "columnName": "crc32",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sha1",
+            "columnName": "sha1",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "canonicalTitle",
+            "columnName": "canonicalTitle",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "metadataSource",
+            "columnName": "metadataSource",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "managedPath",
+            "columnName": "managedPath",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "collectionsCsv",
+            "columnName": "collectionsCsv",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tagsCsv",
+            "columnName": "tagsCsv",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_games_sha256",
+            "unique": true,
+            "columnNames": [
+              "sha256"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_games_sha256` ON `${TABLE_NAME}` (`sha256`)"
+          },
+          {
+            "name": "index_games_gameCode",
+            "unique": false,
+            "columnNames": [
+              "gameCode"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_games_gameCode` ON `${TABLE_NAME}` (`gameCode`)"
+          },
+          {
+            "name": "index_games_crc32",
+            "unique": false,
+            "columnNames": [
+              "crc32"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_games_crc32` ON `${TABLE_NAME}` (`crc32`)"
+          },
+          {
+            "name": "index_games_sha1",
+            "unique": false,
+            "columnNames": [
+              "sha1"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_games_sha1` ON `${TABLE_NAME}` (`sha1`)"
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3feba575f600ed83780aaf007c100232')"
+    ]
+  }
+}

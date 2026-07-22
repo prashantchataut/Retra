@@ -79,18 +79,6 @@ for relative, tokens in v2_capabilities.items():
         if token not in source:
             raise SystemExit(f"Retra v2 capability missing from {relative}: {token}")
 
-onboarding = (root / "app/src/main/kotlin/app/retra/emulator/OnboardingUi.kt").read_text()
-for token in ["ONBOARDING_STEPS = 4", "VerifiedSourcesStep", "TRUST THE\\nSOURCE.", "No commercial ROM storefront"]:
-    if token not in onboarding:
-        raise SystemExit(f"Retra v2 onboarding capability missing: {token}")
-experience = (root / "app/src/main/kotlin/app/retra/emulator/RetraFinalExperienceUi.kt").read_text()
-for token in ["Prashant Chataut", "Library health", "Commercial ROM catalog", "Sync official checksum metadata"]:
-    if token not in experience:
-        raise SystemExit(f"Retra v2 settings/profile capability missing: {token}")
-details = (root / "app/src/main/kotlin/app/retra/emulator/RetraUi.kt").read_text()
-for token in ["Install matching community cheats", "Import a RetroArch .cht file", "canonicalTitle"]:
-    if token not in details:
-        raise SystemExit(f"Retra v2 game details capability missing: {token}")
 if (root / "app/retra-sideload.jks").exists() or "storePassword" in (root / "app/build.gradle.kts").read_text():
     raise SystemExit("A reusable app signing key or password must not be committed")
 
@@ -113,10 +101,6 @@ cheat_catalog_repository = (root / "app/src/main/kotlin/app/retra/emulator/data/
 for token in ["writeAtomically", "RetraCheatCatalogParser.parse", "compatibleEntries"]:
     if token not in cheat_catalog_repository:
         raise SystemExit(f"Cheat-index persistence capability missing: {token}")
-for final_ui in ["RetraFinalExperienceUi.kt", "RetraFinalDiscoverUi.kt"]:
-    if not (root / "app/src/main/kotlin/app/retra/emulator" / final_ui).is_file():
-        raise SystemExit(f"Final Retra UI surface is missing: {final_ui}")
-
 download_policy = (root / "core/download/src/main/kotlin/app/retra/core/download/CatalogDownloadPolicy.kt").read_text()
 for token in ["https", "MAX_DOWNLOAD_BYTES", "MAX_REDIRECTS", "validateRedirect", "validateResponse", "validateCompletedSize"]:
     if token not in download_policy:
@@ -157,11 +141,6 @@ for token in ["MultiplayerLanHost", "MAX_FRAME_BYTES", "InternetRelayTransport",
     if token not in transport:
         raise SystemExit(f"Multiplayer transport capability missing: {token}")
 
-community_ui = (root / "app/src/main/kotlin/app/retra/emulator/CommunityUi.kt").read_text()
-for token in ["OnlineCatalogImportCard", "CommunityHub", "Achievements", "Multiplayer"]:
-    if token not in community_ui:
-        raise SystemExit(f"Community UI capability missing: {token}")
-
 
 manifest = (root / "app/src/main/AndroidManifest.xml").read_text()
 for permission in ["android.permission.VIBRATE", "android.permission.POST_NOTIFICATIONS"]:
@@ -183,14 +162,6 @@ for token in ["RetraBackdrop", "GlassPanel", "LocalRetraSettings", "RetraAnimate
     if token not in glass:
         raise SystemExit(f"Premium glass design capability missing: {token}")
 
-skills = [
-    "ui-ux-pro-max", "design-guide", "paperclip-create-agent", "design-taste-frontend", "mobile-android-design"
-]
-for skill in skills:
-    if not (root / ".agents/skills" / skill / "SKILL.md").is_file():
-        raise SystemExit(f"Requested skill snapshot missing: {skill}")
-
-
 branding = (root / "branding/retra-logo.svg")
 if not branding.is_file() or "Portal and Save Core" not in branding.read_text():
     raise SystemExit("Retra Portal / Save Core brand source is missing or undocumented")
@@ -198,8 +169,6 @@ for asset in [
     "app/src/main/res/drawable-nodpi/retra_logo.png",
     "app/src/main/res/drawable/ic_retra_foreground.xml",
     "app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
-    "app/src/main/kotlin/app/retra/emulator/OnboardingUi.kt",
-    "app/src/main/kotlin/app/retra/emulator/ProfileUi.kt",
     "app/src/main/kotlin/app/retra/emulator/auth/GoogleAuthRepository.kt",
 ]:
     if not (root / asset).is_file():
@@ -209,19 +178,59 @@ for token in ["GetSignInWithGoogleOption", "setNonce", "GoogleIdTokenCredential.
     if token not in auth:
         raise SystemExit(f"Google identity capability missing: {token}")
 settings_model = (root / "core/model/src/main/kotlin/app/retra/core/model/GameModels.kt").read_text()
-for token in ["integerScaling", "displaySmoothing", "showTouchControls", "audioEnabled", "masterVolume", "autoSuspendOnBackground"]:
+for token in ["screenScalingMode", "displaySmoothing", "showTouchControls", "touchControlScale", "controlLayoutPreset", "autoSaveIntervalMinutes", "audioEnabled", "masterVolume", "autoSuspendOnBackground"]:
     if token not in settings_model:
         raise SystemExit(f"Functional emulator setting missing: {token}")
 player = (root / "app/src/main/kotlin/app/retra/emulator/PlayerUi.kt").read_text()
 surface = (root / "app/src/main/kotlin/app/retra/emulator/EmulationSurfaceView.kt").read_text()
-for token in ["showPerformanceOverlay", "showTouchControls", "integerScaling", "displaySmoothing"]:
+for token in ["showPerformanceOverlay", "showTouchControls", "screenScalingMode", "touchControlScale", "controlLayoutPreset", "autoSaveIntervalMinutes", "displaySmoothing"]:
     if token not in player:
         raise SystemExit(f"Player does not consume emulator setting: {token}")
-for token in ["configure", "integerScaling", "isFilterBitmap", "floor"]:
+for token in ["configure", "scalingMode", "ScreenScalingMode.FILL", "isFilterBitmap", "floor"]:
     if token not in surface:
         raise SystemExit(f"Video presenter capability missing: {token}")
+
+dead_ui = [
+    "RetraUi.kt", "RetraFinalExperienceUi.kt", "RetraFinalDiscoverUi.kt",
+    "OnboardingUi.kt", "CommunityUi.kt", "ProfileUi.kt", "NotificationSettingsUi.kt"
+]
+for filename in dead_ui:
+    if (root / "app/src/main/kotlin/app/retra/emulator" / filename).exists():
+        raise SystemExit(f"Legacy duplicate UI must not remain in the active source tree: {filename}")
+
+v22_ui = (root / "app/src/main/kotlin/app/retra/emulator/RetraV22Ui.kt").read_text()
+for token in ["RetraV22Root", "Prashant Chataut", "A library, not a storefront", "Playable homebrew", "Save Health Center", "Pokémon Heart & Soul"]:
+    if token not in v22_ui:
+        raise SystemExit(f"Retra 2.2 product surface missing: {token}")
+main_activity = (root / "app/src/main/kotlin/app/retra/emulator/MainActivity.kt").read_text()
+if "RetraV22Root" not in main_activity:
+    raise SystemExit("Retra 2.2 root is not active")
+build_file = (root / "app/build.gradle.kts").read_text()
+for token in ['versionName = "2.2.0"', "alias(libs.plugins.room)", "schemaDirectory"]:
+    if token not in build_file:
+        raise SystemExit(f"Retra 2.2 build hardening missing: {token}")
+bundled_patch = root / "app/src/main/assets/patches/pokemon_hns_v1_2_1.ups"
+if not bundled_patch.is_file() or bundled_patch.stat().st_size != 32558217:
+    raise SystemExit("Reviewed Heart & Soul v1.2.1 patch asset is missing or changed")
+
 if not (root / "scripts/fetch-mgba-archive.sh").is_file():
     raise SystemExit("Pinned mGBA archive fetch script is missing")
+
+backup = (root / "app/src/main/kotlin/app/retra/emulator/data/BackupRepository.kt").read_text()
+for token in ["RETRA-BACKUP", "romsIncluded", "AtomicSaveStore", "MAX_TOTAL_IMPORT_BYTES", "settingsRepository.replace", "achievementRepository.importProgress"]:
+    if token not in backup:
+        raise SystemExit(f"Portable ROM-free backup capability missing: {token}")
+vault = (root / "app/src/main/kotlin/app/retra/emulator/data/VaultRepository.kt").read_text()
+for token in ["VaultHealthSummary", "corruptedRecords", "backupCount", "restorePrevious"]:
+    if token not in vault:
+        raise SystemExit(f"Save Health capability missing: {token}")
+main_activity = (root / "app/src/main/kotlin/app/retra/emulator/MainActivity.kt").read_text()
+for token in ["routeExternalIntent", "ACTION_SEND", "queueExternalImport", "onNewIntent"]:
+    if token not in main_activity:
+        raise SystemExit(f"External import review path missing: {token}")
+for token in ["Review external file", "confirmExternalImport", "dismissExternalImport"]:
+    if token not in v22_ui:
+        raise SystemExit(f"External import confirmation UI missing: {token}")
 rewind = (root / "core/emulation/src/main/kotlin/app/retra/core/emulation/RewindBuffer.kt").read_text()
 for token in ["maximumBytes", "snapshotCount", "copyOf", "Not enough rewind history"]:
     if token not in rewind:
@@ -239,7 +248,7 @@ for token in ["MediaStore", "IS_PENDING", "Bitmap.CompressFormat.PNG", "fd.sync(
     if token not in screenshot:
         raise SystemExit(f"Screenshot capability missing: {token}")
 artwork = (root / "app/src/main/kotlin/app/retra/emulator/data/ArtworkRepository.kt").read_text()
-for token in ["MAX_SOURCE_BYTES", "BitmapFactory", "compress", "renameTo", "setCoverArt"]:
+for token in ["MAX_SOURCE_BYTES", "BitmapFactory", "compress", "Files.move", "setCoverArt"]:
     if token not in artwork:
         raise SystemExit(f"Artwork capability missing: {token}")
 for token in ["favorite", "notes", "coverArtPath"]:
@@ -256,7 +265,7 @@ for token in ["retro_load_game", "retro_serialize", "retro_get_memory_data", "RT
     if token not in mgba_adapter:
         raise SystemExit(f"mGBA/libretro adapter capability missing: {token}")
 
-print("PASS project structure, TOML, XML, public Compose APIs, final glass UI, feedback, notifications, migrations, patching, codes, trusted cheat indexes, catalogs, achievements, social, multiplayer, requested skill snapshots, DI, and emulation checks")
+print("PASS Retra 2.2 structure, UI, player customization, Room schema hardening, patching, achievements, catalogs, DI, and emulation checks")
 PY
 
 for script in "$ROOT"/scripts/*.sh "$ROOT"/tools/*/run.sh; do

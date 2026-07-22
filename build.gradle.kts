@@ -6,4 +6,5 @@ plugins {
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.legacy.kapt) apply false
     alias(libs.plugins.hilt.android) apply false
+    alias(libs.plugins.room) apply false
 }
