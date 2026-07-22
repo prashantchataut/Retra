@@ -1125,5 +1125,3 @@ private fun RetraCodesDialog(
         dismissButton = { FilledTonalButton(onClick = onDismiss) { Text("Close") } }
     )
 }
-
-private const val AUTO_SAVE_SLOT = 9

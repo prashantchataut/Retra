@@ -224,7 +224,6 @@ private fun V23App(viewModel: RetraViewModel, settings: AppSettings) {
     val achievements by viewModel.achievements.collectAsStateWithLifecycle()
     val vaultRecords by viewModel.vaultRecords.collectAsStateWithLifecycle()
     val vaultHealth by viewModel.vaultHealth.collectAsStateWithLifecycle()
-    val games by viewModel.games.collectAsStateWithLifecycle()
     val homebrew by viewModel.homebrewHub.collectAsStateWithLifecycle()
     val account by viewModel.account.collectAsStateWithLifecycle()
     val externalImport by viewModel.externalImport.collectAsStateWithLifecycle()
@@ -1335,6 +1334,7 @@ private fun V23SettingsScreen(settings: AppSettings, viewModel: RetraViewModel, 
 
 @Composable
 private fun SettingsCategoryContent(category: String, settings: AppSettings, viewModel: RetraViewModel, modifier: Modifier = Modifier) {
+    val games by viewModel.games.collectAsStateWithLifecycle()
     val vaultRecords by viewModel.vaultRecords.collectAsStateWithLifecycle()
     val vaultHealth by viewModel.vaultHealth.collectAsStateWithLifecycle()
     val exportBackup = rememberLauncherForActivityResult(

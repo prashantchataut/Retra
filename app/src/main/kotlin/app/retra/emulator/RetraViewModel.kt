@@ -1299,3 +1299,5 @@ class RetraViewModel @Inject constructor(
         super.onCleared()
     }
 }
+
+internal const val AUTO_SAVE_SLOT = 9

@@ -165,7 +165,7 @@ class GameRepository @Inject constructor(
         gameDao.updateCompatibilityNotebook(
             id = id,
             compatibility = compatibility.name,
-            notes = notes?.trim()?.replace(Regex("[\p{Cntrl}&&[^\n\t]]"), "")?.take(4_000)?.ifBlank { null }
+            notes = notes?.trim()?.replace(Regex("""[\p{Cntrl}&&[^\n\t]]"""), "")?.take(4_000)?.ifBlank { null }
         )
     }
 

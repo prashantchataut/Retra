@@ -192,7 +192,8 @@ for token in ["configure", "scalingMode", "ScreenScalingMode.FILL", "isFilterBit
 
 dead_ui = [
     "RetraUi.kt", "RetraFinalExperienceUi.kt", "RetraFinalDiscoverUi.kt",
-    "OnboardingUi.kt", "CommunityUi.kt", "ProfileUi.kt", "NotificationSettingsUi.kt"
+    "OnboardingUi.kt", "CommunityUi.kt", "ProfileUi.kt", "NotificationSettingsUi.kt",
+    "RetraV22Ui.kt"
 ]
 for filename in dead_ui:
     if (root / "app/src/main/kotlin/app/retra/emulator" / filename).exists():
