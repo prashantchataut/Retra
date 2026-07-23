@@ -131,6 +131,14 @@ class RetraNotificationCoordinator @Inject constructor(
 
     private fun post(channel: String, title: String, body: String, category: String) {
         if (!canNotify()) return
+        // Lint requires an in-scope permission check (or SecurityException handling) at
+        // the notify() call site; canNotify() alone is not enough for MissingPermission.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
         val notification = NotificationCompat.Builder(context, channel)
             .setSmallIcon(R.drawable.ic_retra_monochrome)
             .setContentTitle(title)
@@ -141,7 +149,11 @@ class RetraNotificationCoordinator @Inject constructor(
             .setAutoCancel(true)
             .setColor(ContextCompat.getColor(context, R.color.retra_accent))
             .build()
-        NotificationManagerCompat.from(context).notify(notificationIds.incrementAndGet(), notification)
+        try {
+            NotificationManagerCompat.from(context).notify(notificationIds.incrementAndGet(), notification)
+        } catch (_: SecurityException) {
+            // User revoked POST_NOTIFICATIONS between the check and the notify call.
+        }
     }
 
     private fun openAppIntent(): PendingIntent {
