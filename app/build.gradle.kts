@@ -81,6 +81,11 @@ android {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
 
+    lint {
+        abortOnError = true
+        checkReleaseBuilds = false
+    }
+
     sourceSets.getByName("androidTest").assets.srcDir("$projectDir/schemas")
 }
 

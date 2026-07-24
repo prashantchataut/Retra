@@ -200,8 +200,12 @@ jobs:
           STATUS=$?
           REPORT="$(find app/build -name 'lint-results-debug.txt' | head -n 1)"
           if [ -n "$REPORT" ]; then
-            echo "---- lint errors ----"
-            grep -E '^Error:|^/home/|^[[:space:]]*[0-9]+ errors' "$REPORT" | head -n 80 || true
+            echo "---- lint report: $REPORT ----"
+            grep -nE 'Error:| error |errors,|\[RestrictedApi\]|\[NewApi\]|\[MissingPermission\]' "$REPORT" | head -n 120 || true
+            echo "---- lint report tail ----"
+            tail -n 40 "$REPORT" || true
+          else
+            echo "---- lint report missing; gradle exit=$STATUS ----"
           fi
           exit $STATUS
 

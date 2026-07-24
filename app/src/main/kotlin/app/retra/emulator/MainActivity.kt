@@ -1,6 +1,5 @@
 package app.retra.emulator
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -29,24 +28,16 @@ class MainActivity : ComponentActivity() {
         routeExternalIntent(intent)
     }
 
-    // ComponentActivity.dispatchKeyEvent is LIBRARY_GROUP_PREFIX-restricted in current
-    // AndroidX, but overriding it remains the correct way to intercept gamepad keys
-    // before Compose consumes them.
-    @SuppressLint("RestrictedApi")
-    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        val device = event.device
-        val gameInput = event.source and (InputDevice.SOURCE_GAMEPAD or InputDevice.SOURCE_DPAD or InputDevice.SOURCE_JOYSTICK) != 0
-        if (device != null && gameInput && event.action in setOf(KeyEvent.ACTION_DOWN, KeyEvent.ACTION_UP)) {
-            val handled = viewModel.handleControllerKeyEvent(
-                deviceDescriptor = device.descriptor.orEmpty(),
-                deviceName = device.name.orEmpty(),
-                keyCode = event.keyCode,
-                pressed = event.action == KeyEvent.ACTION_DOWN,
-                repeatCount = event.repeatCount
-            )
-            if (handled) return true
-        }
-        return super.dispatchKeyEvent(event)
+    // Prefer Activity key callbacks over ComponentActivity.dispatchKeyEvent, which
+    // AndroidX marks LIBRARY_GROUP_PREFIX-restricted and plans to make final.
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (handleHardwareControllerKey(event, pressed = true)) return true
+        return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
+        if (handleHardwareControllerKey(event, pressed = false)) return true
+        return super.onKeyUp(keyCode, event)
     }
 
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
@@ -78,6 +69,21 @@ class MainActivity : ComponentActivity() {
             }
         }
         return super.onGenericMotionEvent(event)
+    }
+
+    private fun handleHardwareControllerKey(event: KeyEvent, pressed: Boolean): Boolean {
+        val device = event.device ?: return false
+        val gameInput = event.source and (
+            InputDevice.SOURCE_GAMEPAD or InputDevice.SOURCE_DPAD or InputDevice.SOURCE_JOYSTICK
+            ) != 0
+        if (!gameInput) return false
+        return viewModel.handleControllerKeyEvent(
+            deviceDescriptor = device.descriptor.orEmpty(),
+            deviceName = device.name.orEmpty(),
+            keyCode = event.keyCode,
+            pressed = pressed,
+            repeatCount = event.repeatCount
+        )
     }
 
     private fun centeredAxis(event: MotionEvent, device: InputDevice, axis: Int): Float {
