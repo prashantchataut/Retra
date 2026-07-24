@@ -193,7 +193,17 @@ jobs:
         run: ./tools/schema-verification/run.sh
 
       - name: Android lint
-        run: ./gradlew --no-daemon --no-parallel --stacktrace :app:lintDebug
+        shell: bash
+        run: |
+          set +e
+          ./gradlew --no-daemon --no-parallel --stacktrace :app:lintDebug
+          STATUS=$?
+          REPORT="$(find app/build -name 'lint-results-debug.txt' | head -n 1)"
+          if [ -n "$REPORT" ]; then
+            echo "---- lint errors ----"
+            grep -E '^Error:|^/home/|^[[:space:]]*[0-9]+ errors' "$REPORT" | head -n 80 || true
+          fi
+          exit $STATUS
 
       - name: Upload lint reports on failure
         if: failure()

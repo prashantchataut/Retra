@@ -1,5 +1,6 @@
 package app.retra.emulator
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -28,6 +29,10 @@ class MainActivity : ComponentActivity() {
         routeExternalIntent(intent)
     }
 
+    // ComponentActivity.dispatchKeyEvent is LIBRARY_GROUP_PREFIX-restricted in current
+    // AndroidX, but overriding it remains the correct way to intercept gamepad keys
+    // before Compose consumes them.
+    @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         val device = event.device
         val gameInput = event.source and (InputDevice.SOURCE_GAMEPAD or InputDevice.SOURCE_DPAD or InputDevice.SOURCE_JOYSTICK) != 0
