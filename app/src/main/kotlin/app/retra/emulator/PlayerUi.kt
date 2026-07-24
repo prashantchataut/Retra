@@ -1,7 +1,7 @@
 package app.retra.emulator
 
-import android.app.Activity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -73,7 +73,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -117,7 +116,7 @@ fun PlayerScreen(
     val settings = remember(baseSettings, launchProfiles, game.sha256) {
         viewModel.effectivePlayerSettings(game, baseSettings)
     }
-    val activity = LocalContext.current as? Activity
+    val activity = LocalActivity.current
 
     DisposableEffect(activity, settings.playerImmersiveMode) {
         val controller = activity?.let { WindowCompat.getInsetsController(it.window, it.window.decorView) }
