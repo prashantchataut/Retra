@@ -130,7 +130,6 @@ class RetraNotificationCoordinator @Inject constructor(
     }
 
     private fun post(channel: String, title: String, body: String, category: String) {
-        if (!canNotify()) return
         // Lint requires an in-scope permission check (or SecurityException handling) at
         // the notify() call site; canNotify() alone is not enough for MissingPermission.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -139,6 +138,7 @@ class RetraNotificationCoordinator @Inject constructor(
         ) {
             return
         }
+        if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
         val notification = NotificationCompat.Builder(context, channel)
             .setSmallIcon(R.drawable.ic_retra_monochrome)
             .setContentTitle(title)

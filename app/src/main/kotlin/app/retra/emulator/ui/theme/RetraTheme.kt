@@ -236,10 +236,13 @@ fun RetraTheme(settings: AppSettings, content: @Composable () -> Unit) {
         ThemeMode.DARK, ThemeMode.OLED -> true
     }
     val context = LocalContext.current
-    val dynamic = settings.dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     val base = when {
-        dynamic && dark -> dynamicDarkColorScheme(context)
-        dynamic -> dynamicLightColorScheme(context)
+        settings.dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && dark -> {
+            dynamicDarkColorScheme(context)
+        }
+        settings.dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            dynamicLightColorScheme(context)
+        }
         settings.themeMode == ThemeMode.OLED -> DarkBase.copy(
             background = Color.Black,
             surface = Color(0xFF05090B),
