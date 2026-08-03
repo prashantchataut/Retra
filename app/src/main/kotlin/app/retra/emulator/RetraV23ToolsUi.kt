@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteOutline
@@ -84,7 +83,7 @@ fun ControllerStudioPanel(viewModel: RetraViewModel) {
         )
         ControllerInputTester(viewModel)
         if (devices.isEmpty()) {
-            Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
+            Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f)) {
                 Text(
                     "Connect a USB or Bluetooth controller, then press any button. Retra will register the device here.",
                     Modifier.padding(14.dp)
@@ -128,7 +127,7 @@ fun ControllerStudioPanel(viewModel: RetraViewModel) {
             var deadZone by remember(profile.id, profile.deadZone) { mutableFloatStateOf(profile.deadZone) }
             var trigger by remember(profile.id, profile.triggerThreshold) { mutableFloatStateOf(profile.triggerThreshold) }
 
-            Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
+            Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f)) {
                 Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Analog calibration", fontWeight = FontWeight.SemiBold)
                     Text("Dead zone ${(deadZone * 100).toInt()}%", style = MaterialTheme.typography.bodySmall)
@@ -153,7 +152,7 @@ fun ControllerStudioPanel(viewModel: RetraViewModel) {
             }
 
             if (profile.alternateBindings.isNotEmpty()) {
-                Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.secondaryContainer) {
+                Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.secondaryContainer) {
                     Text(
                         "${profile.alternateBindings.size} action${if (profile.alternateBindings.size == 1) " has" else "s have"} alternate physical buttons. Each physical button still resolves to exactly one emulator action.",
                         Modifier.padding(12.dp),
@@ -165,7 +164,7 @@ fun ControllerStudioPanel(viewModel: RetraViewModel) {
             Text("Bindings", fontWeight = FontWeight.SemiBold)
             CONTROLLER_ACTIONS.forEach { action ->
                 val keys = profile.bindings.filterValues { it == action }.keys.sorted()
-                Surface(shape = RoundedCornerShape(15.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
+                Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f)) {
                     Row(
                         Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -224,7 +223,7 @@ fun SaveTimelinePanel(viewModel: RetraViewModel, games: List<GameRecord>) {
             .forEach { game ->
                 val gameRecords = records.filter { it.gameSha256.equals(game.sha256, true) }
                 val entries = timelineByGame[game.sha256.lowercase()].orEmpty()
-                Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
+                Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f)) {
                     Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Icon(Icons.Default.History, null)
@@ -276,7 +275,7 @@ fun SaveTimelinePanel(viewModel: RetraViewModel, games: List<GameRecord>) {
 
 @Composable
 private fun TimelineEntryRow(entry: SaveTimelineEntry, onRestore: () -> Unit, onDelete: () -> Unit) {
-    Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceContainerHighest) {
+    Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceVariant) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -319,7 +318,7 @@ fun PerformanceAdvisorPanel(viewModel: RetraViewModel, games: List<GameRecord>) 
         relevantGames.forEach { game ->
             val advice = adviceByGame[game.sha256.lowercase()]
             val selected = profiles[game.sha256.lowercase()]?.performanceProfile
-            Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
+            Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f)) {
                 Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Icon(Icons.Default.Speed, null)
@@ -418,7 +417,7 @@ fun GameLaunchProfileDialog(
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Text("Only this game uses these values. Global player settings remain unchanged.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 advice?.takeIf { it.ready && it.recommendedProfile != null }?.let {
-                    Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.secondaryContainer) {
+                    Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.secondaryContainer) {
                         Column(Modifier.fillMaxWidth().padding(12.dp)) {
                             Text("Measured recommendation", fontWeight = FontWeight.SemiBold)
                             Text("${it.recommendedProfile?.prettyName()} · ${(it.confidence * 100).toInt()}% confidence", style = MaterialTheme.typography.bodySmall)

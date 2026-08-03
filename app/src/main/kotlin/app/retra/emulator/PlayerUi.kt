@@ -93,7 +93,7 @@ import app.retra.emulation.api.VideoFrame
 import kotlinx.coroutines.delay
 
 /**
- * Retra 2.3 player shell.
+ * Retra 3.0 player shell.
  *
  * The video surface remains the visual priority. Session actions are reachable in one tap,
  * touch controls adapt to compact and wide windows, and every visual control preference is
@@ -131,7 +131,9 @@ fun PlayerScreen(
     var menuOpen by remember { mutableStateOf(false) }
     var customizationOpen by remember { mutableStateOf(false) }
     var cheatsOpen by remember { mutableStateOf(false) }
-    var quickActionsVisible by remember { mutableStateOf(true) }
+    var quickActionsVisible by remember(settings.playerImmersiveMode) {
+        mutableStateOf(!settings.playerImmersiveMode)
+    }
     var selectedSlot by remember { mutableIntStateOf(0) }
     var selectedSpeed by remember { mutableFloatStateOf(1f) }
 

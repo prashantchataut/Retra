@@ -18,7 +18,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { RetraV23Root(viewModel) }
+        setContent { RetraV3Root(viewModel) }
         routeExternalIntent(intent)
     }
 

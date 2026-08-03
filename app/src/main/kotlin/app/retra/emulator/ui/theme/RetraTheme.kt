@@ -23,7 +23,7 @@ import app.retra.core.model.AccentPalette
 import app.retra.core.model.AppSettings
 import app.retra.core.model.ThemeMode
 
-/** Retra 1.0 "Archive Glass" palette: mineral, cool, and deliberately non-purple. */
+/** Retra 3.0 "Archive Glass" palette: mineral, cool, and deliberately non-purple. */
 val VoidBlack = Color(0xFF050A0D)
 val NightNavy = Color(0xFF091219)
 val Graphite = Color(0xFF101A20)

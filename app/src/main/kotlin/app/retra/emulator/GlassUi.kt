@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -22,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.retra.core.model.AppSettings
@@ -111,13 +111,14 @@ private fun AmbientLight(
 }
 
 /**
- * A readable liquid-glass panel. The content itself is never blurred.
+ * A readable Archive Glass panel. Content is never blurred.
+ * Prefer [app.retra.emulator.ui.components.RetraPanel] so callers use theme shapes.
  */
 @Composable
 fun GlassPanel(
     modifier: Modifier = Modifier,
     settings: AppSettings? = null,
-    cornerRadius: Dp = 24.dp,
+    shape: Shape = MaterialTheme.shapes.large,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     content: @Composable () -> Unit
 ) {
@@ -125,7 +126,6 @@ fun GlassPanel(
     val effectiveSettings = settings ?: LocalRetraSettings.current
     val reduceTransparency = effectiveSettings?.reduceTransparency == true
     val intensity = effectiveSettings?.glassIntensity?.coerceIn(0f, 1f) ?: 0.42f
-    val shape = RoundedCornerShape(cornerRadius)
     val fillAlpha = if (reduceTransparency) 1f else (0.68f + intensity * 0.16f).coerceIn(0.68f, 0.88f)
     val edgeAlpha = if (reduceTransparency) 0.88f else (0.42f + intensity * 0.20f)
 
@@ -153,6 +153,31 @@ fun GlassPanel(
     }
 }
 
+/** @deprecated Prefer GlassPanel(shape = …) or RetraPanel. Kept for binary-safe migration. */
+@Composable
+fun GlassPanel(
+    modifier: Modifier = Modifier,
+    settings: AppSettings? = null,
+    cornerRadius: Dp,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    content: @Composable () -> Unit
+) {
+    val mapped = when {
+        cornerRadius.value <= 10f -> MaterialTheme.shapes.extraSmall
+        cornerRadius.value <= 14f -> MaterialTheme.shapes.small
+        cornerRadius.value <= 20f -> MaterialTheme.shapes.medium
+        cornerRadius.value <= 27f -> MaterialTheme.shapes.large
+        else -> MaterialTheme.shapes.extraLarge
+    }
+    GlassPanel(
+        modifier = modifier,
+        settings = settings,
+        shape = mapped,
+        contentPadding = contentPadding,
+        content = content
+    )
+}
+
 @Composable
 fun GlassPill(
     modifier: Modifier = Modifier,
@@ -164,7 +189,7 @@ fun GlassPill(
     val opaque = settings?.reduceTransparency == true
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(999.dp),
+        shape = CircleShape,
         color = when {
             selected -> colors.primaryContainer.copy(alpha = if (opaque) 1f else 0.78f)
             opaque -> colors.surfaceVariant
