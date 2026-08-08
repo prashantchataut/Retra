@@ -219,7 +219,7 @@ fun V3SettingsScreen(settings: AppSettings, viewModel: RetraViewModel, onBack: (
                                         Text("GBA archive and emulator", color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
-                                V3AboutLine("Built-in game", "Retra Drift · original open-source GBA homebrew")
+                                V3AboutLine("Offline demo", "Retra Drift planned for a future packaged build")
                                 V3AboutLine("Imported content", "Owned backups, user-selected patches, licensed homebrew")
                                 V3AboutLine("Patch formats", "UPS, IPS, BPS")
                                 V3AboutLine("Privacy", "Local by default")

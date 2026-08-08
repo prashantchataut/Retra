@@ -199,12 +199,23 @@ for filename in dead_ui:
     if (root / "app/src/main/kotlin/app/retra/emulator" / filename).exists():
         raise SystemExit(f"Legacy duplicate UI must not remain in the active source tree: {filename}")
 
-v23_ui = (root / "app/src/main/kotlin/app/retra/emulator/RetraV23Ui.kt").read_text()
-for token in ["RetraV23Root", "Prashant Chataut", "A library, not a storefront", "Playable homebrew", "Save Health Center", "Pokémon Heart & Soul", "Controller Studio", "Measured Performance Advisor"]:
-    if token not in v23_ui:
+v3_ui = (root / "app/src/main/kotlin/app/retra/emulator/RetraV3Ui.kt").read_text()
+settings_ui = (root / "app/src/main/kotlin/app/retra/emulator/RetraV3SettingsUi.kt").read_text()
+tools_ui = (root / "app/src/main/kotlin/app/retra/emulator/RetraV23ToolsUi.kt").read_text()
+for token, source in [
+    ("RetraV3Root", v3_ui),
+    ("Local by default", settings_ui),
+    ("Home", v3_ui),
+    ("Library", v3_ui),
+    ("Discover", v3_ui),
+    ("Controller Studio", tools_ui),
+    ("Timeline checkpoints", tools_ui),
+    ("PerformanceAdvisorPanel", tools_ui),
+]:
+    if token not in source:
         raise SystemExit(f"Retra 2.3 product surface missing: {token}")
 main_activity = (root / "app/src/main/kotlin/app/retra/emulator/MainActivity.kt").read_text()
-if "RetraV23Root" not in main_activity:
+if "RetraV3Root" not in main_activity:
     raise SystemExit("Retra 2.3 root is not active")
 build_file = (root / "app/build.gradle.kts").read_text()
 for token in ['versionName = "2.3.0"', "alias(libs.plugins.room)", "schemaDirectory", "RETRA_SIGNING_STORE_FILE", "releaseSigningEnabled"]:
@@ -225,7 +236,7 @@ for relative, tokens in v23_capabilities.items():
     for token in tokens:
         if token not in source:
             raise SystemExit(f"Retra 2.3 capability missing from {relative}: {token}")
-for token in ["dispatchKeyEvent", "onGenericMotionEvent", "handleControllerKeyEvent", "handleControllerMotionEvent"]:
+for token in ["onKeyDown", "onKeyUp", "onGenericMotionEvent", "handleControllerKeyEvent", "handleControllerMotionEvent"]:
     if token not in main_activity:
         raise SystemExit(f"Hardware controller input path missing: {token}")
 game_repository = (root / "app/src/main/kotlin/app/retra/emulator/data/GameRepository.kt").read_text()
@@ -251,8 +262,8 @@ main_activity = (root / "app/src/main/kotlin/app/retra/emulator/MainActivity.kt"
 for token in ["routeExternalIntent", "ACTION_SEND", "queueExternalImport", "onNewIntent"]:
     if token not in main_activity:
         raise SystemExit(f"External import review path missing: {token}")
-for token in ["Review external file", "confirmExternalImport", "dismissExternalImport"]:
-    if token not in v23_ui:
+for token in ["Inspect before importing", "confirmExternalImport", "dismissExternalImport"]:
+    if token not in v3_ui:
         raise SystemExit(f"External import confirmation UI missing: {token}")
 rewind = (root / "core/emulation/src/main/kotlin/app/retra/core/emulation/RewindBuffer.kt").read_text()
 for token in ["maximumBytes", "snapshotCount", "copyOf", "Not enough rewind history"]:
@@ -297,15 +308,19 @@ done
 
 echo "PASS shell syntax checks"
 
-JAVA_HOME=$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")
 OUT=$(mktemp -d)
 trap 'rm -rf "$OUT"' EXIT
-c++ -std=c++20 -Wall -Wextra -Werror \
-  -I"$JAVA_HOME/include" -I"$JAVA_HOME/include/linux" \
-  -I"$ROOT/emulation/native/src/main/cpp" \
-  -c "$ROOT/emulation/native/src/main/cpp/jni_bridge.cpp" \
-  -o "$OUT/jni_bridge.o"
-echo "PASS JNI bridge host syntax compilation"
+if command -v javac >/dev/null 2>&1; then
+  JAVA_HOME=$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")
+  c++ -std=c++20 -Wall -Wextra -Werror \
+    -I"$JAVA_HOME/include" -I"$JAVA_HOME/include/linux" \
+    -I"$ROOT/emulation/native/src/main/cpp" \
+    -c "$ROOT/emulation/native/src/main/cpp/jni_bridge.cpp" \
+    -o "$OUT/jni_bridge.o"
+  echo "PASS JNI bridge host syntax compilation"
+else
+  echo "SKIP JNI bridge host syntax compilation: javac/JDK headers are unavailable"
+fi
 
 c++ -std=c++20 -Wall -Wextra -Werror \
   -I"$ROOT/emulation/native/src/main/cpp" \
