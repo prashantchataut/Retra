@@ -23,18 +23,17 @@ class ControllerProfileAndTimelineTest {
     fun controllerProfileNormalizesCalibrationValues() {
         val profile = ControllerProfile(
             id = "test-controller",
-            displayName = "Pro Gamepad",
             deviceDescriptor = "vendor_1234_product_5678",
+            deviceName = "Pro Gamepad",
             gameSha256 = null,
-            bindings = mapOf(96 to EmulatorButton.A, 97 to EmulatorButton.B),
-            alternateBindings = emptyMap(),
             deadZone = 0.20f,
             triggerThreshold = 0.50f,
-            rumbleEnabled = true,
-            analogMapping = "DUAL_STICK"
+            bindings = mapOf(96 to EmulatorButton.A, 97 to EmulatorButton.B)
         )
 
         assertEquals("test-controller", profile.id)
+        assertEquals("Pro Gamepad", profile.deviceName)
+        assertEquals("vendor_1234_product_5678", profile.deviceDescriptor)
         assertEquals(EmulatorButton.A, profile.bindings[96])
         assertEquals(EmulatorButton.B, profile.bindings[97])
         assertTrue(profile.deadZone in 0.05f..0.65f)
