@@ -81,8 +81,10 @@ android {
     }
 
     testOptions {
-        unitTests.isReturnDefaultValues = true
-        unitTests.isIncludeAndroidResources = true
+        unitTests {
+            isReturnDefaultValues = true
+            isIncludeAndroidResources = true
+        }
     }
 
     // Patch files are already compressed binary containers. Prevent aapt2 from
