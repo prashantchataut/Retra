@@ -22,7 +22,6 @@ import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -42,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import app.retra.core.model.GameRecord
 import app.retra.core.model.LibraryLayout
 import app.retra.emulator.ui.components.RetraEmptyState
+import app.retra.emulator.ui.components.RetraGlassFilterChip
 import app.retra.emulator.ui.components.RetraPageTitle
 
 internal enum class V3Filter(val label: String) {
@@ -114,12 +114,12 @@ internal fun V3Library(
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 val visible = if (filtersExpanded) V3Filter.entries else listOf(V3Filter.ALL, V3Filter.CONTINUE, V3Filter.FAVORITES)
                 visible.forEach { item ->
-                    FilterChip(selected = filter == item, onClick = { filter = item }, label = { Text(item.label) })
+                    RetraGlassFilterChip(label = item.label, selected = filter == item, onClick = { filter = item })
                 }
-                FilterChip(
+                RetraGlassFilterChip(
+                    label = if (filtersExpanded) "Less" else "More",
                     selected = filtersExpanded,
-                    onClick = { filtersExpanded = !filtersExpanded },
-                    label = { Text(if (filtersExpanded) "Less" else "More") }
+                    onClick = { filtersExpanded = !filtersExpanded }
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
