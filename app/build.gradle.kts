@@ -80,6 +80,11 @@ android {
         buildConfig = true
     }
 
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+        unitTests.isIncludeAndroidResources = true
+    }
+
     // Patch files are already compressed binary containers. Prevent aapt2 from
     // spending minutes recompressing the 32 MiB reviewed UPS asset on every APK.
     androidResources {
