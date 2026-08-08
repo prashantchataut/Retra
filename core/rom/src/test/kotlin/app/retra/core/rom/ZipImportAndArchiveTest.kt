@@ -1,8 +1,5 @@
-package app.retra.emulator
+package app.retra.core.rom
 
-import app.retra.core.rom.GbaRomParser
-import app.retra.core.rom.InvalidRomException
-import app.retra.core.rom.Sha256
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -13,8 +10,7 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 /**
- * Validates ZIP archive handling, safety constraints, format validation,
- * and rejection reasons for unsupported entries.
+ * Validates ZIP archive handling, format validation, and rejection reasons.
  */
 class ZipImportAndArchiveTest {
 

@@ -1,7 +1,5 @@
-package app.retra.emulator
+package app.retra.emulation.api
 
-import app.retra.emulation.api.CoreDescriptor
-import app.retra.emulation.api.CoreTier
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

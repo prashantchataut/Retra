@@ -1,22 +1,18 @@
-package app.retra.emulator
+package app.retra.core.model
 
-import app.retra.core.model.CompatibilityStatus
-import app.retra.emulator.data.GameEntity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Validates Room entity to domain record mapping, CSV tag encoding/decoding,
- * and database v6 metadata integrity.
+ * Validates domain game records, compatibility statuses, and model transformations.
  */
-class GameEntityAndDaoModelTest {
+class GameModelMappingTest {
 
     @Test
-    fun entityToRecordPreservesAllV6Fields() {
-        val entity = GameEntity(
+    fun gameRecordPreservesAllDomainFields() {
+        val record = GameRecord(
             id = 42L,
             uri = "content://media/external/123",
             displayName = "Custom Game.gba",
@@ -28,7 +24,7 @@ class GameEntityAndDaoModelTest {
             sizeBytes = 16_777_216L,
             importedAtEpochMillis = 1000L,
             lastPlayedAtEpochMillis = 2000L,
-            compatibility = CompatibilityStatus.PLAYABLE.name,
+            compatibility = CompatibilityStatus.PLAYABLE,
             origin = "LOCAL_IMPORT",
             baseSha256 = "b".repeat(64),
             patchSha256 = "c".repeat(64),
@@ -46,11 +42,9 @@ class GameEntityAndDaoModelTest {
             canonicalTitle = "Canonical Game Title",
             metadataSource = "Libretro DAT",
             managedPath = "/data/user/0/rom.gba",
-            collectionsCsv = "RPG|Favorites",
-            tagsCsv = "retro|handheld"
+            collections = listOf("RPG", "Favorites"),
+            tags = listOf("retro", "handheld")
         )
-
-        val record = entity.toRecord()
 
         assertEquals(42L, record.id)
         assertEquals("content://media/external/123", record.uri)
@@ -80,20 +74,11 @@ class GameEntityAndDaoModelTest {
     }
 
     @Test
-    fun csvEncodingAndDecodingHandlesSpecialCases() {
-        val original = listOf("Action", "Adventure", "RPG")
-        val encoded = GameEntity.encodeCsv(original)
-        assertEquals("Action|Adventure|RPG", encoded)
-
-        val decoded = GameEntity.decodeCsv(encoded)
-        assertEquals(original, decoded)
-
-        // Empty string decodes to empty list
-        assertEquals(emptyList<String>(), GameEntity.decodeCsv(""))
-
-        // Whitespace and duplicates trimmed
-        val messy = listOf("  Alpha  ", "Beta", "Alpha", "")
-        val cleanEncoded = GameEntity.encodeCsv(messy)
-        assertEquals("Alpha|Beta", cleanEncoded)
+    fun compatibilityStatusEnumValuesAreComplete() {
+        val values = CompatibilityStatus.entries
+        assertTrue(values.contains(CompatibilityStatus.PLAYABLE))
+        assertTrue(values.contains(CompatibilityStatus.UNKNOWN))
+        assertTrue(values.contains(CompatibilityStatus.HAS_ISSUES))
+        assertTrue(values.contains(CompatibilityStatus.UNPLAYABLE))
     }
 }

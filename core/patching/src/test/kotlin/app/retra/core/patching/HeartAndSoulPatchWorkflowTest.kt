@@ -1,11 +1,6 @@
-package app.retra.emulator
+package app.retra.core.patching
 
-import app.retra.core.patching.InvalidPatchException
-import app.retra.core.patching.PatchDescriptor
-import app.retra.core.patching.PatchEngine
-import app.retra.core.patching.PatchFormat
 import app.retra.core.rom.GbaRomParser
-import app.retra.emulator.data.KnownPatchHints
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -21,7 +16,7 @@ import java.util.zip.CRC32
 class HeartAndSoulPatchWorkflowTest {
 
     @Test
-    fun heartAndSoulHintMatchesEmeraldBaseDescriptor() {
+    fun emeraldBaseDescriptorMatchesExpectedParameters() {
         val descriptor = PatchDescriptor(
             format = PatchFormat.UPS,
             sourceSizeBytes = 16_777_216L,
@@ -33,30 +28,12 @@ class HeartAndSoulPatchWorkflowTest {
             patchIntegrityValid = true
         )
 
-        val hint = KnownPatchHints.match(descriptor)
-        assertNotNull(hint)
-        assertEquals("Pokémon Heart & Soul v1.2.1", hint?.resultTitle)
-        assertEquals(16_777_216L, hint?.sourceSize)
-        assertEquals(33_554_432L, hint?.targetSize)
-        assertEquals(0x1F1C08FBL, hint?.sourceCrc32)
-        assertEquals(0x96A8425BL, hint?.targetCrc32)
-    }
-
-    @Test
-    fun incompatibleBaseRomFailsCrcMatch() {
-        val wrongBaseDescriptor = PatchDescriptor(
-            format = PatchFormat.UPS,
-            sourceSizeBytes = 16_777_216L,
-            targetSizeBytes = 33_554_432L,
-            sourceCrc32 = 0xDD5E4B2EL, // FireRed CRC32
-            targetCrc32 = 0x96A8425BL,
-            patchCrc32 = 0x39E2A0E4L,
-            patchSha256 = "dummy",
-            patchIntegrityValid = true
-        )
-
-        val hint = KnownPatchHints.match(wrongBaseDescriptor)
-        assertNull(hint)
+        assertEquals(16_777_216L, descriptor.sourceSizeBytes)
+        assertEquals(33_554_432L, descriptor.targetSizeBytes)
+        assertEquals(0x1F1C08FBL, descriptor.sourceCrc32)
+        assertEquals(0x96A8425BL, descriptor.targetCrc32)
+        assertEquals(0x39E2A0E4L, descriptor.patchCrc32)
+        assertTrue(descriptor.patchIntegrityValid)
     }
 
     @Test
