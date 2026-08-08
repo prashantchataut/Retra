@@ -103,7 +103,10 @@ internal fun V3GameSheet(
                 Surface(shape = MaterialTheme.shapes.medium, color = if (coreReady) SaveMint.copy(alpha = 0.12f) else AdventureGold.copy(alpha = 0.13f)) {
                     Row(Modifier.padding(13.dp), horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(if (coreReady) Icons.Default.CheckCircle else Icons.Default.Info, null, tint = if (coreReady) SaveMint else AdventureGold)
-                        Text(if (coreReady) "Ready with ${coreStatus}" else coreStatus, style = MaterialTheme.typography.bodySmall)
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(if (coreReady) "Ready to play" else "Gameplay is unavailable", fontWeight = FontWeight.Bold)
+                            Text(if (coreReady) coreStatus else "$coreStatus Build Retra with the reviewed mGBA core to play.", style = MaterialTheme.typography.bodySmall)
+                        }
                     }
                 }
             }
@@ -178,7 +181,13 @@ internal fun V3PatchDialog(
         icon = { Icon(Icons.Default.AutoAwesome, null, tint = MemoryCoral) },
         title = { Text("Patch Studio", fontWeight = FontWeight.Black) },
         text = {
-            Column(Modifier.heightIn(max = 560.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
                 Text(patch.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text("This UPS file is not a game. Retra verified the patch container and now needs the exact base ROM it was authored for.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 RetraPanel(shape = MaterialTheme.shapes.medium, contentPadding = PaddingValues(14.dp)) {

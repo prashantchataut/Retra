@@ -1,3 +1,5 @@
+import java.util.zip.ZipFile
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -101,6 +103,22 @@ kapt {
 
 room {
     schemaDirectory("$projectDir/schemas")
+}
+
+tasks.named("assembleDebug") {
+    doLast {
+        val apk = layout.buildDirectory.file("outputs/apk/debug/app-debug.apk").get().asFile
+        require(apk.isFile) { "Debug APK was not produced: ${apk.absolutePath}" }
+        val requiredAbis = listOf("arm64-v8a", "armeabi-v7a", "x86_64")
+        ZipFile(apk).use { archive ->
+            requiredAbis.forEach { abi ->
+                val entry = archive.getEntry("lib/$abi/libmgba_libretro.so")
+                require(entry != null && entry.size > 0) {
+                    "Playable mGBA core is missing from the debug APK for $abi. Refusing to produce a diagnostics-only build."
+                }
+            }
+        }
+    }
 }
 
 dependencies {
