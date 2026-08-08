@@ -96,6 +96,31 @@ fun RetraPageTitle(
 }
 
 @Composable
+fun RetraGlassFilterChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        onClick = onClick,
+        modifier = modifier,
+        shape = MaterialTheme.shapes.medium,
+        color = if (selected) colors.primaryContainer.copy(alpha = 0.82f) else colors.surface.copy(alpha = 0.64f),
+        contentColor = if (selected) colors.onPrimaryContainer else colors.onSurfaceVariant,
+        border = BorderStroke(1.dp, if (selected) colors.primary.copy(alpha = 0.5f) else colors.outlineVariant.copy(alpha = 0.65f))
+    ) {
+        Text(
+            label,
+            modifier = Modifier.padding(horizontal = 15.dp, vertical = 11.dp),
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+        )
+    }
+}
+
+@Composable
 fun RetraBadge(
     label: String,
     color: Color,

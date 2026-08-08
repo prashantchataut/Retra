@@ -22,12 +22,12 @@ import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -41,11 +41,12 @@ import androidx.compose.ui.unit.dp
 import app.retra.core.model.GameRecord
 import app.retra.core.model.LibraryLayout
 import app.retra.emulator.ui.components.RetraEmptyState
+import app.retra.emulator.ui.components.RetraGlassFilterChip
 import app.retra.emulator.ui.components.RetraPageTitle
 
 internal enum class LibraryFilter(val label: String) {
     ALL("All"),
-    CONTINUE("Continue"),
+    CONTINUE("Played"),
     FAVORITES("Favorites"),
     PATCHED("Patched"),
     HOMEBREW("Homebrew"),
@@ -96,9 +97,15 @@ internal fun RetraLibrary(
                     onValueChange = { query = it.take(120) },
                     modifier = Modifier.weight(1f),
                     leadingIcon = { Icon(Icons.Default.Search, null) },
-                    placeholder = { Text("Search") },
+                    placeholder = { Text("Search your archive") },
                     singleLine = true,
-                    shape = MaterialTheme.shapes.medium
+                    shape = MaterialTheme.shapes.large,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.68f),
+                        focusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f),
+                        focusedBorderColor = MaterialTheme.colorScheme.primary
+                    )
                 )
                 IconButton(onClick = { onLayout(if (layout == LibraryLayout.DETAILED_LIST) LibraryLayout.LARGE_GRID else LibraryLayout.DETAILED_LIST) }) {
                     Icon(if (layout == LibraryLayout.DETAILED_LIST) Icons.Default.GridView else Icons.Default.List, "Change library layout")
@@ -107,12 +114,12 @@ internal fun RetraLibrary(
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 val visible = if (filtersExpanded) LibraryFilter.entries else listOf(LibraryFilter.ALL, LibraryFilter.CONTINUE, LibraryFilter.FAVORITES)
                 visible.forEach { item ->
-                    FilterChip(selected = filter == item, onClick = { filter = item }, label = { Text(item.label) })
+                    RetraGlassFilterChip(label = item.label, selected = filter == item, onClick = { filter = item })
                 }
-                FilterChip(
+                RetraGlassFilterChip(
+                    label = if (filtersExpanded) "Less" else "More",
                     selected = filtersExpanded,
-                    onClick = { filtersExpanded = !filtersExpanded },
-                    label = { Text(if (filtersExpanded) "Less" else "More") }
+                    onClick = { filtersExpanded = !filtersExpanded }
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -135,7 +142,7 @@ internal fun RetraLibrary(
                 body = if (games.isNotEmpty()) {
                     "Try another filter or clear search."
                 } else {
-                    "Import a GBA file you are allowed to use, or restore Retra Drift."
+                    "Import a GBA file you are allowed to use, or check whether the offline demo is packaged."
                 },
                 primaryLabel = "Import file",
                 onPrimary = onImport,
