@@ -173,27 +173,7 @@ jobs:
           test -s third_party/mgba/ANDROID_BINARY_HASHES.txt
 
       - name: Run debug unit tests
-        shell: bash
-        run: |
-          set +e
-          ./gradlew --no-daemon --no-parallel --stacktrace :app:testDebugUnitTest
-          STATUS=$?
-          if [ $STATUS -ne 0 ]; then
-            echo "==== UNIT TEST REPORT SUMMARY ===="
-            find . -name "*.xml" -path "*/test-results/*" -exec cat {} + || true
-          fi
-          exit $STATUS
-
-      - name: Upload test reports on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: unit-test-reports
-          path: |
-            app/build/reports/tests/**
-            core/*/build/reports/tests/**
-          if-no-files-found: ignore
-          retention-days: 7
+        run: ./gradlew --no-daemon --no-parallel --stacktrace :app:testDebugUnitTest
 
       - name: Compile migration instrumentation tests
         run: ./gradlew --no-daemon --no-parallel --stacktrace :app:compileDebugAndroidTestKotlin
