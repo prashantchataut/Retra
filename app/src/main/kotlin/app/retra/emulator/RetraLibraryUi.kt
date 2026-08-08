@@ -45,7 +45,7 @@ import app.retra.emulator.ui.components.RetraPageTitle
 
 internal enum class V3Filter(val label: String) {
     ALL("All"),
-    CONTINUE("Continue"),
+    CONTINUE("Played"),
     FAVORITES("Favorites"),
     PATCHED("Patched"),
     HOMEBREW("Homebrew"),
@@ -135,7 +135,7 @@ internal fun V3Library(
                 body = if (games.isNotEmpty()) {
                     "Try another filter or clear search."
                 } else {
-                    "Import a GBA file you are allowed to use, or restore Retra Drift."
+                    "Import a GBA file you are allowed to use, or check whether the offline demo is packaged."
                 },
                 primaryLabel = "Import file",
                 onPrimary = onImport,

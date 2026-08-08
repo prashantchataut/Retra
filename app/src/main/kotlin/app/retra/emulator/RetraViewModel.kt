@@ -257,6 +257,15 @@ class RetraViewModel @Inject constructor(
         handleImportOutcome(gameRepository.importFile(uri))
     }
 
+    /**
+     * The product copy historically promised a bundled Retra Drift ROM, but this
+     * checkout contains only the reviewed patch asset. Keep the entry point safe
+     * and explicit until an actual distributable homebrew build is packaged.
+     */
+    fun installBundledDemo() = viewModelScope.launch {
+        _messages.emit("Retra Drift is not bundled in this build yet. Import an original GBA homebrew or an owned backup to begin.")
+    }
+
     fun queueExternalImport(uri: Uri) {
         if (uri.scheme !in setOf("content", "file")) {
             _messages.tryEmit("Retra only accepts local files from Android's document or share system.")

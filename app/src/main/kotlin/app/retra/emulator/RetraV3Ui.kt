@@ -172,6 +172,7 @@ private fun V3App(viewModel: RetraViewModel, settings: AppSettings) {
                         onContinue = viewModel::launchGame,
                         onGame = viewModel::selectGame,
                         onImport = { importFile.launch(SUPPORTED_IMPORT_MIME_TYPES_V3) },
+                        onInstallDemo = viewModel::installBundledDemo,
                         onLibrary = { destination = V3Destination.LIBRARY },
                         onPatchStudio = viewModel::prepareHeartAndSoulPatch,
                         onSettings = { settingsOpen = true }
@@ -191,6 +192,7 @@ private fun V3App(viewModel: RetraViewModel, settings: AppSettings) {
                         loading = homebrew.loading,
                         installingSlug = homebrew.installingSlug,
                         onRefresh = { viewModel.refreshHomebrewHub() },
+                        onInstallDemo = viewModel::installBundledDemo,
                         onInstall = viewModel::installHomebrew,
                         loadArtwork = viewModel::loadHomebrewPreview,
                         onPatchStudio = viewModel::prepareHeartAndSoulPatch,

@@ -49,7 +49,7 @@ internal fun V3Onboarding(viewModel: RetraViewModel) {
     var page by rememberSaveable { mutableIntStateOf(0) }
     val pages = listOf(
         V3OnboardingPage("A private archive for games you return to", "Retra is built around resuming play, understanding your saves, and keeping every imported file exact.", Icons.Default.SportsEsports, RetraBlue),
-        V3OnboardingPage("A real homebrew game is already here", "Retra Drift is an original GBA mini-game included to verify the player without bundling copyrighted commercial ROMs.", Icons.Default.Gamepad, SaveMint),
+        V3OnboardingPage("Verify play with lawful content", "Retra does not bundle commercial ROMs. Import an owned backup or creator-published homebrew; a future packaged build may include Retra Drift.", Icons.Default.Gamepad, SaveMint),
         V3OnboardingPage("Patches need the exact base", "UPS, IPS, and BPS files are transformations, not games. Retra checks size and checksum before creating a separate patched copy.", Icons.Default.AutoAwesome, MemoryCoral),
         V3OnboardingPage("Your progress stays recoverable", "Manual states, rotating backups, screenshots, patch lineage, and checksum identity remain local and visible.", Icons.Default.Shield, MemoryAqua)
     )

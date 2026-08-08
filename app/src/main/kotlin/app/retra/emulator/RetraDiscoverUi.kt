@@ -64,6 +64,7 @@ internal fun V3Discover(
     loading: Boolean,
     installingSlug: String?,
     onRefresh: () -> Unit,
+    onInstallDemo: () -> Unit,
     onInstall: (HomebrewHubEntry) -> Unit,
     loadArtwork: suspend (HomebrewHubEntry) -> ByteArray?,
     onPatchStudio: () -> Unit,
@@ -81,7 +82,7 @@ internal fun V3Discover(
                 subtitle = "Homebrew and local patches.",
                 actionIcon = Icons.Default.Refresh,
                 actionLabel = "Refresh homebrew",
-                onAction = onRefresh
+                onAction = onRefresh.takeIf { onlineEnabled }
             )
         }
         item {
@@ -89,9 +90,9 @@ internal fun V3Discover(
                 BoxWithConstraints(Modifier.fillMaxWidth()) {
                     val stacked = maxWidth < 560.dp
                     if (stacked) {
-                        Column { V3DemoArt(Modifier.fillMaxWidth().height(190.dp)); V3DemoCopy() }
+                        Column { V3DemoArt(Modifier.fillMaxWidth().height(190.dp)); V3DemoCopy(onInstallDemo = onInstallDemo) }
                     } else {
-                        Row(Modifier.heightIn(min = 240.dp)) { V3DemoArt(Modifier.weight(0.42f).fillMaxHeight()); V3DemoCopy(Modifier.weight(0.58f)) }
+                        Row(Modifier.heightIn(min = 240.dp)) { V3DemoArt(Modifier.weight(0.42f).fillMaxHeight()); V3DemoCopy(Modifier.weight(0.58f), onInstallDemo) }
                     }
                 }
             }
@@ -140,7 +141,7 @@ internal fun V3Discover(
                     RetraPanel(shape = MaterialTheme.shapes.medium, contentPadding = PaddingValues(18.dp)) {
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             Text("No network gallery yet", fontWeight = FontWeight.Bold)
-                            Text("The included Retra Drift game remains playable offline. Refresh when you have a connection.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Retra Drift is not bundled in this build. Refresh when you have a connection to browse creator releases.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             OutlinedButton(onClick = onRefresh) { Icon(Icons.Default.Refresh, null); Spacer(Modifier.width(6.dp)); Text("Refresh") }
                         }
                     }
@@ -173,18 +174,23 @@ internal fun V3DemoArt(modifier: Modifier = Modifier) {
 }
 
 @Composable
-internal fun V3DemoCopy(modifier: Modifier = Modifier) {
+internal fun V3DemoCopy(modifier: Modifier = Modifier, onInstallDemo: () -> Unit) {
     Column(modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         RetraBadge("BUILT IN", SaveMint)
         Text("Retra Drift", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         Text(
-            "Original GBA homebrew included to verify play without commercial ROMs.",
+            "Original GBA homebrew intended to verify play without commercial ROMs. This build still requires an imported homebrew file.",
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             RetraBadge("OFFLINE", RetraBlue)
             RetraBadge("OPEN SOURCE", MemoryAqua)
             RetraBadge("64 KiB", AdventureGold)
+        }
+        Button(onClick = onInstallDemo) {
+            Icon(Icons.Default.Download, null)
+            Spacer(Modifier.width(6.dp))
+            Text("Check offline demo")
         }
     }
 }

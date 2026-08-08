@@ -61,6 +61,7 @@ internal fun V3Home(
     onContinue: (GameRecord) -> Unit,
     onGame: (GameRecord) -> Unit,
     onImport: () -> Unit,
+    onInstallDemo: () -> Unit,
     onLibrary: () -> Unit,
     onPatchStudio: () -> Unit,
     onSettings: () -> Unit
@@ -93,7 +94,7 @@ internal fun V3Home(
                     onDetails = { onGame(continueGame) }
                 )
             } else {
-                V3HeroEmpty(onImport)
+                V3HeroEmpty(onImport = onImport, onInstallDemo = onInstallDemo)
             }
         }
         if (recent.isNotEmpty()) {
@@ -201,19 +202,22 @@ internal fun V3HeroCopy(
 }
 
 @Composable
-internal fun V3HeroEmpty(onImport: () -> Unit) {
+internal fun V3HeroEmpty(onImport: () -> Unit, onInstallDemo: () -> Unit) {
     RetraPanel(shape = MaterialTheme.shapes.extraLarge, contentPadding = PaddingValues(26.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp), horizontalAlignment = Alignment.Start) {
             RetraBrandMark(size = 72.dp)
-            Text("Add a game you own", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Text("Start with your archive", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             Text(
-                "Import a GBA backup, ZIP, or patch file. Retra Drift is available from Discover if you want a built-in demo.",
+                "Import a GBA backup you own. Retra Drift is an original offline demo planned for a packaged build; no account or network is required for local play.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Button(onClick = onImport) {
-                Icon(Icons.Default.Add, null)
-                Spacer(Modifier.width(6.dp))
-                Text("Import")
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Button(onClick = onImport) {
+                    Icon(Icons.Default.Add, null)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Import game")
+                }
+                OutlinedButton(onClick = onInstallDemo) { Text("Check offline demo") }
             }
         }
     }
