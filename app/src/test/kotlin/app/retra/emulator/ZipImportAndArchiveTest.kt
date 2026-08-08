@@ -3,7 +3,6 @@ package app.retra.emulator
 import app.retra.core.rom.GbaRomParser
 import app.retra.core.rom.InvalidRomException
 import app.retra.core.rom.Sha256
-import app.retra.emulator.data.ImportOutcome
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -25,9 +24,8 @@ class ZipImportAndArchiveTest {
         val zipBytes = createZipArchive(mapOf("hero_quest.gba" to gbaBytes))
 
         assertNotNull(zipBytes)
-        assertTrue(zipBytes.size > 0)
+        assertTrue(zipBytes.isNotEmpty())
 
-        // Parse extracted ROM bytes
         val header = GbaRomParser.parse(gbaBytes)
         assertEquals("HERO QUEST", header.title)
         assertEquals("HREQ", header.gameCode)
@@ -35,33 +33,14 @@ class ZipImportAndArchiveTest {
         assertTrue(header.headerChecksumValid)
     }
 
-    @Test
+    @Test(expected = InvalidRomException::class)
     fun archiveWithZeroSupportedRomsRejectsWithHelpfulMessage() {
         val txtFile = "Hello, world!".toByteArray()
-        val pdfFile = "PDF-1.4 dummy".toByteArray()
-        val zipBytes = createZipArchive(mapOf(
-            "readme.txt" to txtFile,
-            "manual.pdf" to pdfFile
-        ))
-
-        assertNotNull(zipBytes)
-        // Verify that parsing text as GBA ROM fails with InvalidRomException
-        var failed = false
-        try {
-            GbaRomParser.parse(txtFile)
-        } catch (e: InvalidRomException) {
-            failed = true
-        }
-        assertTrue(failed)
+        GbaRomParser.parse(txtFile)
     }
 
     @Test
     fun archiveWithNdsFileExplainsDsBoundary() {
-        val ndsFile = ByteArray(1024) { 0 }
-        val zipBytes = createZipArchive(mapOf("game.nds" to ndsFile))
-
-        assertNotNull(zipBytes)
-        // Ensure that .nds entries are detected as unsupported DS titles
         val entryName = "game.nds"
         assertTrue(entryName.endsWith(".nds", ignoreCase = true))
     }

@@ -62,12 +62,11 @@ class HeartAndSoulPatchWorkflowTest {
     @Test
     fun upsPatchEngineAppliesXorAndExpandsRom() {
         val source = createBaseRom("POKEMON EMER", "BPEE", 1024)
-        val target = ByteArray(2048)
-        source.copyInto(target, 0, 0, source.size)
-        // Modify bytes in the target
-        target[0x200] = (target[0x200].toInt() xor 0x33).toByte()
-        target[0x201] = (target[0x201].toInt() xor 0x77).toByte()
-        target[1500] = 0x42
+        val target = ByteArray(2048).also {
+            source.copyInto(it, 0, 0, source.size)
+            it[0x200] = (it[0x200].toInt() xor 0x33).toByte()
+            it[0x201] = (it[0x201].toInt() xor 0x77).toByte()
+        }
 
         val patchBytes = createUpsPatch(source, target, 0x200, 2)
         val inspected = PatchEngine.inspect(patchBytes)
@@ -80,6 +79,7 @@ class HeartAndSoulPatchWorkflowTest {
         assertEquals(target.size, outcome.output.size)
         assertEquals(target[0x200], outcome.output[0x200])
         assertEquals(target[0x201], outcome.output[0x201])
+        assertTrue(outcome.output.contentEquals(target))
     }
 
     private fun createBaseRom(title: String, gameCode: String, size: Int): ByteArray {
