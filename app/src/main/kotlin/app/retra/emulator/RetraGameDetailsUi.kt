@@ -61,7 +61,7 @@ import app.retra.emulator.ui.theme.SaveMint
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun V3GameSheet(
+internal fun RetraGameSheet(
     game: GameRecord,
     coreReady: Boolean,
     coreStatus: String,
@@ -128,13 +128,13 @@ internal fun V3GameSheet(
             item {
                 RetraPanel(shape = MaterialTheme.shapes.medium, contentPadding = PaddingValues(16.dp)) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        V3DetailLine("File", game.displayName)
-                        V3DetailLine("Size", formatBytes(game.sizeBytes))
-                        V3DetailLine("Game code", game.gameCode.ifBlank { "Unknown" })
-                        V3DetailLine("CRC32", game.crc32?.let { "%08X".format(it) } ?: "Not indexed")
-                        V3DetailLine("SHA-256", game.sha256.take(16) + "…")
-                        game.creator?.let { V3DetailLine("Creator", it) }
-                        game.license?.let { V3DetailLine("License", it) }
+                        RetraDetailLine("File", game.displayName)
+                        RetraDetailLine("Size", formatBytes(game.sizeBytes))
+                        RetraDetailLine("Game code", game.gameCode.ifBlank { "Unknown" })
+                        RetraDetailLine("CRC32", game.crc32?.let { "%08X".format(it) } ?: "Not indexed")
+                        RetraDetailLine("SHA-256", game.sha256.take(16) + "…")
+                        game.creator?.let { RetraDetailLine("Creator", it) }
+                        game.license?.let { RetraDetailLine("License", it) }
                     }
                 }
             }
@@ -168,7 +168,7 @@ internal fun V3GameSheet(
 }
 
 @Composable
-internal fun V3PatchDialog(
+internal fun RetraPatchDialog(
     patch: PendingPatch,
     compatibleGames: List<GameRecord>,
     onImportBase: () -> Unit,
@@ -192,11 +192,11 @@ internal fun V3PatchDialog(
                 Text("This UPS file is not a game. Retra verified the patch container and now needs the exact base ROM it was authored for.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 RetraPanel(shape = MaterialTheme.shapes.medium, contentPadding = PaddingValues(14.dp)) {
                     Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                        V3DetailLine("Format", patch.descriptor.format.name)
-                        V3DetailLine("Base size", patch.descriptor.sourceSizeBytes?.let(::formatBytes) ?: "Not declared")
-                        V3DetailLine("Base CRC32", patch.descriptor.sourceCrc32?.let { "%08X".format(it) } ?: "Not declared")
-                        V3DetailLine("Output size", patch.descriptor.targetSizeBytes?.let(::formatBytes) ?: "Not declared")
-                        V3DetailLine("Patch CRC", patch.descriptor.patchCrc32?.let { "%08X".format(it) } ?: "Not declared")
+                        RetraDetailLine("Format", patch.descriptor.format.name)
+                        RetraDetailLine("Base size", patch.descriptor.sourceSizeBytes?.let(::formatBytes) ?: "Not declared")
+                        RetraDetailLine("Base CRC32", patch.descriptor.sourceCrc32?.let { "%08X".format(it) } ?: "Not declared")
+                        RetraDetailLine("Output size", patch.descriptor.targetSizeBytes?.let(::formatBytes) ?: "Not declared")
+                        RetraDetailLine("Patch CRC", patch.descriptor.patchCrc32?.let { "%08X".format(it) } ?: "Not declared")
                     }
                 }
                 if (hint != null) {

@@ -62,7 +62,7 @@ class LibretroCheatRepository @Inject constructor(
             connection.requestMethod = "GET"
             connection.setRequestProperty("Accept", "text/plain, application/octet-stream")
             connection.setRequestProperty("Accept-Encoding", "identity")
-            connection.setRequestProperty("User-Agent", "Retra/2.0 Android")
+            connection.setRequestProperty("User-Agent", "Retra/3.0 Android")
             when (val code = connection.responseCode) {
                 HttpURLConnection.HTTP_OK -> {
                     if (connection.contentLengthLong > RetroArchCheatParser.MAX_FILE_BYTES) {

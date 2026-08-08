@@ -127,7 +127,7 @@ class CatalogDownloadRepository @Inject constructor(
                         "application/x-zip-compressed, application/x-ups-patch, application/x-ips-patch, application/x-bps-patch"
                 )
                 connection.setRequestProperty("Accept-Encoding", "identity")
-                connection.setRequestProperty("User-Agent", "Retra/2.0 Android")
+                connection.setRequestProperty("User-Agent", "Retra/3.0 Android")
                 val code = connection.responseCode
                 if (code in REDIRECT_CODES) {
                     if (redirectIndex >= CatalogDownloadPolicy.MAX_REDIRECTS) {

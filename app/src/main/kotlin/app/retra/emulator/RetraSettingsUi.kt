@@ -58,7 +58,7 @@ import app.retra.core.model.StartupDestination
 import app.retra.core.model.ThemeMode
 import app.retra.emulator.ui.components.RetraPanel
 
-private enum class V3SettingsCategory(val label: String, val icon: ImageVector) {
+private enum class SettingsCategory(val label: String, val icon: ImageVector) {
     APPEARANCE("Appearance", Icons.Default.Palette),
     PLAYER("Player", Icons.Default.Speed),
     CONTROLS("Controls", Icons.Default.Gamepad),
@@ -68,9 +68,9 @@ private enum class V3SettingsCategory(val label: String, val icon: ImageVector) 
 }
 
 @Composable
-fun V3SettingsScreen(settings: AppSettings, viewModel: RetraViewModel, onBack: () -> Unit) {
+fun RetraSettingsScreen(settings: AppSettings, viewModel: RetraViewModel, onBack: () -> Unit) {
     val games by viewModel.games.collectAsStateWithLifecycle()
-    var category by rememberSaveable { mutableStateOf(V3SettingsCategory.APPEARANCE) }
+    var category by rememberSaveable { mutableStateOf(SettingsCategory.APPEARANCE) }
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -96,7 +96,7 @@ fun V3SettingsScreen(settings: AppSettings, viewModel: RetraViewModel, onBack: (
                 Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                V3SettingsCategory.entries.forEach { item ->
+                SettingsCategory.entries.forEach { item ->
                     FilterChip(
                         selected = category == item,
                         onClick = { category = item },
@@ -111,107 +111,107 @@ fun V3SettingsScreen(settings: AppSettings, viewModel: RetraViewModel, onBack: (
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 when (category) {
-                    V3SettingsCategory.APPEARANCE -> {
+                    SettingsCategory.APPEARANCE -> {
                         item {
-                            V3SettingsCard("Theme and contrast", Icons.Default.Palette) {
-                                V3ChoiceRow(ThemeMode.entries, settings.themeMode, { it.name.lowercase().replaceFirstChar(Char::uppercase) }, viewModel::setThemeMode)
-                                V3Toggle("Use system colors", "Allow Android dynamic color on supported devices.", settings.dynamicColor, viewModel::setDynamicColor)
-                                V3Toggle("High contrast", "Use stronger outlines and full-strength secondary text.", settings.highContrast, viewModel::setHighContrast)
-                                V3Toggle("Reduce transparency", "Replace translucent glass with opaque panels.", settings.reduceTransparency, viewModel::setReduceTransparency)
-                                V3Toggle("Reduce motion", "Use immediate transitions instead of crossfades.", settings.reduceMotion, viewModel::setReduceMotion)
+                            RetraSettingsCard("Theme and contrast", Icons.Default.Palette) {
+                                RetraChoiceRow(ThemeMode.entries, settings.themeMode, { it.name.lowercase().replaceFirstChar(Char::uppercase) }, viewModel::setThemeMode)
+                                RetraToggle("Use system colors", "Allow Android dynamic color on supported devices.", settings.dynamicColor, viewModel::setDynamicColor)
+                                RetraToggle("High contrast", "Use stronger outlines and full-strength secondary text.", settings.highContrast, viewModel::setHighContrast)
+                                RetraToggle("Reduce transparency", "Replace translucent glass with opaque panels.", settings.reduceTransparency, viewModel::setReduceTransparency)
+                                RetraToggle("Reduce motion", "Use immediate transitions instead of crossfades.", settings.reduceMotion, viewModel::setReduceMotion)
                             }
                         }
                         item {
-                            V3SettingsCard("Archive Glass", Icons.Default.Tune) {
-                                V3ChoiceRow(AccentPalette.entries, settings.accentPalette, ::accentLabel, viewModel::setAccentPalette)
-                                V3Slider("Glass intensity", settings.glassIntensity, 0f..1f, viewModel::setGlassIntensity)
-                                V3Slider("Corner scale", settings.cornerScale, 0.75f..1.35f, viewModel::setCornerScale, decimal = true, suffix = "×")
-                                V3Slider("Text scale", settings.fontScale, 0.85f..1.3f, viewModel::setFontScale, decimal = true, suffix = "×")
+                            RetraSettingsCard("Archive Glass", Icons.Default.Tune) {
+                                RetraChoiceRow(AccentPalette.entries, settings.accentPalette, ::accentLabel, viewModel::setAccentPalette)
+                                RetraSlider("Glass intensity", settings.glassIntensity, 0f..1f, viewModel::setGlassIntensity)
+                                RetraSlider("Corner scale", settings.cornerScale, 0.75f..1.35f, viewModel::setCornerScale, decimal = true, suffix = "×")
+                                RetraSlider("Text scale", settings.fontScale, 0.85f..1.3f, viewModel::setFontScale, decimal = true, suffix = "×")
                             }
                         }
                         item {
-                            V3SettingsCard("Library behavior", Icons.Default.Settings) {
-                                V3ChoiceRow(LibraryLayout.entries, settings.libraryLayout, ::libraryLabel, viewModel::setLibraryLayout)
-                                V3ChoiceRow(StartupDestination.entries, settings.startupDestination, { it.name.lowercase().replace('_', ' ').replaceFirstChar(Char::uppercase) }, viewModel::setStartupDestination)
-                                V3Toggle("Online recommendations", "Show the creator-credited Homebrew Hub gallery.", settings.showOnlineRecommendations, viewModel::setShowOnlineRecommendations)
-                                V3Toggle("Library statistics", "Show local archive and milestone counts.", settings.showStatistics, viewModel::setShowStatistics)
+                            RetraSettingsCard("Library behavior", Icons.Default.Settings) {
+                                RetraChoiceRow(LibraryLayout.entries, settings.libraryLayout, ::libraryLabel, viewModel::setLibraryLayout)
+                                RetraChoiceRow(StartupDestination.entries, settings.startupDestination, { it.name.lowercase().replace('_', ' ').replaceFirstChar(Char::uppercase) }, viewModel::setStartupDestination)
+                                RetraToggle("Online recommendations", "Show the creator-credited Homebrew Hub gallery.", settings.showOnlineRecommendations, viewModel::setShowOnlineRecommendations)
+                                RetraToggle("Library statistics", "Show local archive and milestone counts.", settings.showStatistics, viewModel::setShowStatistics)
                             }
                         }
                     }
-                    V3SettingsCategory.PLAYER -> {
+                    SettingsCategory.PLAYER -> {
                         item {
-                            V3SettingsCard("Display", Icons.Default.Speed) {
-                                V3ChoiceRow(ScreenScalingMode.entries, settings.screenScalingMode, { it.name.lowercase().replace('_', ' ').replaceFirstChar(Char::uppercase) }, viewModel::setScreenScalingMode)
-                                V3Toggle("Integer scaling", "Prefer crisp whole-number pixels when the screen allows it.", settings.integerScaling, viewModel::setIntegerScaling)
-                                V3Toggle("Display smoothing", "Filter the game image when scaling.", settings.displaySmoothing, viewModel::setDisplaySmoothing)
-                                V3Toggle("Immersive player", "Hide system chrome while playing.", settings.playerImmersiveMode, viewModel::setPlayerImmersiveMode)
-                                V3Toggle("Performance overlay", "Show frame pacing and runtime diagnostics.", settings.showPerformanceOverlay, viewModel::setShowPerformanceOverlay)
+                            RetraSettingsCard("Display", Icons.Default.Speed) {
+                                RetraChoiceRow(ScreenScalingMode.entries, settings.screenScalingMode, { it.name.lowercase().replace('_', ' ').replaceFirstChar(Char::uppercase) }, viewModel::setScreenScalingMode)
+                                RetraToggle("Integer scaling", "Prefer crisp whole-number pixels when the screen allows it.", settings.integerScaling, viewModel::setIntegerScaling)
+                                RetraToggle("Display smoothing", "Filter the game image when scaling.", settings.displaySmoothing, viewModel::setDisplaySmoothing)
+                                RetraToggle("Immersive player", "Hide system chrome while playing.", settings.playerImmersiveMode, viewModel::setPlayerImmersiveMode)
+                                RetraToggle("Performance overlay", "Show frame pacing and runtime diagnostics.", settings.showPerformanceOverlay, viewModel::setShowPerformanceOverlay)
                             }
                         }
                         item {
-                            V3SettingsCard("Performance", Icons.Default.Speed) {
-                                V3ChoiceRow(PerformanceProfile.entries, settings.performanceProfile, { it.name.lowercase().replace('_', ' ').replaceFirstChar(Char::uppercase) }, viewModel::setPerformanceProfile)
-                                V3Slider("Fast-forward", settings.fastForwardSpeed, 1f..8f, viewModel::setFastForwardSpeed, decimal = true, suffix = "×")
-                                V3Toggle("Suspend in background", "Pause and snapshot when Retra leaves the foreground.", settings.autoSuspendOnBackground, viewModel::setAutoSuspendOnBackground)
+                            RetraSettingsCard("Performance", Icons.Default.Speed) {
+                                RetraChoiceRow(PerformanceProfile.entries, settings.performanceProfile, { it.name.lowercase().replace('_', ' ').replaceFirstChar(Char::uppercase) }, viewModel::setPerformanceProfile)
+                                RetraSlider("Fast-forward", settings.fastForwardSpeed, 1f..8f, viewModel::setFastForwardSpeed, decimal = true, suffix = "×")
+                                RetraToggle("Suspend in background", "Pause and snapshot when Retra leaves the foreground.", settings.autoSuspendOnBackground, viewModel::setAutoSuspendOnBackground)
                             }
                         }
                         item { PerformanceAdvisorPanel(viewModel, games) }
                         item {
-                            V3SettingsCard("Audio", Icons.Default.VolumeUp) {
-                                V3Toggle("Game audio", "Enable emulator audio output.", settings.audioEnabled, viewModel::setAudioEnabled)
-                                V3Slider("Master volume", settings.masterVolume, 0f..1f, viewModel::setMasterVolume)
-                                V3Toggle("Pause on headphone disconnect", "Pause when wired or Bluetooth audio becomes unavailable.", settings.pauseOnHeadphoneDisconnect, viewModel::setPauseOnHeadphoneDisconnect)
+                            RetraSettingsCard("Audio", Icons.Default.VolumeUp) {
+                                RetraToggle("Game audio", "Enable emulator audio output.", settings.audioEnabled, viewModel::setAudioEnabled)
+                                RetraSlider("Master volume", settings.masterVolume, 0f..1f, viewModel::setMasterVolume)
+                                RetraToggle("Pause on headphone disconnect", "Pause when wired or Bluetooth audio becomes unavailable.", settings.pauseOnHeadphoneDisconnect, viewModel::setPauseOnHeadphoneDisconnect)
                             }
                         }
                     }
-                    V3SettingsCategory.CONTROLS -> {
+                    SettingsCategory.CONTROLS -> {
                         item {
-                            V3SettingsCard("Touch controls", Icons.Default.Gamepad) {
-                                V3Toggle("Show touch controls", "Keep the on-screen controls visible while playing.", settings.showTouchControls, viewModel::setShowTouchControls)
-                                V3ChoiceRow(ControlLayoutPreset.entries, settings.controlLayoutPreset, { it.name.lowercase().replace('_', ' ').replaceFirstChar(Char::uppercase) }, viewModel::setControlLayoutPreset)
-                                V3ChoiceRow(ControlVisualStyle.entries, settings.controlVisualStyle, { it.name.lowercase().replace('_', ' ').replaceFirstChar(Char::uppercase) }, viewModel::setControlVisualStyle)
-                                V3Slider("Control opacity", settings.touchControlOpacity, 0.25f..1f, viewModel::setTouchControlOpacity)
-                                V3Slider("Control size", settings.touchControlScale, 0.75f..1.45f, viewModel::setTouchControlScale, decimal = true, suffix = "×")
-                                V3Slider("Control spacing", settings.touchControlSpacing, 0.75f..1.4f, viewModel::setTouchControlSpacing, decimal = true, suffix = "×")
-                                V3Slider("Dead zone", settings.touchDeadZone, 0.05f..0.4f, viewModel::setTouchDeadZone)
-                                V3Toggle("Shoulder buttons", "Show L and R on the touch overlay.", settings.showShoulderButtons, viewModel::setShowShoulderButtons)
-                                V3Toggle("Quick actions", "Show save, load, fast-forward, and menu shortcuts.", settings.showQuickActions, viewModel::setShowQuickActions)
-                                V3Toggle("Haptics", "Use restrained tactile confirmation.", settings.hapticsEnabled, viewModel::setHapticsEnabled)
+                            RetraSettingsCard("Touch controls", Icons.Default.Gamepad) {
+                                RetraToggle("Show touch controls", "Keep the on-screen controls visible while playing.", settings.showTouchControls, viewModel::setShowTouchControls)
+                                RetraChoiceRow(ControlLayoutPreset.entries, settings.controlLayoutPreset, { it.name.lowercase().replace('_', ' ').replaceFirstChar(Char::uppercase) }, viewModel::setControlLayoutPreset)
+                                RetraChoiceRow(ControlVisualStyle.entries, settings.controlVisualStyle, { it.name.lowercase().replace('_', ' ').replaceFirstChar(Char::uppercase) }, viewModel::setControlVisualStyle)
+                                RetraSlider("Control opacity", settings.touchControlOpacity, 0.25f..1f, viewModel::setTouchControlOpacity)
+                                RetraSlider("Control size", settings.touchControlScale, 0.75f..1.45f, viewModel::setTouchControlScale, decimal = true, suffix = "×")
+                                RetraSlider("Control spacing", settings.touchControlSpacing, 0.75f..1.4f, viewModel::setTouchControlSpacing, decimal = true, suffix = "×")
+                                RetraSlider("Dead zone", settings.touchDeadZone, 0.05f..0.4f, viewModel::setTouchDeadZone)
+                                RetraToggle("Shoulder buttons", "Show L and R on the touch overlay.", settings.showShoulderButtons, viewModel::setShowShoulderButtons)
+                                RetraToggle("Quick actions", "Show save, load, fast-forward, and menu shortcuts.", settings.showQuickActions, viewModel::setShowQuickActions)
+                                RetraToggle("Haptics", "Use restrained tactile confirmation.", settings.hapticsEnabled, viewModel::setHapticsEnabled)
                             }
                         }
                         item { ControllerStudioPanel(viewModel) }
                     }
-                    V3SettingsCategory.SAVES -> {
+                    SettingsCategory.SAVES -> {
                         item {
-                            V3SettingsCard("Save policy", Icons.Default.Save) {
-                                V3Toggle("Quick save", "Enable the quick-state action in the player.", settings.quickSaveEnabled, viewModel::setQuickSaveEnabled)
+                            RetraSettingsCard("Save policy", Icons.Default.Save) {
+                                RetraToggle("Quick save", "Enable the quick-state action in the player.", settings.quickSaveEnabled, viewModel::setQuickSaveEnabled)
                                 Text("Automatic state interval", fontWeight = FontWeight.SemiBold)
-                                V3ChoiceRow(listOf(0, 2, 5, 10, 15), settings.autoSaveIntervalMinutes, { if (it == 0) "Off" else "$it min" }, viewModel::setAutoSaveIntervalMinutes)
+                                RetraChoiceRow(listOf(0, 2, 5, 10, 15), settings.autoSaveIntervalMinutes, { if (it == 0) "Off" else "$it min" }, viewModel::setAutoSaveIntervalMinutes)
                                 Text("Battery saves and save states are separate. Retra keeps rotating backups and checks record integrity before showing them as healthy.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                         item { SaveTimelinePanel(viewModel, games) }
                     }
-                    V3SettingsCategory.PRIVACY -> {
+                    SettingsCategory.PRIVACY -> {
                         item {
-                            V3SettingsCard("Local-first boundary", Icons.Default.Lock) {
+                            RetraSettingsCard("Local-first boundary", Icons.Default.Lock) {
                                 Text("ROMs, patches, cheats, save records, and screenshots remain on this device unless you explicitly choose an Android export or share action.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                V3Toggle("Notifications", "Allow Retra to show local status alerts.", settings.notificationsEnabled, viewModel::setNotificationsEnabled)
-                                V3Toggle("Achievement alerts", "Notify when an on-device milestone unlocks.", settings.notifyAchievements, viewModel::setNotifyAchievements)
-                                V3Toggle("Download alerts", "Notify when a verified homebrew install completes.", settings.notifyDownloads, viewModel::setNotifyDownloads)
-                                V3Toggle("Multiplayer alerts", "Show local multiplayer session status.", settings.notifyMultiplayer, viewModel::setNotifyMultiplayer)
+                                RetraToggle("Notifications", "Allow Retra to show local status alerts.", settings.notificationsEnabled, viewModel::setNotificationsEnabled)
+                                RetraToggle("Achievement alerts", "Notify when an on-device milestone unlocks.", settings.notifyAchievements, viewModel::setNotifyAchievements)
+                                RetraToggle("Download alerts", "Notify when a verified homebrew install completes.", settings.notifyDownloads, viewModel::setNotifyDownloads)
+                                RetraToggle("Multiplayer alerts", "Show local multiplayer session status.", settings.notifyMultiplayer, viewModel::setNotifyMultiplayer)
                             }
                         }
                         item {
-                            V3SettingsCard("Feedback", Icons.Default.Notifications) {
-                                V3Toggle("Interface sounds", "Use short original Retra cues for important actions.", settings.soundEffectsEnabled, viewModel::setSoundEffectsEnabled)
-                                V3Slider("Interface sound volume", settings.soundEffectsVolume, 0f..1f, viewModel::setSoundEffectsVolume)
+                            RetraSettingsCard("Feedback", Icons.Default.Notifications) {
+                                RetraToggle("Interface sounds", "Use short original Retra cues for important actions.", settings.soundEffectsEnabled, viewModel::setSoundEffectsEnabled)
+                                RetraSlider("Interface sound volume", settings.soundEffectsVolume, 0f..1f, viewModel::setSoundEffectsVolume)
                             }
                         }
                     }
-                    V3SettingsCategory.ABOUT -> {
+                    SettingsCategory.ABOUT -> {
                         item {
-                            V3SettingsCard("Retra 3.0", Icons.Default.Info) {
+                            RetraSettingsCard("Retra 3.0", Icons.Default.Info) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                                     RetraLogoTile(size = 64.dp)
                                     Column {
@@ -219,10 +219,10 @@ fun V3SettingsScreen(settings: AppSettings, viewModel: RetraViewModel, onBack: (
                                         Text("GBA archive and emulator", color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
-                                V3AboutLine("Offline demo", "Retra Drift planned for a future packaged build")
-                                V3AboutLine("Imported content", "Owned backups, user-selected patches, licensed homebrew")
-                                V3AboutLine("Patch formats", "UPS, IPS, BPS")
-                                V3AboutLine("Privacy", "Local by default")
+                                RetraAboutLine("Built-in game", "Retra Drift · original open-source GBA homebrew")
+                                RetraAboutLine("Imported content", "Owned backups, user-selected patches, licensed homebrew")
+                                RetraAboutLine("Patch formats", "UPS, IPS, BPS")
+                                RetraAboutLine("Privacy", "Local by default")
                                 Text("Retra is not affiliated with Nintendo, The Pokémon Company, Game Freak, or community patch projects. Product names are used only to identify user-supplied files and compatibility requirements.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
@@ -235,7 +235,7 @@ fun V3SettingsScreen(settings: AppSettings, viewModel: RetraViewModel, onBack: (
 }
 
 @Composable
-private fun V3SettingsCard(title: String, icon: ImageVector, content: @Composable () -> Unit) {
+private fun RetraSettingsCard(title: String, icon: ImageVector, content: @Composable () -> Unit) {
     RetraPanel(shape = MaterialTheme.shapes.large, contentPadding = PaddingValues(17.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -248,7 +248,7 @@ private fun V3SettingsCard(title: String, icon: ImageVector, content: @Composabl
 }
 
 @Composable
-private fun V3Toggle(title: String, description: String, checked: Boolean, onChecked: (Boolean) -> Unit) {
+private fun RetraToggle(title: String, description: String, checked: Boolean, onChecked: (Boolean) -> Unit) {
     Surface(
         onClick = { onChecked(!checked) },
         shape = MaterialTheme.shapes.medium,
@@ -269,7 +269,7 @@ private fun V3Toggle(title: String, description: String, checked: Boolean, onChe
 }
 
 @Composable
-private fun V3Slider(
+private fun RetraSlider(
     title: String,
     value: Float,
     range: ClosedFloatingPointRange<Float>,
@@ -291,7 +291,7 @@ private fun V3Slider(
 }
 
 @Composable
-private fun <T> V3ChoiceRow(values: List<T>, selected: T, label: (T) -> String, onSelected: (T) -> Unit) {
+private fun <T> RetraChoiceRow(values: List<T>, selected: T, label: (T) -> String, onSelected: (T) -> Unit) {
     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         values.forEach { value ->
             FilterChip(selected = value == selected, onClick = { onSelected(value) }, label = { Text(label(value)) })
@@ -300,7 +300,7 @@ private fun <T> V3ChoiceRow(values: List<T>, selected: T, label: (T) -> String, 
 }
 
 @Composable
-private fun V3AboutLine(label: String, value: String) {
+private fun RetraAboutLine(label: String, value: String) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(label, modifier = Modifier.width(110.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)

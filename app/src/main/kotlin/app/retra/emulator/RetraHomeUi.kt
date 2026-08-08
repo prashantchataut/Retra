@@ -51,7 +51,7 @@ import java.text.DateFormat
 import java.util.Date
 
 @Composable
-internal fun V3Home(
+internal fun RetraHome(
     games: List<GameRecord>,
     achievements: List<AchievementStatus>,
     vaultCount: Int,
@@ -61,7 +61,6 @@ internal fun V3Home(
     onContinue: (GameRecord) -> Unit,
     onGame: (GameRecord) -> Unit,
     onImport: () -> Unit,
-    onInstallDemo: () -> Unit,
     onLibrary: () -> Unit,
     onPatchStudio: () -> Unit,
     onSettings: () -> Unit
@@ -77,8 +76,8 @@ internal fun V3Home(
     ) {
         item {
             RetraPageTitle(
-                title = "Your archive",
-                subtitle = if (continueGame != null) "Continue where you left off." else "A private place for the games you return to.",
+                title = "Home",
+                subtitle = if (continueGame != null) "Continue where you left off." else "Import a game you own to start.",
                 actionIcon = Icons.Default.Settings,
                 actionLabel = "Settings",
                 onAction = onSettings
@@ -86,7 +85,7 @@ internal fun V3Home(
         }
         item {
             if (continueGame != null) {
-                V3HeroGame(
+                RetraHeroGame(
                     game = continueGame,
                     coreReady = coreReady,
                     coreStatus = coreStatus,
@@ -94,7 +93,7 @@ internal fun V3Home(
                     onDetails = { onGame(continueGame) }
                 )
             } else {
-                V3HeroEmpty(onImport = onImport, onInstallDemo = onInstallDemo)
+                RetraHeroEmpty(onImport)
             }
         }
         if (recent.isNotEmpty()) {
@@ -102,7 +101,7 @@ internal fun V3Home(
             item {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     items(recent.take(8), key = { it.id }) { game ->
-                        V3PosterCard(game, Modifier.width(156.dp)) { onGame(game) }
+                        RetraPosterCard(game, Modifier.width(156.dp)) { onGame(game) }
                     }
                 }
             }
@@ -110,8 +109,8 @@ internal fun V3Home(
         if (showStatistics && games.isNotEmpty()) {
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    V3Stat("Saves", vaultCount.toString(), "local records", Icons.Default.Save, Modifier.weight(1f))
-                    V3Stat("Milestones", "$unlocked/${achievements.size}", "on device", Icons.Default.Star, Modifier.weight(1f))
+                    RetraStat("Saves", vaultCount.toString(), "local records", Icons.Default.Save, Modifier.weight(1f))
+                    RetraStat("Milestones", "$unlocked/${achievements.size}", "on device", Icons.Default.Star, Modifier.weight(1f))
                 }
             }
         }
@@ -134,7 +133,7 @@ internal fun V3Home(
 }
 
 @Composable
-internal fun V3HeroGame(
+internal fun RetraHeroGame(
     game: GameRecord,
     coreReady: Boolean,
     coreStatus: String,
@@ -147,12 +146,12 @@ internal fun V3HeroGame(
             if (stacked) {
                 Column {
                     GameArtwork(game, Modifier.fillMaxWidth().height(220.dp), ContentScale.Crop)
-                    V3HeroCopy(game, coreReady, coreStatus, onPlay, onDetails)
+                    RetraHeroCopy(game, coreReady, coreStatus, onPlay, onDetails)
                 }
             } else {
                 Row(Modifier.heightIn(min = 280.dp)) {
                     GameArtwork(game, Modifier.weight(0.43f).fillMaxHeight(), ContentScale.Crop)
-                    V3HeroCopy(game, coreReady, coreStatus, onPlay, onDetails, Modifier.weight(0.57f))
+                    RetraHeroCopy(game, coreReady, coreStatus, onPlay, onDetails, Modifier.weight(0.57f))
                 }
             }
         }
@@ -160,7 +159,7 @@ internal fun V3HeroGame(
 }
 
 @Composable
-internal fun V3HeroCopy(
+internal fun RetraHeroCopy(
     game: GameRecord,
     coreReady: Boolean,
     coreStatus: String,
@@ -202,22 +201,19 @@ internal fun V3HeroCopy(
 }
 
 @Composable
-internal fun V3HeroEmpty(onImport: () -> Unit, onInstallDemo: () -> Unit) {
+internal fun RetraHeroEmpty(onImport: () -> Unit) {
     RetraPanel(shape = MaterialTheme.shapes.extraLarge, contentPadding = PaddingValues(26.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp), horizontalAlignment = Alignment.Start) {
             RetraBrandMark(size = 72.dp)
-            Text("Start with your archive", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Text("Add a game you own", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             Text(
-                "Import a GBA backup you own. Retra Drift is an original offline demo planned for a packaged build; no account or network is required for local play.",
+                "Import a GBA backup, ZIP, or patch file. Retra Drift is available from Discover if you want a built-in demo.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Button(onClick = onImport) {
-                    Icon(Icons.Default.Add, null)
-                    Spacer(Modifier.width(6.dp))
-                    Text("Import game")
-                }
-                OutlinedButton(onClick = onInstallDemo) { Text("Check offline demo") }
+            Button(onClick = onImport) {
+                Icon(Icons.Default.Add, null)
+                Spacer(Modifier.width(6.dp))
+                Text("Import")
             }
         }
     }

@@ -91,6 +91,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
@@ -199,10 +200,25 @@ class RetraViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            // A lawful, original GBA title makes the first-run library functional without
+            // shipping or downloading commercial game data. Duplicate imports are ignored.
+            gameRepository.ensureBundledDemo()
+        }
+        viewModelScope.launch {
             settingsRepository.settings.collect { value ->
                 audioOutput.configure(value.audioEnabled, value.masterVolume)
                 feedbackEngine.configure(value.hapticsEnabled, value.soundEffectsEnabled, value.soundEffectsVolume)
             }
+        }
+        viewModelScope.launch {
+            combine(mutablePendingPatch, games) { pending, currentGames -> pending to currentGames }
+                .collect { (pending, currentGames) ->
+                    mutableCompatiblePatchGames.value = if (pending == null) {
+                        emptyList()
+                    } else {
+                        patchRepository.compatibleGames(pending.descriptor, currentGames)
+                    }
+                }
         }
         viewModelScope.launch {
             emulationCore.audioPackets.collect { packet ->
@@ -257,13 +273,13 @@ class RetraViewModel @Inject constructor(
         handleImportOutcome(gameRepository.importFile(uri))
     }
 
-    /**
-     * The product copy historically promised a bundled Retra Drift ROM, but this
-     * checkout contains only the reviewed patch asset. Keep the entry point safe
-     * and explicit until an actual distributable homebrew build is packaged.
-     */
     fun installBundledDemo() = viewModelScope.launch {
-        _messages.emit("Retra Drift is not bundled in this build yet. Import an original GBA homebrew or an owned backup to begin.")
+        when (val outcome = gameRepository.ensureBundledDemo()) {
+            is ImportOutcome.Imported -> _messages.emit("Retra Drift is ready in your library.")
+            is ImportOutcome.Duplicate -> _messages.emit("Retra Drift is already in your library.")
+            is ImportOutcome.Rejected -> _messages.emit(outcome.reason)
+            else -> _messages.emit("Retra Drift is ready.")
+        }
     }
 
     fun queueExternalImport(uri: Uri) {
@@ -318,6 +334,12 @@ class RetraViewModel @Inject constructor(
                 feedbackEngine.emit(FeedbackCue.CONFIRM)
                 _messages.emit("Imported ${result.game.title}.")
                 recordAchievement(AchievementEventType.GAME_IMPORTED, uniqueKey = result.game.sha256, game = result.game)
+                mutablePendingPatch.value?.let { pending ->
+                    mutableCompatiblePatchGames.value = patchRepository.compatibleGames(
+                        pending.descriptor,
+                        games.value + result.game
+                    )
+                }
             }
             is ImportOutcome.Duplicate -> _messages.emit("${result.title} is already in the library.")
             is ImportOutcome.Batch -> {

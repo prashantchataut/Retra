@@ -2,84 +2,60 @@
 
 **Relive the games that made you.**
 
-Retra 2.3 is a privacy-first Android Game Boy Advance emulator and personal game archive built with Kotlin, Jetpack Compose, Material 3, Room, DataStore, Hilt, JNI/CMake, and a pinned mGBA/libretro build path. Developer: **Prashant Chataut**.
+Retra 3.0 is a privacy-first Android Game Boy Advance emulator, patch workspace, save vault, and personal game archive. The app is built with Kotlin, Jetpack Compose, Material 3, Room, DataStore, Hilt, JNI/CMake, and a pinned mGBA/libretro build path. Developer: **Prashant Chataut**.
 
-## What changed in 2.3
+## Retra 3.0 redesign
 
-Retra 2.3 converts the previous roadmap into working product systems rather than adding showcase cards:
+The visible product has been rebuilt rather than reskinned:
 
-- **Controller Studio:** real Android gamepad input, per-device and per-game mappings, live input testing, analog dead-zone and trigger calibration, remapping, and stable local profile files.
-- **Save Timeline:** automatic and named immutable checkpoints, retention limits, cheat/core/hash metadata, reversible restore, and integration with Save Health.
-- **Measured performance advisor:** local frame-time percentiles, FPS, speed, dropped-frame, audio-underrun, thermal, and battery evidence. Advice is withheld until at least two minutes of active measurements exist.
-- **Per-game launch profiles:** game-specific scaling, display smoothing, control layout, touch-control visibility, fast-forward speed, and performance profile.
-- **Compatibility notebook:** local per-game status and observations, separate from canonical game identity.
-- **Player input hardening:** touch, touch-axis, hardware-key, and hardware-axis states are merged independently so releasing one source cannot cancel a button still held by another source.
-- **Frame pacing correction:** fast-forward now changes the frame budget; performance metrics report against the GBA target rate instead of presenting a decorative speed value.
+- A new responsive shell uses bottom navigation on phones and a navigation rail on wider layouts.
+- Archive Glass now has readable content colors, controlled translucency, opaque accessibility fallbacks, high-contrast support, and quieter ambient light.
+- Home prioritizes continuing a game, then recent/favorite worlds, saves, and trust information.
+- Library is artwork-first with search, grid/list layouts, and filters for continue, favorites, patches, homebrew, and unplayed games.
+- Discover separates original homebrew, creator-owned releases, external creator pages, and patch-only projects.
+- Profile and Settings are first-class destinations instead of secondary utility pages.
+- Game details now expose source provenance, core readiness, technical identity, artwork, cheats, favorites, and safe deletion.
+- The patch flow explains why a `.ups`, `.ips`, or `.bps` file is not a game and identifies compatible local base files.
+- The launcher and in-app brand use the original **Vault Aperture / Memory Prism** mark, not a letter logo or borrowed console imagery.
 
-## Build-failure repair
+## A real built-in game
 
-The reported message:
+A fresh install imports **Retra Drift**, an original 64 KiB GBA homebrew mini-game, through the same content-addressed repository path as any other game. It is included so the library and player can be exercised without packaging a commercial ROM.
 
-```text
-A reusable app signing key or password must not be committed
-```
+Source and deterministic build files are in `tools/demo-rom/`. The generated ROM is at `app/src/main/assets/demo/retra_drift.gba`.
 
-came from Retra's own source-policy script. It incorrectly rejected secure Gradle signing configuration merely because `storePassword` or signing-related code appeared in the build script.
+## Why the supplied Heart & Soul file did not launch
 
-Retra 2.3 replaces that check with `tools/signing-verification/run.sh`:
+`pokemonHnS_v1.2.1.ups` is a UPS patch, not a standalone ROM. Its container is valid and expects an exact 16 MiB base with CRC-32 `1F1C08FB`; after patching, it produces a 32 MiB image with CRC-32 `96A8425B`.
 
-- only committed key material and literal passwords are rejected;
-- Gradle Provider/environment-variable signing is explicitly allowed;
-- local or CI keys live outside the repository;
-- debug builds use Android's normal debug signing;
-- release builds compile unsigned when no signing variables are present;
-- release signing activates only when all four required variables are nonblank;
-- CI can optionally reconstruct a keystore in `$RUNNER_TEMP` from repository secrets.
+Retra 3.0 keeps the patch in Patch Studio, shows the expected size/checksum, offers **Import base game**, refreshes compatible-base matches after import, and only enables local patch application when the selected base matches.
 
-The exact previously failing verification command now passes:
+Retra does not include the required commercial base game. The user must provide a compatible backup they are entitled to use.
 
-```bash
-set -euo pipefail
-SKIP_EXECUTION_SUITES=1 ./tools/project-verification/run.sh
-```
+## Emulation core boundary
 
-## Core product areas
+The Android source tree intentionally does not commit generated `libmgba_libretro.so` binaries. A gameplay-capable APK must stage mGBA for all release ABIs before Gradle packaging. The included GitHub Actions workflow fetches pinned mGBA source, builds `arm64-v8a`, `armeabi-v7a`, and `x86_64` cores, rejects missing binaries, and then builds the app.
 
-### Library and content
+A locally assembled APK that skips those steps can import and index games but cannot provide real GBA gameplay; the UI now reports that state instead of pretending the fallback is a playable core.
 
-- Content-addressed imports with SHA-256, SHA-1, CRC-32, game code, revision, and canonical metadata.
-- Artwork, favorites, tags, collections, creator/license/source provenance, patch lineage, and compatibility notes.
-- Legal creator-published Homebrew Hub releases with real provider imagery and bounded HTTPS installation.
-- Commercial games are imported from user-owned backups. Retra does not bundle or download commercial Pokémon ROMs.
-- The supplied Pokémon Heart & Soul UPS patch remains patch-only and requires a compatible user-owned base ROM.
+## Product systems retained
 
-### Player
-
-- Portrait and landscape screen-first layouts.
-- Fit, fill, and integer scaling.
-- Classic, compact, left-handed, and controller-first touch layouts.
-- Glass, solid, and minimal controls with adjustable scale, spacing, opacity, and dead zone.
-- Save/load, automatic saves, screenshots, rewind, cheats, reset, speed control, audio, and immersive mode.
-- Hardware buttons, D-pad, sticks, hats, and analog triggers.
-
-### Progress and safety
-
-- Rotating save backups and Save Health diagnostics.
-- Named and automatic Save Timeline checkpoints.
-- ROM-free portable backup bundles.
-- Working local achievements for verifiable Retra events.
-- Review-before-import for Android VIEW/SEND intents.
+- Content-addressed imports with SHA-256, SHA-1, CRC-32, game code, revision, metadata, artwork, tags, collections, favorites, provenance, and compatibility notes.
+- `.gba`, `.zip`, `.ups`, `.ips`, and `.bps` import; explicit rejection of Nintendo DS `.nds` files.
+- Local saves, automatic backups, Save Timeline, Save Health, screenshots, rewind, verified cheats, and ROM-free backup bundles.
+- Per-game launch profiles and controls; touch, keyboard/gamepad, analog/dead-zone calibration, and Controller Studio.
+- Local achievements based on verifiable Retra events rather than invented in-game telemetry.
+- Creator-first Homebrew Hub with validation rules for any direct download.
 
 ## Build
 
 Prerequisites:
 
 - JDK 17
-- Gradle 9.5.0
-- Android SDK 37.0 and build-tools 37.0.0
+- Android SDK/API 37 and build-tools 37.0.0
 - Android NDK 28.2.13676358
 - CMake 3.22.1 and Ninja
-- Google Maven and Maven Central access
+- Network access to Google Maven, Maven Central, the Gradle distribution, and the pinned mGBA source archive
 
 ```bash
 ./scripts/fetch-mgba-archive.sh
@@ -100,38 +76,25 @@ export RETRA_SIGNING_KEY_PASSWORD="..."
 ./gradlew --no-daemon --no-parallel :app:assembleRelease
 ```
 
-Optional Google identity:
-
-```bash
-./gradlew --no-daemon --no-parallel :app:assembleDebug \
-  -PRETRA_GOOGLE_WEB_CLIENT_ID="YOUR_WEB_CLIENT_ID.apps.googleusercontent.com"
-```
-
 ## Verification
 
 ```bash
-./tools/signing-verification/run.sh
-./tools/core-verification/run.sh
-./tools/native-verification/run.sh
-./tools/libretro-verification/run.sh
-./tools/schema-verification/run.sh
-SKIP_EXECUTION_SUITES=1 ./tools/project-verification/run.sh
+./tools/project-verification/run.sh
 ```
 
-The current container cannot resolve `services.gradle.org`, so Android/Compose/Hilt/Room compilation and an APK are not claimed here. The checked-in GitHub Actions workflow runs the complete provisioned build.
+That umbrella suite runs the platform-neutral core tests, native reference runtime checks, libretro adapter fake-core tests, Room/static/resource policy checks, shell syntax checks, and host C++ compilation.
+
+The supplied redesign environment had no provisioned Android SDK/NDK and could not complete a Gradle/Compose APK build. See `BUILD_REPORT.md` for the exact evidence and remaining device gates.
 
 ## Content boundary
 
-Retra includes no commercial ROMs, proprietary BIOS files, piracy indexes, scraped commercial cover art, runtime-downloaded native cores, reusable signing credentials, or pre-patched copyrighted games. Patches require a compatible user-supplied base ROM. Portable backups exclude ROM bytes.
+Retra includes no commercial ROMs, proprietary BIOS files, piracy indexes, scraped commercial artwork, reusable signing credentials, or pre-patched copyrighted games. Commercial games remain user-supplied. Patch projects remain patch-only. Direct homebrew downloads are allowed only when the source, permission, size, HTTPS transport, and exact checksum satisfy Retra's validation policy.
 
-## Key documents
+## Important documents
 
-- `docs/V2_3_IMPLEMENTATION.md`
-- `docs/V2_3_BUILD_FAILURE_AND_FIX.md`
-- `docs/V2_4_RECOMMENDATIONS.md`
-- `docs/V2_2_CONTENT_AND_ARTWORK_POLICY.md`
-- `docs/RETRA_FINAL_UI_UX_SPEC.md`
-- `docs/RETRA_CHEAT_INDEX.md`
-- `docs/CONTENT_AND_CHEATS_POLICY.md`
+- `PRODUCT.md` / `DESIGN.md`
+- `docs/UI_MAP.md`
+- `docs/BRAND_IDENTITY.md`
+- `KNOWN_ISSUES.md`
 - `THREAT_MODEL.md`
-- `BUILD_REPORT.md`
+- `CHANGELOG.md`

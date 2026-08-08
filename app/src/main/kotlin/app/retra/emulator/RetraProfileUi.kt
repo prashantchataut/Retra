@@ -32,7 +32,7 @@ import app.retra.emulator.ui.theme.MemoryCoral
 import app.retra.emulator.ui.theme.SaveMint
 
 @Composable
-internal fun V3Profile(
+internal fun RetraProfile(
     games: List<GameRecord>,
     achievements: List<AchievementStatus>,
     accountName: String?,
@@ -75,8 +75,8 @@ internal fun V3Profile(
         }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                V3Stat("Games", games.size.toString(), "verified items", Icons.Default.LibraryBooks, Modifier.weight(1f))
-                V3Stat("Unlocked", "$unlocked/${achievements.size}", "milestones", Icons.Default.Star, Modifier.weight(1f))
+                RetraStat("Games", games.size.toString(), "verified items", Icons.Default.LibraryBooks, Modifier.weight(1f))
+                RetraStat("Unlocked", "$unlocked/${achievements.size}", "milestones", Icons.Default.Star, Modifier.weight(1f))
             }
         }
         item {
@@ -96,10 +96,10 @@ internal fun V3Profile(
             }
         }
         item { RetraSectionHeader("Milestones") }
-        items(achievements.take(6), key = { it.definition.id }) { status -> V3Achievement(status) }
+        items(achievements.take(6), key = { it.definition.id }) { status -> RetraAchievementCard(status) }
         if (recent.isNotEmpty()) {
             item { RetraSectionHeader("Recently played") }
-            items(recent, key = { it.id }) { game -> V3LibraryRow(game) { onGame(game) } }
+            items(recent, key = { it.id }) { game -> RetraLibraryRow(game) { onGame(game) } }
         }
     }
 }

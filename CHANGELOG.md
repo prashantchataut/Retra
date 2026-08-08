@@ -1,5 +1,31 @@
 # Changelog
 
+## 3.0.0 — 2026-07-24
+
+### Product redesign
+- Replaced the active Retra 2.3 shell with a responsive Archive Glass experience for onboarding, Home, Library, Discover, Profile, Settings, game details, external import review, and patch workflows.
+- Fixed the root content-color defect that rendered major headings and icons almost black on the dark background.
+- Added phone bottom navigation, wider-layout navigation rail, stable-key artwork grids/lists, exact library filters, readable empty states, and explicit core-readiness states.
+- Reorganized advanced controls, performance, save timeline, privacy, and appearance tools by user intent.
+
+### Brand
+- Replaced the previous logo with the original non-letter Vault Aperture / Memory Prism mark.
+- Updated Compose, SVG/PNG, splash, adaptive, monochrome, and legacy launcher assets.
+
+### Built-in legal gameplay
+- Added Retra Drift, an original open-source 64 KiB GBA homebrew mini-game with deterministic source/build files.
+- Import the demo idempotently through the normal content-addressed repository on first launch.
+- Keep all commercial ROMs user-supplied.
+
+### Patch and runtime clarity
+- Validated the supplied Heart & Soul v1.2.1 UPS container and documented its exact source/output sizes and CRC-32 values.
+- Added an actionable Patch Studio with base import, exact compatibility matching, local-only application copy, and post-import match refresh.
+- Disabled Play and exposed a clear explanation when a real staged mGBA core is unavailable.
+
+### Validation
+- Platform-neutral core, native reference, fake-core libretro adapter, static/resource/signing, shell syntax, and host C++ checks pass.
+- Android Gradle/Compose compilation and physical-device gameplay remain explicit release gates because the redesign environment had no provisioned Android SDK/NDK.
+
 ## 2.3.0 — 2026-07-22
 
 ### Build and signing repair

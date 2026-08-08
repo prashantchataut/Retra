@@ -39,7 +39,7 @@ import app.retra.emulator.ui.theme.AdventureGold
 import app.retra.emulator.ui.theme.MemoryCoral
 
 @Composable
-internal fun V3Stat(label: String, value: String, helper: String, icon: ImageVector, modifier: Modifier = Modifier) {
+internal fun RetraStat(label: String, value: String, helper: String, icon: ImageVector, modifier: Modifier = Modifier) {
     RetraPanel(modifier, shape = MaterialTheme.shapes.medium, contentPadding = PaddingValues(16.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
@@ -51,7 +51,7 @@ internal fun V3Stat(label: String, value: String, helper: String, icon: ImageVec
 }
 
 @Composable
-internal fun V3PosterCard(game: GameRecord, modifier: Modifier = Modifier, onClick: () -> Unit) {
+internal fun RetraPosterCard(game: GameRecord, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         modifier = modifier,
@@ -77,7 +77,7 @@ internal fun V3PosterCard(game: GameRecord, modifier: Modifier = Modifier, onCli
 }
 
 @Composable
-internal fun V3LibraryRow(game: GameRecord, onClick: () -> Unit) {
+internal fun RetraLibraryRow(game: GameRecord, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         shape = MaterialTheme.shapes.large,
@@ -104,7 +104,7 @@ internal fun gameOriginLabel(game: GameRecord): String = when {
 }
 
 @Composable
-internal fun V3Achievement(status: AchievementStatus) {
+internal fun RetraAchievementCard(status: AchievementStatus) {
     val unlocked = status.progress.unlockedAtEpochMillis != null
     RetraPanel(shape = MaterialTheme.shapes.medium, contentPadding = PaddingValues(15.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(13.dp)) {
@@ -123,17 +123,13 @@ internal fun V3Achievement(status: AchievementStatus) {
 
 
 @Composable
-internal fun V3DetailLine(label: String, value: String) {
+internal fun RetraDetailLine(label: String, value: String) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(90.dp))
         Text(value, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
     }
 }
 
-@Composable
-internal fun V3Badge(label: String, color: Color) {
-    RetraBadge(label, color)
-}
 
 internal fun formatBytes(value: Long): String = when {
     value >= 1024L * 1024L -> "%.1f MiB".format(value / (1024f * 1024f))

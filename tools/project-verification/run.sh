@@ -12,10 +12,12 @@ fi
 
 python3 - "$ROOT" <<'PY'
 from pathlib import Path
+import hashlib
 import re
 import sys
 import tomllib
 import xml.etree.ElementTree as ET
+import zlib
 
 root = Path(sys.argv[1])
 settings = (root / "settings.gradle.kts").read_text()
@@ -71,7 +73,7 @@ v2_capabilities = {
     "core/rom/src/main/kotlin/app/retra/core/rom/Sha1.kt": ["MessageDigest", "SHA-1"],
     "core/rom/src/main/kotlin/app/retra/core/rom/LibretroDat.kt": ["LibretroDatParser", "canonicalTitle", "match"],
     "core/cheats/src/main/kotlin/app/retra/core/cheats/RetroArchCheats.kt": ["RetroArchCheatParser", "mapNotNull", "no supported concrete codes"],
-    "app/src/main/kotlin/app/retra/emulator/data/HomebrewHubRepository.kt": ["HomebrewHubRepository", "directInstallEligible", "HttpsURLConnection"],
+    "app/src/main/kotlin/app/retra/emulator/data/HomebrewHubRepository.kt": ["HomebrewHubRepository", "directInstallEligible", "publishedSha256", "distributionPermission", "creator-published SHA-256", "HttpsURLConnection"],
     "app/src/main/kotlin/app/retra/emulator/data/LibretroMetadataRepository.kt": ["LibretroMetadataRepository", "applyCanonicalMetadata", "HttpsURLConnection"],
     "app/src/main/kotlin/app/retra/emulator/data/LibretroCheatRepository.kt": ["LibretroCheatRepository", "RetroArchCheatParser", "HttpsURLConnection"],
 }
@@ -163,8 +165,8 @@ for token in ["RetraBackdrop", "GlassPanel", "LocalRetraSettings", "RetraAnimate
         raise SystemExit(f"Premium glass design capability missing: {token}")
 
 branding = (root / "branding/retra-logo.svg")
-if not branding.is_file() or "Portal and Save Core" not in branding.read_text():
-    raise SystemExit("Retra Portal / Save Core brand source is missing or undocumented")
+if not branding.is_file() or "Vault Aperture" not in branding.read_text():
+    raise SystemExit("Retra Vault Aperture / Memory Prism brand source is missing or undocumented")
 for asset in [
     "app/src/main/res/drawable-nodpi/retra_logo.png",
     "app/src/main/res/drawable/ic_retra_foreground.xml",
@@ -193,38 +195,31 @@ for token in ["configure", "scalingMode", "ScreenScalingMode.FILL", "isFilterBit
 dead_ui = [
     "RetraUi.kt", "RetraFinalExperienceUi.kt", "RetraFinalDiscoverUi.kt",
     "OnboardingUi.kt", "CommunityUi.kt", "ProfileUi.kt", "NotificationSettingsUi.kt",
-    "RetraV22Ui.kt"
+    "RetraV22Ui.kt", "RetraV23Ui.kt"
 ]
 for filename in dead_ui:
     if (root / "app/src/main/kotlin/app/retra/emulator" / filename).exists():
         raise SystemExit(f"Legacy duplicate UI must not remain in the active source tree: {filename}")
 
 v3_ui = (root / "app/src/main/kotlin/app/retra/emulator/RetraV3Ui.kt").read_text()
+for token in ["RetraV3Root", "Private play archive", "Patch Studio", "Homebrew gallery", "Retra Drift", "Save health", "Vault Aperture", "SOURCE ONLY"]:
+    if token not in v3_ui and token not in (root / "docs/BRAND_IDENTITY.md").read_text():
+        raise SystemExit(f"Retra 3.0 product surface missing: {token}")
 settings_ui = (root / "app/src/main/kotlin/app/retra/emulator/RetraV3SettingsUi.kt").read_text()
-tools_ui = (root / "app/src/main/kotlin/app/retra/emulator/RetraV23ToolsUi.kt").read_text()
-for token, source in [
-    ("RetraV3Root", v3_ui),
-    ("Local by default", settings_ui),
-    ("Home", v3_ui),
-    ("Library", v3_ui),
-    ("Discover", v3_ui),
-    ("Controller Studio", tools_ui),
-    ("Timeline checkpoints", tools_ui),
-    ("PerformanceAdvisorPanel", tools_ui),
-]:
-    if token not in source:
-        raise SystemExit(f"Retra 2.3 product surface missing: {token}")
+for token in ["Archive Glass", "ControllerStudioPanel", "SaveTimelinePanel", "PerformanceAdvisorPanel", "Local-first boundary"]:
+    if token not in settings_ui:
+        raise SystemExit(f"Retra 3.0 settings surface missing: {token}")
 main_activity = (root / "app/src/main/kotlin/app/retra/emulator/MainActivity.kt").read_text()
 if "RetraV3Root" not in main_activity:
-    raise SystemExit("Retra 2.3 root is not active")
+    raise SystemExit("Retra 3.0 root is not active")
 build_file = (root / "app/build.gradle.kts").read_text()
-for token in ['versionName = "2.3.0"', "alias(libs.plugins.room)", "schemaDirectory", "RETRA_SIGNING_STORE_FILE", "releaseSigningEnabled"]:
+for token in ['versionName = "3.0.0"', "alias(libs.plugins.room)", "schemaDirectory", "RETRA_SIGNING_STORE_FILE", "releaseSigningEnabled"]:
     if token not in build_file:
-        raise SystemExit(f"Retra 2.3 build hardening missing: {token}")
+        raise SystemExit(f"Retra 3.0 build hardening missing: {token}")
 workflow = (root / ".github/workflows/build-release.yml").read_text()
-for token in ["wrapper-validation@v4", "./gradlew --no-daemon --no-parallel", "Prepare optional release signing", "RETRA_SIGNING_KEYSTORE_B64", "Retra-2.3.0-debug"]:
+for token in ["wrapper-validation@v4", "./gradlew --no-daemon --no-parallel", "Prepare optional release signing", "RETRA_SIGNING_KEYSTORE_B64", "Retra-3.0.0-debug"]:
     if token not in workflow:
-        raise SystemExit(f"Retra 2.3 CI hardening missing: {token}")
+        raise SystemExit(f"Retra 3.0 CI hardening missing: {token}")
 v23_capabilities = {
     "app/src/main/kotlin/app/retra/emulator/data/ControllerProfileRepository.kt": ["ControllerProfile", "RETRA-CONTROLLER-1", "gameSha256", "writeAtomically"],
     "app/src/main/kotlin/app/retra/emulator/data/VaultRepository.kt": ["SaveTimelineEntry", "createTimelineSnapshot", "restoreTimeline", "RETRA-TIMELINE-1"],
@@ -235,8 +230,8 @@ for relative, tokens in v23_capabilities.items():
     source = (root / relative).read_text()
     for token in tokens:
         if token not in source:
-            raise SystemExit(f"Retra 2.3 capability missing from {relative}: {token}")
-for token in ["onKeyDown", "onKeyUp", "onGenericMotionEvent", "handleControllerKeyEvent", "handleControllerMotionEvent"]:
+            raise SystemExit(f"Retra 3.0 capability missing from {relative}: {token}")
+for token in ["dispatchKeyEvent", "onGenericMotionEvent", "handleControllerKeyEvent", "handleControllerMotionEvent"]:
     if token not in main_activity:
         raise SystemExit(f"Hardware controller input path missing: {token}")
 game_repository = (root / "app/src/main/kotlin/app/retra/emulator/data/GameRepository.kt").read_text()
@@ -246,6 +241,63 @@ if "updateCompatibilityNotebook" not in game_repository:
 bundled_patch = root / "app/src/main/assets/patches/pokemon_hns_v1_2_1.ups"
 if not bundled_patch.is_file() or bundled_patch.stat().st_size != 32558217:
     raise SystemExit("Reviewed Heart & Soul v1.2.1 patch asset is missing or changed")
+patch_bytes = bundled_patch.read_bytes()
+if hashlib.sha256(patch_bytes).hexdigest() != "c8e70f448b481d2980266ca8f021aa8b3c462f4e582cf80228ced4636c6154eb":
+    raise SystemExit("Reviewed Heart & Soul v1.2.1 patch SHA-256 changed")
+if patch_bytes[:4] != b"UPS1":
+    raise SystemExit("Reviewed Heart & Soul asset is not a UPS1 container")
+
+def read_ups_number(data, offset):
+    value = 0
+    shift = 1
+    while True:
+        byte = data[offset]
+        offset += 1
+        value += (byte & 0x7f) * shift
+        if byte & 0x80:
+            return value, offset
+        shift <<= 7
+        value += shift
+
+source_size, offset = read_ups_number(patch_bytes, 4)
+target_size, offset = read_ups_number(patch_bytes, offset)
+source_crc = int.from_bytes(patch_bytes[-12:-8], "little")
+target_crc = int.from_bytes(patch_bytes[-8:-4], "little")
+patch_crc = int.from_bytes(patch_bytes[-4:], "little")
+if (source_size, target_size, source_crc, target_crc, patch_crc) != (
+    16777216, 33554432, 0x1F1C08FB, 0x96A8425B, 0x39E2A0E4
+):
+    raise SystemExit("Reviewed Heart & Soul UPS descriptor changed")
+if zlib.crc32(patch_bytes[:-4]) & 0xffffffff != patch_crc:
+    raise SystemExit("Reviewed Heart & Soul UPS patch CRC is invalid")
+
+demo_rom = root / "app/src/main/assets/demo/retra_drift.gba"
+if not demo_rom.is_file():
+    raise SystemExit("Retra Drift bundled homebrew is missing")
+demo = demo_rom.read_bytes()
+if len(demo) != 65536:
+    raise SystemExit("Retra Drift must remain a deterministic 64 KiB ROM")
+if hashlib.sha256(demo).hexdigest() != "0499fe9e65a425a78049e0253e7c583863d1110e26f5399934d039ed3c99468a":
+    raise SystemExit("Retra Drift ROM hash changed; rebuild and review it")
+if demo[0xA0:0xAC].rstrip(b"\0 ") != b"RETRA DRIFT":
+    raise SystemExit("Retra Drift GBA title is invalid")
+if demo[0xAC:0xB0] != b"RDRT" or demo[0xB0:0xB2] != b"RT" or demo[0xB2] != 0x96:
+    raise SystemExit("Retra Drift GBA identity/header fixed byte is invalid")
+expected_complement = (-(sum(demo[0xA0:0xBD]) + 0x19)) & 0xff
+if demo[0xBD] != expected_complement:
+    raise SystemExit("Retra Drift GBA complement checksum is invalid")
+for source_file in ["startup.S", "main.c", "link.ld", "build.sh"]:
+    if not (root / "tools/demo-rom" / source_file).is_file():
+        raise SystemExit(f"Retra Drift source/build file missing: {source_file}")
+for required_doc in [
+    "docs/RETRA_3_UX_AUDIT.md",
+    "docs/RETRA_3_IMPLEMENTATION.md",
+    "docs/RETRA_3_FEATURE_RECOMMENDATIONS.md",
+    "docs/UPLOADED_PATCH_DIAGNOSIS.md",
+    "FILES_TO_DELETE.md",
+]:
+    if not (root / required_doc).is_file():
+        raise SystemExit(f"Retra 3.0 delivery document missing: {required_doc}")
 
 if not (root / "scripts/fetch-mgba-archive.sh").is_file():
     raise SystemExit("Pinned mGBA archive fetch script is missing")
@@ -299,7 +351,7 @@ for token in ["retro_load_game", "retro_serialize", "retro_get_memory_data", "RT
     if token not in mgba_adapter:
         raise SystemExit(f"mGBA/libretro adapter capability missing: {token}")
 
-print("PASS Retra 2.3 structure, signing policy, controller profiles, save timeline, measured performance, UI, Room schema hardening, patching, achievements, catalogs, DI, and emulation checks")
+print("PASS Retra 3.0 structure, UI, branding, Retra Drift ROM, UPS integrity, signing policy, controller profiles, save timeline, Room schema, catalogs, DI, and emulation checks")
 PY
 
 for script in "$ROOT"/scripts/*.sh "$ROOT"/tools/*/run.sh; do
@@ -308,19 +360,15 @@ done
 
 echo "PASS shell syntax checks"
 
+JAVA_HOME=$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")
 OUT=$(mktemp -d)
 trap 'rm -rf "$OUT"' EXIT
-if command -v javac >/dev/null 2>&1; then
-  JAVA_HOME=$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")
-  c++ -std=c++20 -Wall -Wextra -Werror \
-    -I"$JAVA_HOME/include" -I"$JAVA_HOME/include/linux" \
-    -I"$ROOT/emulation/native/src/main/cpp" \
-    -c "$ROOT/emulation/native/src/main/cpp/jni_bridge.cpp" \
-    -o "$OUT/jni_bridge.o"
-  echo "PASS JNI bridge host syntax compilation"
-else
-  echo "SKIP JNI bridge host syntax compilation: javac/JDK headers are unavailable"
-fi
+c++ -std=c++20 -Wall -Wextra -Werror \
+  -I"$JAVA_HOME/include" -I"$JAVA_HOME/include/linux" \
+  -I"$ROOT/emulation/native/src/main/cpp" \
+  -c "$ROOT/emulation/native/src/main/cpp/jni_bridge.cpp" \
+  -o "$OUT/jni_bridge.o"
+echo "PASS JNI bridge host syntax compilation"
 
 c++ -std=c++20 -Wall -Wextra -Werror \
   -I"$ROOT/emulation/native/src/main/cpp" \

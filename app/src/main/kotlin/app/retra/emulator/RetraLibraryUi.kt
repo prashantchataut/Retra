@@ -44,7 +44,7 @@ import app.retra.emulator.ui.components.RetraEmptyState
 import app.retra.emulator.ui.components.RetraGlassFilterChip
 import app.retra.emulator.ui.components.RetraPageTitle
 
-internal enum class V3Filter(val label: String) {
+internal enum class LibraryFilter(val label: String) {
     ALL("All"),
     CONTINUE("Played"),
     FAVORITES("Favorites"),
@@ -54,7 +54,7 @@ internal enum class V3Filter(val label: String) {
 }
 
 @Composable
-internal fun V3Library(
+internal fun RetraLibrary(
     games: List<GameRecord>,
     layout: LibraryLayout,
     onLayout: (LibraryLayout) -> Unit,
@@ -64,19 +64,19 @@ internal fun V3Library(
     onInstallDemo: () -> Unit
 ) {
     var query by rememberSaveable { mutableStateOf("") }
-    var filter by rememberSaveable { mutableStateOf(V3Filter.ALL) }
+    var filter by rememberSaveable { mutableStateOf(LibraryFilter.ALL) }
     var filtersExpanded by rememberSaveable { mutableStateOf(false) }
     val filtered = remember(games, query, filter) {
         games.filter { game ->
             val matchesText = query.isBlank() || listOf(game.title, game.displayName, game.gameCode, game.creator.orEmpty(), game.tags.joinToString(" "))
                 .any { it.contains(query, ignoreCase = true) }
             val matchesFilter = when (filter) {
-                V3Filter.ALL -> true
-                V3Filter.CONTINUE -> game.lastPlayedAtEpochMillis != null
-                V3Filter.FAVORITES -> game.favorite
-                V3Filter.PATCHED -> game.patchSha256 != null
-                V3Filter.HOMEBREW -> game.origin.contains("HOMEBREW") || game.origin.contains("CATALOG")
-                V3Filter.UNPLAYED -> game.lastPlayedAtEpochMillis == null
+                LibraryFilter.ALL -> true
+                LibraryFilter.CONTINUE -> game.lastPlayedAtEpochMillis != null
+                LibraryFilter.FAVORITES -> game.favorite
+                LibraryFilter.PATCHED -> game.patchSha256 != null
+                LibraryFilter.HOMEBREW -> game.origin.contains("HOMEBREW") || game.origin.contains("CATALOG")
+                LibraryFilter.UNPLAYED -> game.lastPlayedAtEpochMillis == null
             }
             matchesText && matchesFilter
         }.sortedWith(compareByDescending<GameRecord> { it.favorite }.thenByDescending { it.lastPlayedAtEpochMillis ?: it.importedAtEpochMillis })
@@ -112,7 +112,7 @@ internal fun V3Library(
                 }
             }
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                val visible = if (filtersExpanded) V3Filter.entries else listOf(V3Filter.ALL, V3Filter.CONTINUE, V3Filter.FAVORITES)
+                val visible = if (filtersExpanded) LibraryFilter.entries else listOf(LibraryFilter.ALL, LibraryFilter.CONTINUE, LibraryFilter.FAVORITES)
                 visible.forEach { item ->
                     RetraGlassFilterChip(label = item.label, selected = filter == item, onClick = { filter = item })
                 }
@@ -158,11 +158,11 @@ internal fun V3Library(
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(filtered, key = { it.id }) { game -> V3PosterCard(game, Modifier.fillMaxWidth()) { onGame(game) } }
+                items(filtered, key = { it.id }) { game -> RetraPosterCard(game, Modifier.fillMaxWidth()) { onGame(game) } }
             }
         } else {
             LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(bottom = 16.dp)) {
-                items(filtered, key = { it.id }) { game -> V3LibraryRow(game) { onGame(game) } }
+                items(filtered, key = { it.id }) { game -> RetraLibraryRow(game) { onGame(game) } }
             }
         }
     }

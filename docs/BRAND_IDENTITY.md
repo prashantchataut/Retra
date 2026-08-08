@@ -1,25 +1,25 @@
-# Retra Brand Identity — Portal / Save Core
+# Retra Brand Identity — Vault Aperture / Memory Prism
 
 ## Mark
 
-The canonical Retra mark comes from the supplied brand board and is rebuilt as an original vector/Compose asset:
+Retra 3.0 uses a centered, non-letterform symbol built from two ideas:
 
-- **Portal:** a thick open loop expressing return and replay.
-- **Save core:** the rounded inner square representing preserved progress.
-- **Memory lights:** two small dark apertures that keep the mark friendly without becoming a mascot.
-- **Pixel step:** three rising blocks that interrupt the loop and imply digital re-entry.
-- **Coral terminal:** one warm pixel used as the recognizable signature.
+- **Vault aperture:** a rounded archive ring with four precise cardinal cuts. It suggests a protected collection, a D-pad rhythm, and an optical aperture without becoming a literal console or controller.
+- **Memory prism:** a centered diamond inside the vault. It represents a single preserved game identity, bound to its checksum, artwork, saves, and patch history.
+- **Coral core:** one restrained warm point at the exact center. It adds human warmth without unbalancing the mark.
 
-It is intentionally not a letter R, console, cartridge, Poké Ball, or game-specific symbol.
+The geometry is optically centered and works at launcher, navigation, monochrome themed-icon, and large presentation sizes. It is intentionally not a letter, Poké Ball, cartridge, mascot, or franchise-specific symbol.
 
 ## Canonical assets
 
-- `branding/retra-logo.svg` — source mark.
-- `branding/retra-logo.png` — raster presentation asset.
-- `app/src/main/res/drawable-nodpi/retra_logo.png` — in-app image.
-- `app/src/main/res/drawable/ic_retra_foreground.xml` — adaptive launcher foreground.
-- `app/src/main/res/drawable/ic_retra_monochrome.xml` — themed icon.
-- `app/src/main/res/mipmap-*` — launcher fallbacks.
+- `branding/retra-logo.svg` — canonical source mark.
+- `branding/retra-logo.png` — 1024 px raster presentation asset.
+- `branding/retra-wordmark.svg` and `.png` — horizontal brand lockup.
+- `app/src/main/res/drawable-nodpi/retra_logo.png` — in-app raster asset.
+- `app/src/main/res/drawable/ic_retra_logo.xml` — vector mark.
+- `app/src/main/res/drawable/ic_retra_foreground.xml` — adaptive icon foreground.
+- `app/src/main/res/drawable/ic_retra_monochrome.xml` — Android themed icon.
+- `app/src/main/res/mipmap-*` — legacy launcher fallbacks.
 - `app/src/main/kotlin/app/retra/emulator/BrandUi.kt` — scalable Compose implementation.
 
 ## Color roles
@@ -29,18 +29,17 @@ It is intentionally not a letter R, console, cartridge, Poké Ball, or game-spec
 - Graphite `#101A20` — opaque technical surfaces.
 - Retra Ice `#75D7F2` — primary interaction.
 - Frost `#B7ECF8` — edge highlight and quiet emphasis.
-- Memory Aqua `#54C9C0` — connection/continuity.
-- Memory Coral `#FF806F` — terminal pixel, destructive caution, human warmth.
-- Save Mint `#63D6A2` — save integrity and success.
-- Adventure Gold `#E8BE69` — achievements and rare emphasis.
+- Memory Aqua `#66E1D1` — continuity and creator provenance.
+- Memory Coral `#FF806F` — central spark and destructive caution.
+- Save Mint `#62D99E` — save integrity and success.
+- Adventure Gold `#FFC65C` — milestones and rare emphasis.
 
-Purple and rainbow gradients are not part of the brand.
+Purple and rainbow gaming gradients are not part of the brand.
 
 ## Application rules
 
-- Preserve the mark’s open portal and three-pixel interruption at all sizes.
-- Use the full-color mark on dark surfaces; use the monochrome silhouette for themed icons.
-- Keep clear space equal to at least one inner-eye width.
-- Do not place the mark over detailed game artwork without an opaque tile.
-- Do not recolor it with multicolor gradients.
-- Do not bundle or redistribute font files as brand assets.
+- Keep the mark centered; never shift the prism or coral core for decorative composition.
+- Preserve clear space equal to at least one cardinal slot width.
+- Use an opaque or quiet glass tile over detailed artwork.
+- Do not add letters, controller buttons, franchise symbols, or multicolor gradients.
+- Use the monochrome asset for Android themed icons.
