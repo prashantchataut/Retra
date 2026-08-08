@@ -189,7 +189,7 @@ fun PlayerScreen(
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
+                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.76f)
                     )
                 )
             }

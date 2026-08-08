@@ -45,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -72,11 +73,19 @@ internal fun V3GameSheet(
     onDelete: () -> Unit
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surface) {
-        LazyColumn(
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = Color.Transparent,
+        tonalElevation = 0.dp
+    ) {
+        RetraPanel(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.extraLarge
         ) {
+            LazyColumn(
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     GameArtwork(game, Modifier.width(116.dp).aspectRatio(0.76f).clip(MaterialTheme.shapes.large), ContentScale.Crop)
@@ -150,6 +159,7 @@ internal fun V3GameSheet(
                 }
             }
             item { Spacer(Modifier.height(24.dp)) }
+            }
         }
     }
 }
