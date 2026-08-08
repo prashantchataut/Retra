@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.legacy.kapt)
     alias(libs.plugins.hilt.android)
-    alias(libs.plugins.room)
+    // Managed Room schema directory: schemaDirectory("$projectDir/schemas") via alias(libs.plugins.room)
 }
 
 val googleWebClientId = providers.gradleProperty("RETRA_GOOGLE_WEB_CLIENT_ID")
@@ -110,10 +110,6 @@ kapt {
     arguments {
         arg("room.schemaLocation", "$projectDir/schemas")
     }
-}
-
-room {
-    schemaDirectory("$projectDir/schemas")
 }
 
 tasks.named("assembleDebug") {
