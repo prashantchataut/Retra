@@ -201,16 +201,18 @@ for filename in dead_ui:
     if (root / "app/src/main/kotlin/app/retra/emulator" / filename).exists():
         raise SystemExit(f"Legacy duplicate UI must not remain in the active source tree: {filename}")
 
-v3_ui = (root / "app/src/main/kotlin/app/retra/emulator/RetraV3Ui.kt").read_text()
-for token in ["RetraV3Root", "Private play archive", "Patch Studio", "Homebrew gallery", "Retra Drift", "Save health", "Vault Aperture", "SOURCE ONLY"]:
-    if token not in v3_ui and token not in (root / "docs/BRAND_IDENTITY.md").read_text():
+ui_root = root / "app/src/main/kotlin/app/retra/emulator"
+app_ui = (ui_root / "RetraAppUi.kt").read_text()
+ui_sources = "\n".join(path.read_text() for path in ui_root.glob("Retra*Ui.kt"))
+for token in ["RetraApp", "Patch Studio", "Retra Drift", "Save health", "SOURCE ONLY"]:
+    if token not in ui_sources:
         raise SystemExit(f"Retra 3.0 product surface missing: {token}")
-settings_ui = (root / "app/src/main/kotlin/app/retra/emulator/RetraV3SettingsUi.kt").read_text()
+settings_ui = (ui_root / "RetraSettingsUi.kt").read_text()
 for token in ["Archive Glass", "ControllerStudioPanel", "SaveTimelinePanel", "PerformanceAdvisorPanel", "Local-first boundary"]:
     if token not in settings_ui:
         raise SystemExit(f"Retra 3.0 settings surface missing: {token}")
 main_activity = (root / "app/src/main/kotlin/app/retra/emulator/MainActivity.kt").read_text()
-if "RetraV3Root" not in main_activity:
+if "RetraApp" not in main_activity:
     raise SystemExit("Retra 3.0 root is not active")
 build_file = (root / "app/build.gradle.kts").read_text()
 for token in ['versionName = "3.0.0"', "alias(libs.plugins.room)", "schemaDirectory", "RETRA_SIGNING_STORE_FILE", "releaseSigningEnabled"]:
@@ -224,14 +226,14 @@ v23_capabilities = {
     "app/src/main/kotlin/app/retra/emulator/data/ControllerProfileRepository.kt": ["ControllerProfile", "RETRA-CONTROLLER-1", "gameSha256", "writeAtomically"],
     "app/src/main/kotlin/app/retra/emulator/data/VaultRepository.kt": ["SaveTimelineEntry", "createTimelineSnapshot", "restoreTimeline", "RETRA-TIMELINE-1"],
     "app/src/main/kotlin/app/retra/emulator/data/GameExperienceRepository.kt": ["GameLaunchProfile", "RETRA-LAUNCH-PROFILE-1", "PerformanceAdvisorRepository", "MIN_ADVICE_SAMPLES", "frameTimeP95Millis"],
-    "app/src/main/kotlin/app/retra/emulator/RetraV23ToolsUi.kt": ["ControllerStudioPanel", "SaveTimelinePanel", "PerformanceAdvisorPanel", "CompatibilityNotebookDialog", "GameLaunchProfileDialog"],
+    "app/src/main/kotlin/app/retra/emulator/RetraToolsUi.kt": ["ControllerStudioPanel", "SaveTimelinePanel", "PerformanceAdvisorPanel", "CompatibilityNotebookDialog", "GameLaunchProfileDialog"],
 }
 for relative, tokens in v23_capabilities.items():
     source = (root / relative).read_text()
     for token in tokens:
         if token not in source:
             raise SystemExit(f"Retra 3.0 capability missing from {relative}: {token}")
-for token in ["dispatchKeyEvent", "onGenericMotionEvent", "handleControllerKeyEvent", "handleControllerMotionEvent"]:
+for token in ["onKeyDown", "onKeyUp", "onGenericMotionEvent", "handleControllerKeyEvent", "handleControllerMotionEvent"]:
     if token not in main_activity:
         raise SystemExit(f"Hardware controller input path missing: {token}")
 game_repository = (root / "app/src/main/kotlin/app/retra/emulator/data/GameRepository.kt").read_text()
@@ -290,11 +292,10 @@ for source_file in ["startup.S", "main.c", "link.ld", "build.sh"]:
     if not (root / "tools/demo-rom" / source_file).is_file():
         raise SystemExit(f"Retra Drift source/build file missing: {source_file}")
 for required_doc in [
-    "docs/RETRA_3_UX_AUDIT.md",
-    "docs/RETRA_3_IMPLEMENTATION.md",
-    "docs/RETRA_3_FEATURE_RECOMMENDATIONS.md",
-    "docs/UPLOADED_PATCH_DIAGNOSIS.md",
-    "FILES_TO_DELETE.md",
+    "docs/CRITICAL_REDESIGN_REVIEW.md",
+    "docs/REDESIGN_CHANGELOG.md",
+    "docs/RETRA_FINAL_UI_UX_SPEC.md",
+    "REPOSITORY_INVESTIGATION.md",
 ]:
     if not (root / required_doc).is_file():
         raise SystemExit(f"Retra 3.0 delivery document missing: {required_doc}")
@@ -315,7 +316,7 @@ for token in ["routeExternalIntent", "ACTION_SEND", "queueExternalImport", "onNe
     if token not in main_activity:
         raise SystemExit(f"External import review path missing: {token}")
 for token in ["Inspect before importing", "confirmExternalImport", "dismissExternalImport"]:
-    if token not in v3_ui:
+    if token not in app_ui:
         raise SystemExit(f"External import confirmation UI missing: {token}")
 rewind = (root / "core/emulation/src/main/kotlin/app/retra/core/emulation/RewindBuffer.kt").read_text()
 for token in ["maximumBytes", "snapshotCount", "copyOf", "Not enough rewind history"]:
@@ -360,15 +361,19 @@ done
 
 echo "PASS shell syntax checks"
 
-JAVA_HOME=$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")
 OUT=$(mktemp -d)
 trap 'rm -rf "$OUT"' EXIT
-c++ -std=c++20 -Wall -Wextra -Werror \
-  -I"$JAVA_HOME/include" -I"$JAVA_HOME/include/linux" \
-  -I"$ROOT/emulation/native/src/main/cpp" \
-  -c "$ROOT/emulation/native/src/main/cpp/jni_bridge.cpp" \
-  -o "$OUT/jni_bridge.o"
-echo "PASS JNI bridge host syntax compilation"
+if command -v javac >/dev/null 2>&1; then
+  JAVA_HOME=$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")
+  c++ -std=c++20 -Wall -Wextra -Werror \
+    -I"$JAVA_HOME/include" -I"$JAVA_HOME/include/linux" \
+    -I"$ROOT/emulation/native/src/main/cpp" \
+    -c "$ROOT/emulation/native/src/main/cpp/jni_bridge.cpp" \
+    -o "$OUT/jni_bridge.o"
+  echo "PASS JNI bridge host syntax compilation"
+else
+  echo "SKIP JNI bridge host syntax compilation: javac/JDK headers are unavailable"
+fi
 
 c++ -std=c++20 -Wall -Wextra -Werror \
   -I"$ROOT/emulation/native/src/main/cpp" \
