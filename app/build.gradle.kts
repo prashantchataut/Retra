@@ -173,6 +173,7 @@ dependencies {
     kapt(libs.hilt.compiler)
 
     testImplementation(libs.junit)
+    testImplementation(kotlin("test-junit"))
     testImplementation(libs.kotlinx.coroutines.core)
     testImplementation(project(":core:model"))
     testImplementation(project(":core:rom"))
