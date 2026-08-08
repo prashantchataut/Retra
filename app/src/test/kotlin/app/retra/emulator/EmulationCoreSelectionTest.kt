@@ -2,11 +2,8 @@ package app.retra.emulator
 
 import app.retra.emulation.api.CoreDescriptor
 import app.retra.emulation.api.CoreTier
-import app.retra.emulation.nativecore.MgbaLibretroEmulationCore
-import app.retra.emulation.nativecore.NativeReferenceEmulationCore
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
