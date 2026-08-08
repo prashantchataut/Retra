@@ -104,6 +104,7 @@ private fun RetraShell(viewModel: RetraViewModel, settings: AppSettings) {
     val homebrew by viewModel.homebrewHub.collectAsStateWithLifecycle()
     val account by viewModel.account.collectAsStateWithLifecycle()
     val externalImport by viewModel.externalImport.collectAsStateWithLifecycle()
+    val importReport by viewModel.importReport.collectAsStateWithLifecycle()
     val snackbarHost = remember { SnackbarHostState() }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -260,6 +261,35 @@ private fun RetraShell(viewModel: RetraViewModel, settings: AppSettings) {
             },
             confirmButton = { Button(onClick = viewModel::confirmExternalImport) { Text("Inspect file") } },
             dismissButton = { TextButton(onClick = viewModel::dismissExternalImport) { Text("Cancel") } }
+        )
+    }
+
+    importReport?.let { report ->
+        AlertDialog(
+            onDismissRequest = viewModel::dismissImportReport,
+            icon = { Icon(Icons.Default.LibraryBooks, null, tint = MaterialTheme.colorScheme.primary) },
+            title = { Text(report.title, fontWeight = FontWeight.Bold) },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(report.summary, style = MaterialTheme.typography.bodyMedium)
+                    if (report.rejectedReasons.isNotEmpty()) {
+                        Text("Details:", fontWeight = FontWeight.SemiBold)
+                        report.rejectedReasons.take(5).forEach { reason ->
+                            Text("• $reason", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    if (report.pendingPatches.isNotEmpty()) {
+                        Text("Queued Patches:", fontWeight = FontWeight.SemiBold)
+                        report.pendingPatches.take(3).forEach { patch ->
+                            Text("• ${patch.displayName} (requires matching base ROM)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
+            },
+            confirmButton = { Button(onClick = viewModel::dismissImportReport) { Text("OK") } }
         )
     }
 }

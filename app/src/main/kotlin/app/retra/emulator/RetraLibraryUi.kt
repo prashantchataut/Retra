@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,6 +19,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.List
@@ -97,6 +99,13 @@ internal fun RetraLibrary(
                     onValueChange = { query = it.take(120) },
                     modifier = Modifier.weight(1f),
                     leadingIcon = { Icon(Icons.Default.Search, null) },
+                    trailingIcon = {
+                        if (query.isNotEmpty()) {
+                            IconButton(onClick = { query = "" }) {
+                                Icon(Icons.Default.Clear, "Clear search")
+                            }
+                        }
+                    },
                     placeholder = { Text("Search your archive") },
                     singleLine = true,
                     shape = MaterialTheme.shapes.large,
@@ -107,7 +116,10 @@ internal fun RetraLibrary(
                         focusedBorderColor = MaterialTheme.colorScheme.primary
                     )
                 )
-                IconButton(onClick = { onLayout(if (layout == LibraryLayout.DETAILED_LIST) LibraryLayout.LARGE_GRID else LibraryLayout.DETAILED_LIST) }) {
+                IconButton(
+                    onClick = { onLayout(if (layout == LibraryLayout.DETAILED_LIST) LibraryLayout.LARGE_GRID else LibraryLayout.DETAILED_LIST) },
+                    modifier = Modifier.heightIn(min = 48.dp)
+                ) {
                     Icon(if (layout == LibraryLayout.DETAILED_LIST) Icons.Default.GridView else Icons.Default.List, "Change library layout")
                 }
             }
@@ -123,7 +135,7 @@ internal fun RetraLibrary(
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                OutlinedButton(onClick = onFolder) {
+                OutlinedButton(onClick = onFolder, modifier = Modifier.heightIn(min = 48.dp)) {
                     Icon(Icons.Default.FolderOpen, null)
                     Spacer(Modifier.width(6.dp))
                     Text("Scan folder")
@@ -137,19 +149,33 @@ internal fun RetraLibrary(
         }
 
         if (filtered.isEmpty()) {
-            RetraEmptyState(
-                title = if (games.isNotEmpty()) "Nothing matches" else "No games yet",
-                body = if (games.isNotEmpty()) {
-                    "Try another filter or clear search."
-                } else {
-                    "Import a GBA file you are allowed to use, or check whether the offline demo is packaged."
-                },
-                primaryLabel = "Import file",
-                onPrimary = onImport,
-                secondaryLabel = if (games.isEmpty()) "Restore Retra Drift" else null,
-                onSecondary = if (games.isEmpty()) onInstallDemo else null,
-                modifier = Modifier.weight(1f)
-            )
+            if (query.isNotBlank()) {
+                RetraEmptyState(
+                    title = "No games match \"$query\"",
+                    body = "Try searching by game code, title, or clearing active filters.",
+                    primaryLabel = "Clear search",
+                    onPrimary = { query = ""; filter = LibraryFilter.ALL },
+                    modifier = Modifier.weight(1f)
+                )
+            } else if (filter != LibraryFilter.ALL && games.isNotEmpty()) {
+                RetraEmptyState(
+                    title = "No ${filter.label.lowercase()} games",
+                    body = "No items in your archive match the ${filter.label} filter.",
+                    primaryLabel = "Show all games",
+                    onPrimary = { filter = LibraryFilter.ALL },
+                    modifier = Modifier.weight(1f)
+                )
+            } else {
+                RetraEmptyState(
+                    title = "No games yet",
+                    body = "Import a GBA file you are allowed to use, or check whether the offline demo is packaged.",
+                    primaryLabel = "Import file",
+                    onPrimary = onImport,
+                    secondaryLabel = "Restore Retra Drift",
+                    onSecondary = onInstallDemo,
+                    modifier = Modifier.weight(1f)
+                )
+            }
         } else if (layout != LibraryLayout.DETAILED_LIST) {
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(154.dp),

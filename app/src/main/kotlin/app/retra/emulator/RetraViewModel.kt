@@ -150,6 +150,8 @@ class RetraViewModel @Inject constructor(
     val metadataSync = libretroMetadataRepository.state
     private val mutablePendingPatch = MutableStateFlow<PendingPatch?>(null)
     val pendingPatch: StateFlow<PendingPatch?> = mutablePendingPatch
+    private val mutableImportReport = MutableStateFlow<ImportReport?>(null)
+    val importReport: StateFlow<ImportReport?> = mutableImportReport
     private val mutableExternalImport = MutableStateFlow<Uri?>(null)
     val externalImport: StateFlow<Uri?> = mutableExternalImport
     private val mutableCompatiblePatchGames = MutableStateFlow<List<GameRecord>>(emptyList())
@@ -347,6 +349,15 @@ class RetraViewModel @Inject constructor(
                     recordAchievement(AchievementEventType.GAME_IMPORTED, amount = result.imported.toLong())
                 }
                 result.pendingPatches.firstOrNull()?.let { showPendingPatch(it) }
+                mutableImportReport.value = ImportReport(
+                    title = "Archive Import Report",
+                    summary = "${result.imported} game${if (result.imported == 1) "" else "s"} imported, ${result.duplicates} duplicate${if (result.duplicates == 1) "" else "s"}, ${result.rejected} rejected entry/entries.",
+                    importedCount = result.imported,
+                    duplicateCount = result.duplicates,
+                    rejectedCount = result.rejected,
+                    rejectedReasons = result.rejectedReasons,
+                    pendingPatches = result.pendingPatches
+                )
                 _messages.emit(
                     "Archive: ${result.imported} imported, ${result.duplicates} duplicates, ${result.rejected} rejected" +
                         if (result.pendingPatches.isEmpty()) "." else "; ${result.pendingPatches.size} patch${if (result.pendingPatches.size == 1) "" else "es"} ready."
@@ -356,8 +367,22 @@ class RetraViewModel @Inject constructor(
                 showPendingPatch(result.pending)
                 _messages.emit("Patch ${result.pending.displayName} is ready. Choose a compatible base game.")
             }
-            is ImportOutcome.Rejected -> _messages.emit(result.reason)
+            is ImportOutcome.Rejected -> {
+                mutableImportReport.value = ImportReport(
+                    title = "Import Rejected",
+                    summary = result.reason,
+                    importedCount = 0,
+                    duplicateCount = 0,
+                    rejectedCount = 1,
+                    rejectedReasons = listOf(result.reason)
+                )
+                _messages.emit(result.reason)
+            }
         }
+    }
+
+    fun dismissImportReport() {
+        mutableImportReport.value = null
     }
 
     private suspend fun showPendingPatch(pending: PendingPatch) {
@@ -369,6 +394,15 @@ class RetraViewModel @Inject constructor(
         val result = gameRepository.importFolder(uri)
         if (result.imported > 0) recordAchievement(AchievementEventType.GAME_IMPORTED, amount = result.imported.toLong())
         result.pendingPatches.firstOrNull()?.let { showPendingPatch(it) }
+        mutableImportReport.value = ImportReport(
+            title = "Folder Scan Report",
+            summary = "${result.imported} game${if (result.imported == 1) "" else "s"} imported, ${result.duplicates} duplicate${if (result.duplicates == 1) "" else "s"}, ${result.rejected} rejected" +
+                (if (result.limitReached) " (safety limit reached)" else "") + ".",
+            importedCount = result.imported,
+            duplicateCount = result.duplicates,
+            rejectedCount = result.rejected,
+            pendingPatches = result.pendingPatches
+        )
         _messages.emit(
             "Folder scan: ${result.imported} imported, ${result.duplicates} duplicates, ${result.rejected} rejected" +
                 (if (result.pendingPatches.isNotEmpty()) "; ${result.pendingPatches.size} patches ready" else "") +

@@ -24,6 +24,7 @@ val releaseSigningEnabled = listOf(
     releaseKeyAlias,
     releaseKeyPassword
 ).all { !it.orNull.isNullOrBlank() }
+
 android {
     namespace = "app.retra.emulator"
     compileSdk {
@@ -99,6 +100,9 @@ android {
 
 kapt {
     correctErrorTypes = true
+    arguments {
+        arg("room.schemaLocation", "$projectDir/schemas")
+    }
 }
 
 room {
@@ -164,6 +168,20 @@ dependencies {
     kapt(libs.hilt.compiler)
 
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.core)
+    testImplementation(project(":core:model"))
+    testImplementation(project(":core:rom"))
+    testImplementation(project(":core:emulation"))
+    testImplementation(project(":core:patching"))
+    testImplementation(project(":core:cheats"))
+    testImplementation(project(":core:download"))
+    testImplementation(project(":core:catalog"))
+    testImplementation(project(":core:achievements"))
+    testImplementation(project(":core:social"))
+    testImplementation(project(":core:multiplayer"))
+    testImplementation(project(":emulation:api"))
+    testImplementation(project(":emulation:native"))
+
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(libs.androidx.espresso.core)
