@@ -4,6 +4,8 @@ import android.os.Build
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -141,6 +143,19 @@ fun GlassPanel(
     ) {
         Box(
             Modifier
+                .clip(shape)
+                .then(
+                    if (reduceTransparency) Modifier
+                    else Modifier.background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.085f + intensity * 0.035f),
+                                Color.Transparent,
+                                colors.primary.copy(alpha = 0.035f + intensity * 0.025f)
+                            )
+                        )
+                    )
+                )
                 .border(
                     width = 1.dp,
                     color = Color.White.copy(alpha = if (reduceTransparency) 0f else 0.08f + intensity * 0.07f),

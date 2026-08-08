@@ -266,8 +266,11 @@ private fun V3App(viewModel: RetraViewModel, settings: AppSettings) {
 @Composable
 private fun V3BottomDock(selected: V3Destination, onSelected: (V3Destination) -> Unit) {
     Surface(
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.84f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f)),
+        shadowElevation = 14.dp
     ) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
