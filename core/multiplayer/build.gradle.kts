@@ -7,6 +7,8 @@ kotlin {
 }
 
 dependencies {
+    implementation(project(":core:model"))
+    implementation(project(":core:emulation"))
     testImplementation(kotlin("test-junit"))
     testImplementation(libs.junit)
 }

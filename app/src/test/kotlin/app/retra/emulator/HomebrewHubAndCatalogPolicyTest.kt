@@ -4,6 +4,7 @@ import app.retra.emulator.data.HomebrewHubEntry
 import app.retra.emulator.data.HomebrewHubFile
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -52,7 +53,7 @@ class HomebrewHubAndCatalogPolicyTest {
             platform = "GBA",
             typeTag = "game",
             repository = "https://example.com/hack",
-            distributionPermission = null, // No explicit permission
+            distributionPermission = null,
             screenshots = emptyList(),
             tags = listOf("hack"),
             files = listOf(
@@ -76,7 +77,7 @@ class HomebrewHubAndCatalogPolicyTest {
             title = "DS Homebrew",
             developer = "Author",
             license = "MIT",
-            platform = "NDS", // Not GBA
+            platform = "NDS",
             typeTag = "homebrew",
             repository = "https://example.com/ds",
             distributionPermission = "Permission granted",
@@ -94,9 +95,5 @@ class HomebrewHubAndCatalogPolicyTest {
         )
 
         assertFalse(entry.directInstallEligible)
-    }
-
-    private fun assertNotNull(value: Any?) {
-        assertTrue(value != null)
     }
 }
