@@ -28,6 +28,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -96,9 +97,15 @@ internal fun V3Library(
                     onValueChange = { query = it.take(120) },
                     modifier = Modifier.weight(1f),
                     leadingIcon = { Icon(Icons.Default.Search, null) },
-                    placeholder = { Text("Search") },
+                    placeholder = { Text("Search your archive") },
                     singleLine = true,
-                    shape = MaterialTheme.shapes.medium
+                    shape = MaterialTheme.shapes.large,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.68f),
+                        focusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f),
+                        focusedBorderColor = MaterialTheme.colorScheme.primary
+                    )
                 )
                 IconButton(onClick = { onLayout(if (layout == LibraryLayout.DETAILED_LIST) LibraryLayout.LARGE_GRID else LibraryLayout.DETAILED_LIST) }) {
                     Icon(if (layout == LibraryLayout.DETAILED_LIST) Icons.Default.GridView else Icons.Default.List, "Change library layout")

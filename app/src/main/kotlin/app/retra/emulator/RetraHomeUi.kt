@@ -77,8 +77,8 @@ internal fun V3Home(
     ) {
         item {
             RetraPageTitle(
-                title = "Home",
-                subtitle = if (continueGame != null) "Continue where you left off." else "Import a game you own to start.",
+                title = "Your archive",
+                subtitle = if (continueGame != null) "Continue where you left off." else "A private place for the games you return to.",
                 actionIcon = Icons.Default.Settings,
                 actionLabel = "Settings",
                 onAction = onSettings
