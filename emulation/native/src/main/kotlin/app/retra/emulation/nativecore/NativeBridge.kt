@@ -2,7 +2,7 @@ package app.retra.emulation.nativecore
 
 internal object NativeBridge {
     init {
-        System.loadLibrary("retra_native")
+        runCatching { System.loadLibrary("retra_native") }
     }
 
     external fun nativeCreate(): Long

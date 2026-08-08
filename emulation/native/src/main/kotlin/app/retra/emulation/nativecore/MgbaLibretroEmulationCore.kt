@@ -65,7 +65,7 @@ class MgbaLibretroEmulationCore(context: Context) : EmulationCore, AutoCloseable
     private val saveStore = AtomicSaveStore(File(applicationContext.filesDir, "emulation"))
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val nativeLock = Any()
-    private var nativeHandle: Long = MgbaBridge.nativeCreate()
+    private var nativeHandle: Long = runCatching { MgbaBridge.nativeCreate() }.getOrDefault(0L)
     private var frameJob: Job? = null
     private var gameHash: String? = null
     private var input = InputSnapshot()

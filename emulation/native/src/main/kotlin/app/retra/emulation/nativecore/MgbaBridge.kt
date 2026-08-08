@@ -2,7 +2,7 @@ package app.retra.emulation.nativecore
 
 internal object MgbaBridge {
     init {
-        System.loadLibrary("retra_native")
+        runCatching { System.loadLibrary("retra_native") }
     }
 
     external fun nativeIsAvailable(): Boolean
