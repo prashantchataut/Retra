@@ -110,7 +110,7 @@ class CuratedReleaseRepository @Inject constructor() {
             connection.setRequestProperty("Accept", "application/vnd.github+json")
             connection.setRequestProperty("Accept-Encoding", "identity")
             connection.setRequestProperty("X-GitHub-Api-Version", "2022-11-28")
-            connection.setRequestProperty("User-Agent", "Retra/2.0 Android")
+            connection.setRequestProperty("User-Agent", "Retra/3.0 Android")
             val status = connection.responseCode
             require(status == HttpURLConnection.HTTP_OK) { "GitHub returned HTTP $status." }
             val encoding = connection.contentEncoding?.trim()?.lowercase()

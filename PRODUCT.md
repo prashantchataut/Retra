@@ -49,12 +49,11 @@ Kotlin / Jetpack Compose / Material 3 app with Room, DataStore, Hilt, JNI/CMake,
 
 ## Evidence Sources
 
-- README.md, docs/BRAND_IDENTITY.md, docs/RETRA_3_UX_AUDIT.md
+- README.md, docs/BRAND_IDENTITY.md, DESIGN.md
 - `.agents/skills/retra-product-redesign/`
-- Live shell: `RetraV3Root` via MainActivity; ViewModel/repository domain retained
+- Live shell: `RetraApp` via MainActivity (`RetraAppUi.kt` and focused screen files); ViewModel/repository domain retained
 
 ## Open Decisions
 
-- *[assumed]* Full redesign keeps Archive Glass brand tokens and mark; replaces sloppy Compose execution, dead V23 shell, and Operate-hostile copy density
-- *[assumed]* Delivery is phased (foundation → primary shell → secondary shell → player → harden), not a single big-bang PR
+- *[assumed]* Archive Glass brand tokens and mark stay; Operate-first copy density remains the bar
 - Optional identity/account depth beyond local profile remains product-flexible

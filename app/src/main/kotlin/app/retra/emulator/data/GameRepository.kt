@@ -45,6 +45,29 @@ class GameRepository @Inject constructor(
 
     fun observeGames(): Flow<List<GameRecord>> = gameDao.observeAll().map { list -> list.map(GameEntity::toRecord) }
 
+    /**
+     * Installs Retra Drift, an original open-source GBA mini-game shipped with Retra.
+     * This gives a fresh installation something real and legal to launch while keeping
+     * commercial ROMs strictly user-supplied. The content-addressed import path makes
+     * this idempotent across upgrades and reinstalls of the database.
+     */
+    suspend fun ensureBundledDemo(): ImportOutcome = withContext(Dispatchers.IO) {
+        val bytes = try {
+            context.assets.open("demo/retra_drift.gba").use { it.readBytesLimited(GbaRomParser.MAX_ROM_SIZE_BYTES) }
+        } catch (error: Exception) {
+            return@withContext ImportOutcome.Rejected(error.message ?: "Retra Drift could not be opened.")
+        }
+        importGbaBytes(
+            bytes = bytes,
+            displayName = "Retra Drift.gba",
+            origin = "BUNDLED_HOMEBREW",
+            creator = "Retra Project",
+            sourceUrl = "https://github.com/prashantchataut/Retra",
+            license = "Apache-2.0",
+            distributionPermission = "Original homebrew bundled with Retra"
+        )
+    }
+
     suspend fun getById(id: Long): GameRecord? = withContext(Dispatchers.IO) {
         gameDao.getById(id)?.toRecord()
     }

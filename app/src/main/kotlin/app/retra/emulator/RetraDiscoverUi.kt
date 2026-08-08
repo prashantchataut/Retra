@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import app.retra.core.model.CuratedDiscoveryLink
 import app.retra.emulator.data.HomebrewHubEntry
 import app.retra.emulator.ui.components.RetraBadge
 import app.retra.emulator.ui.components.RetraPageTitle
@@ -58,11 +59,12 @@ import app.retra.emulator.ui.theme.RetraBlue
 import app.retra.emulator.ui.theme.SaveMint
 
 @Composable
-internal fun V3Discover(
+internal fun RetraDiscover(
     onlineEnabled: Boolean,
     entries: List<HomebrewHubEntry>,
     loading: Boolean,
     installingSlug: String?,
+    patchGuides: List<CuratedDiscoveryLink>,
     onRefresh: () -> Unit,
     onInstall: (HomebrewHubEntry) -> Unit,
     loadArtwork: suspend (HomebrewHubEntry) -> ByteArray?,
@@ -89,9 +91,9 @@ internal fun V3Discover(
                 BoxWithConstraints(Modifier.fillMaxWidth()) {
                     val stacked = maxWidth < 560.dp
                     if (stacked) {
-                        Column { V3DemoArt(Modifier.fillMaxWidth().height(190.dp)); V3DemoCopy() }
+                        Column { RetraDemoArt(Modifier.fillMaxWidth().height(190.dp)); RetraDemoCopy() }
                     } else {
-                        Row(Modifier.heightIn(min = 240.dp)) { V3DemoArt(Modifier.weight(0.42f).fillMaxHeight()); V3DemoCopy(Modifier.weight(0.58f)) }
+                        Row(Modifier.heightIn(min = 240.dp)) { RetraDemoArt(Modifier.weight(0.42f).fillMaxHeight()); RetraDemoCopy(Modifier.weight(0.58f)) }
                     }
                 }
             }
@@ -113,9 +115,20 @@ internal fun V3Discover(
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Button(onClick = onImport) { Text("Import patch") }
-                        OutlinedButton(onClick = onPatchStudio) { Text("Prepare known patch") }
+                        OutlinedButton(onClick = onPatchStudio) { Text("Prepare Heart & Soul") }
                     }
+                    Text(
+                        "Retra never bundles commercial Pokémon ROMs or scrapes ROM hosts. Bring a base game you own, then apply a creator patch.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
+            }
+        }
+        if (patchGuides.isNotEmpty()) {
+            item { RetraSectionHeader("Featured patch guides") }
+            items(patchGuides, key = { it.id }) { link ->
+                RetraPatchGuideCard(link, onOpen = { onOpenUrl(link.sourcePageUrl) })
             }
         }
         item { RetraSectionHeader("Homebrew") }
@@ -147,7 +160,7 @@ internal fun V3Discover(
                 }
             }
             items(entries.take(12), key = { it.slug }) { entry ->
-                V3HomebrewCard(entry, installingSlug == entry.slug, loadArtwork, { onInstall(entry) }, { onOpenUrl(entry.sourcePageUrl()) })
+                RetraHomebrewCard(entry, installingSlug == entry.slug, loadArtwork, { onInstall(entry) }, { onOpenUrl(entry.sourcePageUrl()) })
             }
             item {
                 RetraPanel(shape = MaterialTheme.shapes.medium, contentPadding = PaddingValues(18.dp)) {
@@ -162,7 +175,7 @@ internal fun V3Discover(
 }
 
 @Composable
-internal fun V3DemoArt(modifier: Modifier = Modifier) {
+internal fun RetraDemoArt(modifier: Modifier = Modifier) {
     Box(modifier.background(Color(0xFF07141B)), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(13.dp)) {
             RetraLogo(size = 90.dp, markColor = Color.White, cutoutColor = Color(0xFF07141B))
@@ -173,7 +186,7 @@ internal fun V3DemoArt(modifier: Modifier = Modifier) {
 }
 
 @Composable
-internal fun V3DemoCopy(modifier: Modifier = Modifier) {
+internal fun RetraDemoCopy(modifier: Modifier = Modifier) {
     Column(modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         RetraBadge("BUILT IN", SaveMint)
         Text("Retra Drift", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
@@ -190,7 +203,27 @@ internal fun V3DemoCopy(modifier: Modifier = Modifier) {
 }
 
 @Composable
-internal fun V3HomebrewCard(
+internal fun RetraPatchGuideCard(link: CuratedDiscoveryLink, onOpen: () -> Unit) {
+    RetraPanel(shape = MaterialTheme.shapes.large, contentPadding = PaddingValues(18.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(link.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text("by ${link.creator}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(link.description, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                RetraBadge("PATCH GUIDE", AdventureGold)
+                RetraBadge("YOUR BASE ROM", MemoryCoral)
+            }
+            OutlinedButton(onClick = onOpen) {
+                Icon(Icons.Default.OpenInNew, null)
+                Spacer(Modifier.width(5.dp))
+                Text("Open creator page")
+            }
+        }
+    }
+}
+
+@Composable
+internal fun RetraHomebrewCard(
     entry: HomebrewHubEntry,
     installing: Boolean,
     loadArtwork: suspend (HomebrewHubEntry) -> ByteArray?,
@@ -209,12 +242,12 @@ internal fun V3HomebrewCard(
             if (stacked) {
                 Column {
                     Box(Modifier.fillMaxWidth().height(180.dp), content = art)
-                    V3HomebrewCopy(entry, installing, onInstall, onSource)
+                    RetraHomebrewCopy(entry, installing, onInstall, onSource)
                 }
             } else {
                 Row(Modifier.heightIn(min = 210.dp)) {
                     Box(Modifier.weight(0.36f).fillMaxHeight(), content = art)
-                    V3HomebrewCopy(entry, installing, onInstall, onSource, Modifier.weight(0.64f))
+                    RetraHomebrewCopy(entry, installing, onInstall, onSource, Modifier.weight(0.64f))
                 }
             }
         }
@@ -222,7 +255,7 @@ internal fun V3HomebrewCard(
 }
 
 @Composable
-internal fun V3HomebrewCopy(entry: HomebrewHubEntry, installing: Boolean, onInstall: () -> Unit, onSource: () -> Unit, modifier: Modifier = Modifier) {
+internal fun RetraHomebrewCopy(entry: HomebrewHubEntry, installing: Boolean, onInstall: () -> Unit, onSource: () -> Unit, modifier: Modifier = Modifier) {
     Column(modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(entry.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         Text("by ${entry.developer}", color = MaterialTheme.colorScheme.onSurfaceVariant)

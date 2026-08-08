@@ -1,30 +1,32 @@
-# Retra 0.8 Redesign Change Log
+# Retra 3.0 Redesign Change Log
 
-## New
+## Rebuilt
 
-- Added `RetraFinalExperienceUi.kt` for final-form Home, Library, You, and Settings experiences.
-- Added the Archive Glass atmosphere and accessibility-aware glass primitives.
-- Implemented the Portal / Save Core logo in Compose, SVG, PNG, launcher, round-launcher, splash, and monochrome forms.
-- Rebuilt onboarding as a three-stage responsive experience.
-- Added a strict trusted-cheat-index (`.rci`) pipeline and game-specific one-tap pack surface.
-- Updated the reusable `retra-product-redesign` skill and final UX/security documentation.
+- Active app shell and responsive navigation.
+- Onboarding, Home, Library, Discover, Profile, Settings, game details, external import review, and Patch Studio.
+- Root content-color handling and dark/light surface hierarchy.
+- Launcher/in-app logo system.
 
-## Changed
+## Added
 
-- Replaced the previous visible screen composition instead of restyling it.
-- Reworked Material 3 colors, typography, shapes, navigation, and settings hierarchy around a mineral/ice palette without purple or rainbow gradients.
-- Promoted You/Profile to a primary destination and moved Settings to contextual top-bar/rail access.
-- Reframed Discover around official creator pages, user-supplied patch bases, and checksum-verified authorized releases.
-- Updated launcher branding across all density buckets.
+- Original Retra Drift GBA homebrew ROM and deterministic source build.
+- Idempotent first-run demo import.
+- Exact uploaded UPS diagnostics and compatible-base recovery.
+- Core-readiness status and honest disabled Play state.
+- Source-only Homebrew Hub behavior unless explicit redistribution permission, published SHA-256, and bounded size exist.
+- Retra 3.0 audit, implementation, patch, recommendation, test, and deletion documentation.
 
 ## Preserved
 
-- ViewModel/repository state ownership and Room/DataStore/WorkManager/JNI/emulation boundaries.
-- GBA/ZIP import, folder scan, patching, saves, achievements, legal catalog validation, downloads, and controller settings.
-- Offline-first play and optional account identity.
+- Repository/ViewModel state ownership.
+- Room/DataStore persistence.
+- Imports, patching, saves, timeline, health, achievements, cheats, screenshots, rewind, controller profiles, performance advice, and ROM-free backups.
+- Existing mGBA/libretro build and CI staging path.
 
-## Intentionally not added
+## Removed
 
-- Unauthorized commercial ROM distribution, Poke Harbor indexing, or one-click commercial ROM downloads.
-- Continuous full-screen blur, visible multicolor gradients, or purple gaming-dashboard chrome.
-- Proprietary game artwork or bundled third-party font files.
+- `RetraV23Ui.kt`, the stale active product monolith.
+- Any implication that a patch file is a standalone game.
+- Any implication that a diagnostic fallback is a playable GBA core.
+
+See the root `CHANGELOG.md` for release history.

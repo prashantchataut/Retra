@@ -86,11 +86,29 @@ class CatalogRepository @Inject constructor(
         CuratedDiscoveryLink(
             id = "heart-and-soul-official",
             title = "Heart & Soul — official patch releases",
-            description = "Open the project team's official release page, then apply its patch locally to a compatible Emerald backup you provide.",
+            description = "Open the project team's official release page, then apply the patch locally to a compatible Emerald backup you own. Retra can prepare the reviewed v1.2.1 UPS from Patch Studio.",
             creator = "Pokémon Heart & Soul team",
             sourcePageUrl = "https://github.com/PokemonHnS-Development/pokemonHnS/releases",
             license = "Project terms; patch only",
-            tags = listOf("official-patch", "requires-base-rom", "rom-hack")
+            tags = listOf("official-patch", "requires-base-rom", "rom-hack", "featured-patch")
+        ),
+        CuratedDiscoveryLink(
+            id = "ultra-shiny-gold-sigma",
+            title = "Ultra Shiny Gold Sigma — project page",
+            description = "Creator project page for the FireRed patch. Bring your own compatible FireRed backup; Retra will not download or ship commercial ROMs.",
+            creator = "Alex Sanchez",
+            sourcePageUrl = "https://www.romhacking.net/hacks/2875/",
+            license = "Project terms; patch only",
+            tags = listOf("official-patch", "requires-base-rom", "rom-hack", "featured-patch")
+        ),
+        CuratedDiscoveryLink(
+            id = "unbound-official",
+            title = "Unbound — creator thread",
+            description = "Skeli's PokeCommunity release thread. Obtain the official patch there and apply it to a FireRed backup you supply.",
+            creator = "Skeli",
+            sourcePageUrl = "https://www.pokecommunity.com/threads/pok%C3%A9mon-unbound-completed.382178/",
+            license = "Project terms; patch only",
+            tags = listOf("official-patch", "requires-base-rom", "rom-hack", "featured-patch")
         ),
         CuratedDiscoveryLink(
             id = "radical-red-official-patcher",
@@ -99,7 +117,61 @@ class CatalogRepository @Inject constructor(
             creator = "Radical Red project",
             sourcePageUrl = "https://patch.radicalred.net/",
             license = "Project terms; browser patcher",
-            tags = listOf("official-patcher", "requires-base-rom", "rom-hack")
+            tags = listOf("official-patcher", "requires-base-rom", "rom-hack", "featured-patch")
+        ),
+        CuratedDiscoveryLink(
+            id = "sovereign-of-the-skies",
+            title = "Sovereign of the Skies — creator thread",
+            description = "Official project thread and site for the Emerald patch. Import your Emerald backup, then apply the creator's patch in Patch Studio.",
+            creator = "Dragonflye / SotS team",
+            sourcePageUrl = "https://www.pokecommunity.com/threads/sovereign-of-the-skies-new-beta-2-0-0-version-released-06-10-2021.292651/",
+            license = "Project terms; patch only",
+            tags = listOf("official-patch", "requires-base-rom", "rom-hack", "featured-patch")
+        ),
+        CuratedDiscoveryLink(
+            id = "life-version",
+            title = "LIFE Version — creator thread",
+            description = "Discontinued FireRed project thread. Retra opens the creator page only; you still supply the base ROM and any patch file you obtain lawfully.",
+            creator = "Dionen, Tcoppy, Danny0317",
+            sourcePageUrl = "https://www.pokecommunity.com/threads/pok%C3%A9mon-life-version.333051/",
+            license = "Project terms; patch only",
+            tags = listOf("official-patch", "requires-base-rom", "rom-hack", "featured-patch")
+        ),
+        CuratedDiscoveryLink(
+            id = "giratinas-legend",
+            title = "Giratina's Legend — creator thread",
+            description = "Andrea's Ruby-based project thread. Patch onto a compatible Ruby backup you own; Retra never ships commercial base ROMs.",
+            creator = "Andrea",
+            sourcePageUrl = "https://www.pokecommunity.com/threads/pokemon-giratinas-legend-07-01-24.289561/",
+            license = "Project terms; patch only",
+            tags = listOf("official-patch", "requires-base-rom", "rom-hack", "featured-patch")
+        ),
+        CuratedDiscoveryLink(
+            id = "saiph",
+            title = "Saiph — creator thread",
+            description = "Vytron's FireRed project thread for patches and release notes. Bring your own base ROM.",
+            creator = "Vytron",
+            sourcePageUrl = "https://www.pokecommunity.com/threads/pok%C3%A9mon-saiph-the-vytroverse-part-1-full-game-released.420990/",
+            license = "Project terms; patch only",
+            tags = listOf("official-patch", "requires-base-rom", "rom-hack", "featured-patch")
+        ),
+        CuratedDiscoveryLink(
+            id = "galaxy-elements",
+            title = "Galaxy Elements — creator thread",
+            description = "Kebbles' FireRed project thread. Open the creator page for patch guidance; import your FireRed backup into Retra separately.",
+            creator = "Kebbles",
+            sourcePageUrl = "https://www.pokecommunity.com/threads/pok%C3%A9mon-galaxy-elements.168749/",
+            license = "Project terms; patch only",
+            tags = listOf("official-patch", "requires-base-rom", "rom-hack", "featured-patch")
+        ),
+        CuratedDiscoveryLink(
+            id = "adventure-red-chapter",
+            title = "Adventure Red Chapter — creator thread",
+            description = "Aethestode's FireRed manga-adaptation thread. Download only the creator's patch; Retra applies patches to a base ROM already in your library.",
+            creator = "Aethestode",
+            sourcePageUrl = "https://www.pokecommunity.com/threads/pok%C3%A9mon-adventure-red-chapter-new-beta-expansion.298920/",
+            license = "Project terms; patch only",
+            tags = listOf("official-patch", "requires-base-rom", "rom-hack", "featured-patch")
         ),
         CuratedDiscoveryLink(
             id = "minicraft-gba-official",
@@ -185,7 +257,7 @@ class CatalogRepository @Inject constructor(
                 connection.requestMethod = "GET"
                 connection.setRequestProperty("Accept", "application/json, text/json, text/plain")
                 connection.setRequestProperty("Accept-Encoding", "identity")
-                connection.setRequestProperty("User-Agent", "Retra/2.0 Android")
+                connection.setRequestProperty("User-Agent", "Retra/3.0 Android")
                 val status = connection.responseCode
                 if (status in REDIRECT_CODES) {
                     if (redirectIndex == MAX_MANIFEST_REDIRECTS) {

@@ -34,8 +34,8 @@ android {
         applicationId = "app.retra.emulator"
         minSdk = 26
         targetSdk = 37
-        versionCode = 23
-        versionName = "2.3.0"
+        versionCode = 30
+        versionName = "3.0.0"
         buildConfigField("String", "RETRA_GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

@@ -131,7 +131,7 @@ Only MaterialTheme shapes: extraSmall 8, small 12, medium 18, large 24, extraLar
 
 **Don't**
 
-- Ship parallel product shells (no V23 root)
+- Ship parallel product shells or versioned UI dialects (no V1/V2/V3 naming)
 - Put manifesto copy above the primary action
 - Hardcode `RoundedCornerShape(N.dp)` outside the component kit
 - Center one fan-patch project as product identity

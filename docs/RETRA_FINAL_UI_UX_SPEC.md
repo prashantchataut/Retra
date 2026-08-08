@@ -1,117 +1,56 @@
-# Retra 0.8 Final UI/UX Specification
+# Retra 3.0 Final UI/UX Specification
 
 ## Product thesis
 
-Retra is a **memory archive**: a private, artwork-led place to return to handheld worlds. It must not feel like a file manager, piracy storefront, template dashboard, or collection of unrelated Dribbble screens.
+Retra is a private memory player for Game Boy Advance worlds. The first question is “What do I return to?”, not “Which file-management tool do I open?”
 
-The previous composition is not preserved. Existing emulator, storage, save, import, patch, cheat, identity, achievement, and multiplayer capabilities remain, but the visible hierarchy is rebuilt around three user intents: **return**, **organize**, and **protect**.
+## Visual system
 
-## Critical interpretation of the references
+- Archive Glass with mineral black/navy foundations.
+- Ice, aqua, coral, mint, and restrained warm-gold semantic accents.
+- Translucency only for grouping/navigation/high-value actions.
+- No blurred text, purple gaming chrome, rainbow gradients, letter logo, copied console trade dress, or copyrighted character branding.
+- Opaque reduced-transparency mode, reduced motion, high contrast, scalable system typography.
+- Vault Aperture / Memory Prism brand across launcher and in-app surfaces.
 
-The supplied references communicate bold typography, strong device framing, dark gaming surfaces, expressive art, and translucent depth. Taken literally, they would create a generic neon concept. Retra instead uses one coherent system:
+## Primary information architecture
 
-- Material 3 interaction and accessibility behavior.
-- Mineral black/navy foundations rather than purple.
-- Ice blue, aqua, coral, mint, and warm gold as controlled semantic accents.
-- Game artwork as the emotional material.
-- Archive Glass only for navigation, grouping, and high-value actions.
-- Opaque alternatives for reduced transparency and high contrast.
+### Home
 
-There are no visible rainbow or purple gradients. Ambient depth comes from solid blurred light pools on Android 12+ and static tonal shapes on older versions. Text and artwork are never blurred.
+Continue hero, core readiness, recent/favorite worlds, compact saves/milestones, and local privacy.
 
-## Brand: Portal / Save Core
+### Library
 
-The supplied brand board’s mark is implemented as the canonical identity:
+Search; file/folder import; All, Continue, Favorites, Patched, Homebrew, Unplayed filters; adaptive artwork grid; detailed list; demo recovery.
 
-- an open return portal;
-- an inner save core with two memory lights;
-- three pixel steps representing re-entry into a world;
-- a coral terminal pixel as the single warm signature.
+### Discover
 
-Assets live in `branding/`, launcher resources, and `BrandUi.kt`. The mark avoids protected console shapes, Poké Balls, game characters, and letter-monogram clichés.
+Original built-in homebrew, Patch Studio, creator-first gallery, and explicit source-only behavior when redistribution/checksum requirements are absent.
 
-## Information architecture
+### Profile
 
-### Home — return
+Local identity, archive progress, save health, achievements, and recent play without invented social metrics.
 
-- Dominant continue-playing hero with real local artwork when available.
-- Recent and favorite worlds as an artwork shelf.
-- Small archive statistics, never decorative analytics.
-- Clear offline/private status.
-- One primary action: resume the most relevant game.
+### Settings
 
-### Library — organize
+Appearance, Player, Controls, Saves, Privacy, and About. Settings exposed in UI must change real persisted behavior.
 
-- Search by title, display name, code, creator, tag, or collection.
-- Filters for all, continue, favorites, patched/homebrew, and unplayed.
-- Adaptive artwork grid and detailed list modes.
-- Import file and scan-folder actions remain immediately available.
-- Empty state teaches `.gba`, `.zip`, `.ips`, `.ups`, and `.bps` workflows without implying bundled games.
+### Game details
 
-### Discover — obtain legal content
+Artwork, provenance, core readiness, Play, favorite, artwork, cheats, technical identity, and confirmed removal.
 
-- Official creator/project pages are primary.
-- Patch projects are labeled as patches and require a user-owned compatible base ROM.
-- Direct import appears only for HTTPS assets with explicit distribution permission and a published SHA-256 digest.
-- Downloads are bounded, redirect-restricted, checksum verified, and imported through the existing secure pipeline.
-- Commercial Pokémon/Nintendo ROMs and unauthorized sites are not indexed or deep-linked.
+### Player
 
-### You — identity without surveillance
+Game canvas first; compact controls; saves, load, pause, fast-forward, screenshots, rewind, per-game profiles, controller-first mode, and honest performance telemetry.
 
-- Local profile is always available and works offline.
-- Optional Google identity never gates play.
-- Played games, achievement progress, and save-vault summary use real local state.
-- Privacy copy distinguishes public identity metadata from private ROM/save content.
+## Legal/trust behavior
 
-### Settings — intention first
+- Commercial ROMs are user-supplied only.
+- UPS/IPS/BPS remain patches and require a compatible local base.
+- Direct downloads require HTTPS, explicit redistribution permission, a published SHA-256, a bounded size, and creator/license/source metadata.
+- External imports are reviewed before repository mutation.
+- ROMs and saves remain local unless the user explicitly exports or shares them.
 
-1. Appearance
-2. Library
-3. Gameplay
-4. Controls
-5. Feedback
-6. Privacy
+## Validation standard
 
-Settings use existing repository state, not duplicate UI-only values. On wide layouts, categories and controls appear in a two-pane arrangement.
-
-### Game details — contextual tools
-
-- Resume, favorite, title/notes, artwork, save states, patches, and cheats stay with the selected game.
-- Cheat packs are matched to exact ROM SHA-256 and, when specified, game code and revision.
-- A trusted `.rci` index can offer a one-tap pack only after license, permission, HTTPS, and pack checksum validation.
-- Manual local `.rcc` import remains available.
-
-### Onboarding — three decisions
-
-1. **Return to worlds that raised you** — establish the product promise.
-2. **Bring what you own** — explain file, folder, and patch import.
-3. **Offline first** — make optional identity and privacy boundaries explicit.
-
-The user can enter Retra without an account or network connection.
-
-## Responsive behavior
-
-- Phone: four-destination bottom navigation; Settings in the top bar.
-- Medium/expanded: navigation rail with Settings anchored at the bottom.
-- Settings becomes two-pane at approximately 760 dp.
-- Library uses adaptive columns rather than model-specific breakpoints.
-- Insets are consumed once and all primary targets remain at least 48 dp.
-
-## Accessibility and performance
-
-- Material typography respects stored font scale.
-- High contrast, reduced motion, and reduced transparency are functional modes.
-- Motion is short and non-essential; reduced motion removes it.
-- Glass is decorative only and never carries the sole state signal.
-- Ambient blur is clipped, static, and unavailable on pre-Android 12 devices by design.
-- Lazy content uses stable keys; blocking storage/network work remains outside composables.
-
-## Typography decision
-
-No font binaries are bundled. Retra uses Android’s system sans-serif stack with deliberate weight, tracking, and hierarchy. This avoids licensing/size risk and keeps rendering native across devices. A separately licensed variable font can be introduced later through the normal Android resource pipeline after legal review and device testing.
-
-## Content and legal boundary
-
-Retra supports user-owned ROM imports, legal homebrew/public releases, official creator pages, checksum-pinned authorized files, and local patching with a compatible base ROM supplied by the user.
-
-Retra does **not** bundle, scrape, index, deep-link, or automate unauthorized commercial ROM downloads from Poke Harbor or similar sites. That requested behavior was intentionally replaced with a secure, provenance-first library and patch workflow.
+The source implementation is not release-complete until Android compilation, resource linking, mGBA ABI loading, instrumented tests, responsive screenshots, accessibility passes, and physical-device gameplay are successful.

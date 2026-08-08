@@ -1,59 +1,19 @@
-# Skills Integration
+# Skills Integration — Retra 3.0
 
-## Requested skill commands
+The repository skill `.agents/skills/retra-product-redesign/SKILL.md` controlled this redesign.
 
-The five exact commands requested by the user were executed with complete output redirected to temporary files and copied into `docs/requested-skills/cli-output/`:
+Applied requirements:
 
-- `ui-ux-pro-max`
-- `design-guide`
-- `paperclip-create-agent`
-- `design-taste-frontend`
-- `mobile-android-design`
+- inspect architecture before editing;
+- preserve repository/ViewModel state ownership and existing emulator behavior;
+- rebuild from shared brand/theme/glass/navigation primitives;
+- use adaptive phone/tablet layouts;
+- respect reduced motion/transparency, high contrast, text scaling, and touch targets;
+- keep player chrome quieter than the game canvas;
+- use creator-first legal discovery;
+- require explicit permission, HTTPS, published SHA-256, and bounded size for direct downloads;
+- keep patches patch-only and require a local compatible base;
+- avoid commercial ROMs, copyrighted artwork, proprietary game data, and font binaries;
+- run all available verification and disclose unavailable Android/device tooling.
 
-Each CLI invocation failed at the Git clone stage because the sandbox could not resolve `github.com`. Retra does not represent these as successful installations.
-
-Canonical instructions recovered through the available retrieval path were reviewed and stored as offline provenance snapshots under `.agents/skills/`. Relative supporting guidance was resolved into the same project tree where available.
-
-## Applied product decisions
-
-- Premium, nostalgic retro-gaming operating-system feel rather than a generic file manager.
-- Material 3 structure with semantic tokens and restrained glass.
-- Deliberate asymmetry and hierarchy without sacrificing scanability.
-- Design dials: variance 7/10, motion 5/10, density 6/10.
-- At least 48dp primary Android touch targets.
-- Controller-first and touch-first operation, adaptive phone/tablet navigation, high contrast, reduced motion/transparency, and scalable typography.
-- Settings must change real behavior rather than only storing values.
-- Explicit implementation-status language instead of polished placeholder buttons.
-
-The Retra design-system summary is in `design-system/retra/MASTER.md`.
-
-## Existing Android guidance
-
-The previously included Android skills were also retained and applied:
-
-- `edge-to-edge`: edge-to-edge setup, inset ownership, and IME behavior.
-- `adaptive`: bottom navigation on compact widths and navigation rail on larger windows.
-- `testing-setup`: separate platform-neutral, native, static, and device-test evidence.
-- `compose-styles`: reviewed but not enabled because the experimental Styles API is not appropriate for the current stable baseline.
-
-## Paperclip agent boundary
-
-`paperclip-create-agent` was reviewed but not executed against a Paperclip API. No organization, credentials, reporting chain, or concrete agent-creation objective was available. Inventing those values would violate the skill’s preconditions.
-
-## 0.5 application
-
-- `ui-ux-pro-max`: explicit UX hierarchy, adaptive touch targets, action feedback, themed icon, reduced-motion/high-contrast settings, and a device-test checklist.
-- `design-guide`: one visual narrative from brand/onboarding through home, library, game details, player, and profile rather than disconnected feature screens.
-- `design-taste-frontend`: deliberate variance, limited gradients/glass, fewer repetitive cards, strong hero anchors, and readable dense technical surfaces.
-- `mobile-android-design`: Credential Manager, bottom navigation/rail adaptation, contextual controller capture, noisy-audio handling, Android launcher/splash resources, and platform storage behavior.
-- `paperclip-create-agent`: reviewed only; still not invoked because no Paperclip organization, manager, budget, or durable agent objective was provided.
-## 0.6 application
-
-The retained UI/UX, Android, adaptive-layout, Compose-style, edge-to-edge, and testing guidance was applied to the Prism Glass redesign. The release emphasizes a single visual grammar, adaptive navigation, crisp content over decorative blur, focused settings categories, accessible fallbacks, consistent 48dp-oriented interaction targets, and explicit host/static verification.
-
-
-## 0.8 application
-
-The repository’s dedicated `retra-product-redesign` skill was used as the controlling workflow and updated to the Archive Glass direction. It required repository inspection before visual work, preservation of functional state, adaptive Material 3 behavior, accessibility modes, provenance-first content discovery, and honest validation reporting. An additional overlapping skill was not created because the project-specific skill already covered the workflow.
-
-The final direction rejects purple/rainbow gaming-dashboard tropes, visible gradients, unlicensed font binaries, and unauthorized ROM indexes. The implementation instead uses the Portal / Save Core mark, mineral/ice color roles, artwork-led hierarchy, official project pages, checksum-pinned authorized files, user-supplied patch bases, and exact-ROM trusted cheat indexes.
+The completed deliverables are source/assets, an original logo, original built-in GBA homebrew, UX/security/patch documentation, verification evidence, a deletion list, and the full source archive.

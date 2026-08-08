@@ -15,9 +15,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
@@ -26,93 +24,92 @@ import app.retra.emulator.ui.theme.MemoryCoral
 import app.retra.emulator.ui.theme.VoidBlack
 
 /**
- * Retra's canonical Portal / Save Core mark, reconstructed from the supplied brand board.
- * It is intentionally flat and geometric so it remains legible from launcher size down to 16dp.
+ * Retra's vault-aperture mark.
+ *
+ * The geometry is deliberately centered and non-letterform: a protected archive
+ * ring surrounds a small memory prism. Four cardinal cuts suggest a D-pad and an
+ * aperture without turning the symbol into a literal controller or cartridge.
  */
 @Composable
 fun RetraLogo(
     modifier: Modifier = Modifier,
-    size: Dp = 96.dp,
-    contentDescription: String = "Retra",
-    markColor: Color? = null,
-    cutoutColor: Color? = null
+    size: Dp = 72.dp,
+    contentDescription: String? = null,
+    markColor: Color = MaterialTheme.colorScheme.onSurface,
+    cutoutColor: Color = MaterialTheme.colorScheme.surface,
+    sparkColor: Color = MemoryCoral
 ) {
-    val resolvedMarkColor = markColor ?: MaterialTheme.colorScheme.onSurface
-    val resolvedCutoutColor = cutoutColor ?: MaterialTheme.colorScheme.surface
-    Canvas(
-        modifier = modifier
-            .size(size)
-            .semantics { this.contentDescription = contentDescription }
-    ) {
+    val semanticsModifier = if (contentDescription == null) modifier else {
+        modifier.semantics { this.contentDescription = contentDescription }
+    }
+    Canvas(semanticsModifier.size(size)) {
         val side = this.size.minDimension
-        val strokeWidth = side * 0.155f
-        val portal = Path().apply {
-            moveTo(side * 0.76f, side * 0.31f)
-            lineTo(side * 0.76f, side * 0.62f)
-            cubicTo(
-                side * 0.76f, side * 0.76f,
-                side * 0.66f, side * 0.84f,
-                side * 0.50f, side * 0.84f
+        val resolvedMark = markColor
+        val resolvedCutout = cutoutColor
+
+        // Rounded archive ring.
+        drawRoundRect(
+            color = resolvedMark,
+            topLeft = Offset(side * 0.10f, side * 0.10f),
+            size = Size(side * 0.80f, side * 0.80f),
+            cornerRadius = CornerRadius(side * 0.24f, side * 0.24f)
+        )
+        drawRoundRect(
+            color = resolvedCutout,
+            topLeft = Offset(side * 0.235f, side * 0.235f),
+            size = Size(side * 0.53f, side * 0.53f),
+            cornerRadius = CornerRadius(side * 0.15f, side * 0.15f)
+        )
+
+        // Cardinal cuts give the ring a precise aperture / D-pad rhythm.
+        val slotLong = side * 0.22f
+        val slotShort = side * 0.075f
+        drawRoundRect(
+            color = resolvedCutout,
+            topLeft = Offset((side - slotLong) / 2f, side * 0.075f),
+            size = Size(slotLong, slotShort),
+            cornerRadius = CornerRadius(slotShort / 2f, slotShort / 2f)
+        )
+        drawRoundRect(
+            color = resolvedCutout,
+            topLeft = Offset((side - slotLong) / 2f, side * 0.85f),
+            size = Size(slotLong, slotShort),
+            cornerRadius = CornerRadius(slotShort / 2f, slotShort / 2f)
+        )
+        drawRoundRect(
+            color = resolvedCutout,
+            topLeft = Offset(side * 0.075f, (side - slotLong) / 2f),
+            size = Size(slotShort, slotLong),
+            cornerRadius = CornerRadius(slotShort / 2f, slotShort / 2f)
+        )
+        drawRoundRect(
+            color = resolvedCutout,
+            topLeft = Offset(side * 0.85f, (side - slotLong) / 2f),
+            size = Size(slotShort, slotLong),
+            cornerRadius = CornerRadius(slotShort / 2f, slotShort / 2f)
+        )
+
+        // Memory prism: a centered diamond with a protected core.
+        rotate(45f, pivot = Offset(side / 2f, side / 2f)) {
+            drawRoundRect(
+                color = resolvedMark,
+                topLeft = Offset(side * 0.355f, side * 0.355f),
+                size = Size(side * 0.29f, side * 0.29f),
+                cornerRadius = CornerRadius(side * 0.055f, side * 0.055f)
             )
-            lineTo(side * 0.37f, side * 0.84f)
-            cubicTo(
-                side * 0.23f, side * 0.84f,
-                side * 0.15f, side * 0.74f,
-                side * 0.15f, side * 0.59f
+            drawRoundRect(
+                color = resolvedCutout,
+                topLeft = Offset(side * 0.425f, side * 0.425f),
+                size = Size(side * 0.15f, side * 0.15f),
+                cornerRadius = CornerRadius(side * 0.028f, side * 0.028f)
             )
-            lineTo(side * 0.15f, side * 0.35f)
-            cubicTo(
-                side * 0.15f, side * 0.22f,
-                side * 0.25f, side * 0.14f,
-                side * 0.39f, side * 0.14f
-            )
-            lineTo(side * 0.58f, side * 0.14f)
         }
-        drawPath(
-            path = portal,
-            color = resolvedMarkColor,
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
-        )
 
-        // Save core: a tiny protected world inside the loop.
-        drawRoundRect(
-            color = resolvedMarkColor,
-            topLeft = Offset(side * 0.29f, side * 0.37f),
-            size = Size(side * 0.36f, side * 0.31f),
-            cornerRadius = CornerRadius(side * 0.075f, side * 0.075f)
-        )
-        drawRoundRect(
-            color = resolvedCutoutColor,
-            topLeft = Offset(side * 0.365f, side * 0.505f),
-            size = Size(side * 0.055f, side * 0.06f),
-            cornerRadius = CornerRadius(side * 0.018f, side * 0.018f)
-        )
-        drawRoundRect(
-            color = resolvedCutoutColor,
-            topLeft = Offset(side * 0.515f, side * 0.505f),
-            size = Size(side * 0.055f, side * 0.06f),
-            cornerRadius = CornerRadius(side * 0.018f, side * 0.018f)
-        )
-
-        // Pixel-step interruption: two archive pixels and one living-memory spark.
-        val pixel = side * 0.105f
-        drawRoundRect(
-            color = resolvedMarkColor,
-            topLeft = Offset(side * 0.60f, side * 0.21f),
-            size = Size(pixel, pixel),
-            cornerRadius = CornerRadius(side * 0.018f, side * 0.018f)
-        )
-        drawRoundRect(
-            color = resolvedMarkColor,
-            topLeft = Offset(side * 0.69f, side * 0.12f),
-            size = Size(pixel, pixel),
-            cornerRadius = CornerRadius(side * 0.018f, side * 0.018f)
-        )
-        drawRoundRect(
-            color = MemoryCoral,
-            topLeft = Offset(side * 0.78f, side * 0.03f),
-            size = Size(pixel, pixel),
-            cornerRadius = CornerRadius(side * 0.018f, side * 0.018f)
+        // A single centered spark is the only warm accent.
+        drawCircle(
+            color = sparkColor,
+            radius = side * 0.045f,
+            center = Offset(side * 0.50f, side * 0.50f)
         )
     }
 }
@@ -122,7 +119,7 @@ fun RetraLogoTile(
     modifier: Modifier = Modifier,
     size: Dp = 48.dp
 ) {
-    val radius = size * 0.27f
+    val radius = size * 0.28f
     Surface(
         modifier = modifier.size(size),
         shape = RoundedCornerShape(radius),
@@ -133,8 +130,8 @@ fun RetraLogoTile(
     ) {
         Box(contentAlignment = Alignment.Center) {
             RetraLogo(
-                modifier = Modifier.padding(size * 0.15f),
-                size = size * 0.70f,
+                modifier = Modifier.padding(size * 0.17f),
+                size = size * 0.66f,
                 contentDescription = "Retra",
                 markColor = Color.White,
                 cutoutColor = VoidBlack

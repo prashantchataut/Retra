@@ -51,7 +51,7 @@ import java.text.DateFormat
 import java.util.Date
 
 @Composable
-internal fun V3Home(
+internal fun RetraHome(
     games: List<GameRecord>,
     achievements: List<AchievementStatus>,
     vaultCount: Int,
@@ -85,7 +85,7 @@ internal fun V3Home(
         }
         item {
             if (continueGame != null) {
-                V3HeroGame(
+                RetraHeroGame(
                     game = continueGame,
                     coreReady = coreReady,
                     coreStatus = coreStatus,
@@ -93,7 +93,7 @@ internal fun V3Home(
                     onDetails = { onGame(continueGame) }
                 )
             } else {
-                V3HeroEmpty(onImport)
+                RetraHeroEmpty(onImport)
             }
         }
         if (recent.isNotEmpty()) {
@@ -101,7 +101,7 @@ internal fun V3Home(
             item {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     items(recent.take(8), key = { it.id }) { game ->
-                        V3PosterCard(game, Modifier.width(156.dp)) { onGame(game) }
+                        RetraPosterCard(game, Modifier.width(156.dp)) { onGame(game) }
                     }
                 }
             }
@@ -109,8 +109,8 @@ internal fun V3Home(
         if (showStatistics && games.isNotEmpty()) {
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    V3Stat("Saves", vaultCount.toString(), "local records", Icons.Default.Save, Modifier.weight(1f))
-                    V3Stat("Milestones", "$unlocked/${achievements.size}", "on device", Icons.Default.Star, Modifier.weight(1f))
+                    RetraStat("Saves", vaultCount.toString(), "local records", Icons.Default.Save, Modifier.weight(1f))
+                    RetraStat("Milestones", "$unlocked/${achievements.size}", "on device", Icons.Default.Star, Modifier.weight(1f))
                 }
             }
         }
@@ -133,7 +133,7 @@ internal fun V3Home(
 }
 
 @Composable
-internal fun V3HeroGame(
+internal fun RetraHeroGame(
     game: GameRecord,
     coreReady: Boolean,
     coreStatus: String,
@@ -146,12 +146,12 @@ internal fun V3HeroGame(
             if (stacked) {
                 Column {
                     GameArtwork(game, Modifier.fillMaxWidth().height(220.dp), ContentScale.Crop)
-                    V3HeroCopy(game, coreReady, coreStatus, onPlay, onDetails)
+                    RetraHeroCopy(game, coreReady, coreStatus, onPlay, onDetails)
                 }
             } else {
                 Row(Modifier.heightIn(min = 280.dp)) {
                     GameArtwork(game, Modifier.weight(0.43f).fillMaxHeight(), ContentScale.Crop)
-                    V3HeroCopy(game, coreReady, coreStatus, onPlay, onDetails, Modifier.weight(0.57f))
+                    RetraHeroCopy(game, coreReady, coreStatus, onPlay, onDetails, Modifier.weight(0.57f))
                 }
             }
         }
@@ -159,7 +159,7 @@ internal fun V3HeroGame(
 }
 
 @Composable
-internal fun V3HeroCopy(
+internal fun RetraHeroCopy(
     game: GameRecord,
     coreReady: Boolean,
     coreStatus: String,
@@ -201,7 +201,7 @@ internal fun V3HeroCopy(
 }
 
 @Composable
-internal fun V3HeroEmpty(onImport: () -> Unit) {
+internal fun RetraHeroEmpty(onImport: () -> Unit) {
     RetraPanel(shape = MaterialTheme.shapes.extraLarge, contentPadding = PaddingValues(26.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp), horizontalAlignment = Alignment.Start) {
             RetraBrandMark(size = 72.dp)

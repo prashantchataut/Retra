@@ -26,7 +26,9 @@ import org.json.JSONObject
 data class HomebrewHubFile(
     val filename: String,
     val playable: Boolean,
-    val isDefault: Boolean
+    val isDefault: Boolean,
+    val publishedSha256: String?,
+    val publishedSizeBytes: Long?
 )
 
 data class HomebrewHubEntry(
@@ -37,6 +39,7 @@ data class HomebrewHubEntry(
     val platform: String,
     val typeTag: String,
     val repository: String?,
+    val distributionPermission: String?,
     val screenshots: List<String>,
     val tags: List<String>,
     val files: List<HomebrewHubFile>
@@ -46,14 +49,20 @@ data class HomebrewHubEntry(
             ?: files.firstOrNull { it.playable && it.filename.endsWith(".gba", true) }
 
     val directInstallEligible: Boolean
-        get() = defaultPlayableGba != null &&
-            typeTag.lowercase() in setOf("game", "homebrew", "demo", "music") &&
-            license.isNotBlank() && !license.equals("unknown", true)
+        get() {
+            val file = defaultPlayableGba ?: return false
+            return typeTag.lowercase() in setOf("game", "homebrew", "demo", "music") &&
+                license.isNotBlank() && !license.equals("unknown", true) &&
+                !distributionPermission.isNullOrBlank() &&
+                file.publishedSha256?.matches(SHA256_PATTERN) == true &&
+                file.publishedSizeBytes?.let { it in 1L..GbaRomParser.MAX_ROM_SIZE_BYTES.toLong() } == true
+        }
 
-    fun sourcePageUrl(): String = "${HomebrewHubRepository.WEB_BASE}/game/${encodePath(slug)}/"
+    fun sourcePageUrl(): String = repository ?: "${HomebrewHubRepository.WEB_BASE}/game/${encodePath(slug)}/"
     fun screenshotUrl(file: String): String = "${HomebrewHubRepository.API_BASE}/entry/${encodePath(slug)}/${encodePath(file)}"
 
     companion object {
+        private val SHA256_PATTERN = Regex("[0-9a-fA-F]{64}")
         private fun encodePath(value: String): String = URLEncoder.encode(value, StandardCharsets.UTF_8.name()).replace("+", "%20")
     }
 }
@@ -153,18 +162,22 @@ class HomebrewHubRepository @Inject constructor(
         val file = entry.defaultPlayableGba
             ?: return@withContext HomebrewInstallOutcome.Rejected("This Homebrew Hub entry does not expose a playable GBA file.")
         if (entry.platform != "GBA") {
-            return@withContext HomebrewInstallOutcome.Rejected("Retra 2 currently installs GBA releases only.")
+            return@withContext HomebrewInstallOutcome.Rejected("Retra 3 currently installs GBA releases only.")
         }
         if (!entry.directInstallEligible) {
             return@withContext HomebrewInstallOutcome.Rejected(
-                "Retra only installs creator-published homebrew, games, demos, or music with usable license metadata. Hack-ROM entries remain source-page only."
+                "This release is source-page only because it does not publish explicit redistribution permission, an exact SHA-256, and a bounded file size."
             )
         }
+        val expectedSha256 = requireNotNull(file.publishedSha256).lowercase()
+        val expectedSize = requireNotNull(file.publishedSizeBytes)
         mutableState.value = mutableState.value.copy(installingSlug = entry.slug, error = null)
         try {
             val url = "$API_BASE/entry/${encodePath(entry.slug)}/${encodePath(file.filename)}"
             val bytes = get(url, GbaRomParser.MAX_ROM_SIZE_BYTES, "application/octet-stream")
+            require(bytes.size.toLong() == expectedSize) { "The creator-published file size did not match the downloaded release." }
             val sha256 = Sha256.of(bytes)
+            require(sha256.equals(expectedSha256, ignoreCase = true)) { "The creator-published SHA-256 did not match the downloaded release." }
             when (
                 val outcome = gameRepository.importGbaBytes(
                     bytes = bytes,
@@ -173,7 +186,7 @@ class HomebrewHubRepository @Inject constructor(
                     creator = entry.developer,
                     sourceUrl = entry.sourcePageUrl(),
                     license = entry.license,
-                    distributionPermission = "Playable file served by Homebrew Hub for a non-hack-ROM entry with declared license metadata; Retra recorded local SHA-256 $sha256."
+                    distributionPermission = requireNotNull(entry.distributionPermission)
                 )
             ) {
                 is ImportOutcome.Imported -> {
@@ -263,6 +276,11 @@ class HomebrewHubRepository @Inject constructor(
             platform = platform,
             typeTag = item.optString("typetag", "homebrew").trim().take(40),
             repository = item.optString("repository").trim().takeIf { it.startsWith("https://") }?.take(2_048),
+            distributionPermission = item.optString("distribution_permission")
+                .ifBlank { item.optString("redistribution_permission") }
+                .trim()
+                .take(500)
+                .takeIf { it.isNotBlank() },
             screenshots = item.optJSONArray("screenshots").toStringList(12, 240),
             tags = item.optJSONArray("tags").toStringList(24, 80),
             files = files
@@ -276,10 +294,21 @@ class HomebrewHubRepository @Inject constructor(
             val item = optJSONObject(index) ?: continue
             val filename = item.optString("filename").trim().take(240)
             if (!SAFE_FILE.matches(filename)) continue
+            val digest = item.optString("sha256")
+                .ifBlank { item.optString("digest").removePrefix("sha256:") }
+                .trim()
+                .takeIf { it.matches(SHA256_PATTERN) }
+            val publishedSize = when {
+                item.has("size_bytes") -> item.optLong("size_bytes", -1L)
+                item.has("size") -> item.optLong("size", -1L)
+                else -> -1L
+            }.takeIf { it > 0L }
             output += HomebrewHubFile(
                 filename = filename,
                 playable = item.optBoolean("playable", false),
-                isDefault = item.optBoolean("default", false)
+                isDefault = item.optBoolean("default", false),
+                publishedSha256 = digest,
+                publishedSizeBytes = publishedSize
             )
         }
         return output
@@ -309,7 +338,7 @@ class HomebrewHubRepository @Inject constructor(
             connection.requestMethod = "GET"
             connection.setRequestProperty("Accept", accept)
             connection.setRequestProperty("Accept-Encoding", "identity")
-            connection.setRequestProperty("User-Agent", "Retra/2.2 Android")
+            connection.setRequestProperty("User-Agent", "Retra/3.0 Android")
             val code = connection.responseCode
             if (code != HttpURLConnection.HTTP_OK) {
                 throw IllegalArgumentException("Homebrew Hub returned HTTP $code.")
@@ -346,5 +375,6 @@ class HomebrewHubRepository @Inject constructor(
         private const val MAX_ARTWORK_BYTES = 8 * 1024 * 1024
         private val SAFE_SLUG = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,159}")
         private val SAFE_FILE = Regex("[A-Za-z0-9][A-Za-z0-9 ._()'&+,-]{0,239}")
+        private val SHA256_PATTERN = Regex("[0-9a-fA-F]{64}")
     }
 }

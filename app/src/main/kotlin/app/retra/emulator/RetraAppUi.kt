@@ -58,7 +58,7 @@ import app.retra.core.model.StartupDestination
 import app.retra.emulator.ui.theme.RetraTheme
 import kotlinx.coroutines.launch
 
-private enum class V3Destination(val label: String, val icon: ImageVector) {
+private enum class AppDestination(val label: String, val icon: ImageVector) {
     HOME("Home", Icons.Default.Home),
     LIBRARY("Library", Icons.Default.LibraryBooks),
     DISCOVER("Discover", Icons.Default.Search),
@@ -66,7 +66,7 @@ private enum class V3Destination(val label: String, val icon: ImageVector) {
 }
 
 @Composable
-fun RetraV3Root(viewModel: RetraViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
+fun RetraApp(viewModel: RetraViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val activeGame by viewModel.activeGame.collectAsStateWithLifecycle()
 
@@ -78,13 +78,13 @@ fun RetraV3Root(viewModel: RetraViewModel = androidx.lifecycle.viewmodel.compose
         ) {
             RetraBackdrop(settings) {
                 when {
-                    !settings.onboardingComplete -> V3Onboarding(viewModel)
+                    !settings.onboardingComplete -> RetraOnboarding(viewModel)
                     activeGame != null -> PlayerScreen(
                         game = requireNotNull(activeGame),
                         viewModel = viewModel,
                         onExit = viewModel::closePlayer
                     )
-                    else -> V3App(viewModel, settings)
+                    else -> RetraShell(viewModel, settings)
                 }
             }
         }
@@ -93,7 +93,7 @@ fun RetraV3Root(viewModel: RetraViewModel = androidx.lifecycle.viewmodel.compose
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun V3App(viewModel: RetraViewModel, settings: AppSettings) {
+private fun RetraShell(viewModel: RetraViewModel, settings: AppSettings) {
     val games by viewModel.games.collectAsStateWithLifecycle()
     val selectedGame by viewModel.selectedGame.collectAsStateWithLifecycle()
     val pendingPatch by viewModel.pendingPatch.collectAsStateWithLifecycle()
@@ -111,8 +111,8 @@ private fun V3App(viewModel: RetraViewModel, settings: AppSettings) {
     var destination by rememberSaveable {
         mutableStateOf(
             when (settings.startupDestination) {
-                StartupDestination.LIBRARY -> V3Destination.LIBRARY
-                StartupDestination.CONTINUE_PLAYING, StartupDestination.HOME -> V3Destination.HOME
+                StartupDestination.LIBRARY -> AppDestination.LIBRARY
+                StartupDestination.CONTINUE_PLAYING, StartupDestination.HOME -> AppDestination.HOME
             }
         )
     }
@@ -145,7 +145,7 @@ private fun V3App(viewModel: RetraViewModel, settings: AppSettings) {
     }
 
     if (settingsOpen) {
-        V3SettingsScreen(settings, viewModel) { settingsOpen = false }
+        RetraSettingsScreen(settings, viewModel) { settingsOpen = false }
         return
     }
 
@@ -156,13 +156,13 @@ private fun V3App(viewModel: RetraViewModel, settings: AppSettings) {
             contentColor = MaterialTheme.colorScheme.onBackground,
             snackbarHost = { SnackbarHost(snackbarHost) },
             bottomBar = {
-                if (!expanded) V3BottomDock(destination) { destination = it }
+                if (!expanded) RetraBottomDock(destination) { destination = it }
             }
         ) { scaffoldPadding ->
             Row(Modifier.fillMaxSize().padding(scaffoldPadding)) {
-                if (expanded) V3Rail(destination) { destination = it }
+                if (expanded) RetraRail(destination) { destination = it }
                 when (destination) {
-                    V3Destination.HOME -> V3Home(
+                    AppDestination.HOME -> RetraHome(
                         games = games,
                         achievements = achievements,
                         vaultCount = vaultRecords.size,
@@ -171,36 +171,39 @@ private fun V3App(viewModel: RetraViewModel, settings: AppSettings) {
                         coreStatus = viewModel.coreStatus,
                         onContinue = viewModel::launchGame,
                         onGame = viewModel::selectGame,
-                        onImport = { importFile.launch(SUPPORTED_IMPORT_MIME_TYPES_V3) },
-                        onLibrary = { destination = V3Destination.LIBRARY },
+                        onImport = { importFile.launch(SUPPORTED_IMPORT_MIME_TYPES) },
+                        onLibrary = { destination = AppDestination.LIBRARY },
                         onPatchStudio = viewModel::prepareHeartAndSoulPatch,
                         onSettings = { settingsOpen = true }
                     )
-                    V3Destination.LIBRARY -> V3Library(
+                    AppDestination.LIBRARY -> RetraLibrary(
                         games = games,
                         layout = settings.libraryLayout,
                         onLayout = viewModel::setLibraryLayout,
                         onGame = viewModel::selectGame,
-                        onImport = { importFile.launch(SUPPORTED_IMPORT_MIME_TYPES_V3) },
+                        onImport = { importFile.launch(SUPPORTED_IMPORT_MIME_TYPES) },
                         onFolder = { importFolder.launch(null) },
                         onInstallDemo = viewModel::installBundledDemo
                     )
-                    V3Destination.DISCOVER -> V3Discover(
+                    AppDestination.DISCOVER -> RetraDiscover(
                         onlineEnabled = settings.showOnlineRecommendations,
                         entries = homebrew.page.entries,
                         loading = homebrew.loading,
                         installingSlug = homebrew.installingSlug,
+                        patchGuides = viewModel.catalogRepository.curatedLinks.filter {
+                            "featured-patch" in it.tags
+                        },
                         onRefresh = { viewModel.refreshHomebrewHub() },
                         onInstall = viewModel::installHomebrew,
                         loadArtwork = viewModel::loadHomebrewPreview,
                         onPatchStudio = viewModel::prepareHeartAndSoulPatch,
-                        onImport = { importFile.launch(SUPPORTED_IMPORT_MIME_TYPES_V3) },
+                        onImport = { importFile.launch(SUPPORTED_IMPORT_MIME_TYPES) },
                         onOpenUrl = { url ->
                             runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
                                 .onFailure { scope.launch { snackbarHost.showSnackbar("No browser could open the creator page.") } }
                         }
                     )
-                    V3Destination.PROFILE -> V3Profile(
+                    AppDestination.PROFILE -> RetraProfile(
                         games = games,
                         achievements = achievements,
                         accountName = account?.displayName,
@@ -215,7 +218,7 @@ private fun V3App(viewModel: RetraViewModel, settings: AppSettings) {
     }
 
     selectedGame?.let { game ->
-        V3GameSheet(
+        RetraGameSheet(
             game = game,
             coreReady = viewModel.coreAvailable,
             coreStatus = viewModel.coreStatus,
@@ -232,10 +235,10 @@ private fun V3App(viewModel: RetraViewModel, settings: AppSettings) {
     }
 
     pendingPatch?.let { patch ->
-        V3PatchDialog(
+        RetraPatchDialog(
             patch = patch,
             compatibleGames = compatibleBases,
-            onImportBase = { importFile.launch(SUPPORTED_IMPORT_MIME_TYPES_V3) },
+            onImportBase = { importFile.launch(SUPPORTED_IMPORT_MIME_TYPES) },
             onApply = viewModel::applyPendingPatch,
             onDismiss = viewModel::dismissPendingPatch
         )
@@ -262,7 +265,7 @@ private fun V3App(viewModel: RetraViewModel, settings: AppSettings) {
 }
 
 @Composable
-private fun V3BottomDock(selected: V3Destination, onSelected: (V3Destination) -> Unit) {
+private fun RetraBottomDock(selected: AppDestination, onSelected: (AppDestination) -> Unit) {
     Surface(
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
@@ -271,7 +274,7 @@ private fun V3BottomDock(selected: V3Destination, onSelected: (V3Destination) ->
             Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceAround
         ) {
-            V3Destination.entries.forEach { item ->
+            AppDestination.entries.forEach { item ->
                 val active = item == selected
                 Surface(
                     onClick = { onSelected(item) },
@@ -294,7 +297,7 @@ private fun V3BottomDock(selected: V3Destination, onSelected: (V3Destination) ->
 }
 
 @Composable
-private fun V3Rail(selected: V3Destination, onSelected: (V3Destination) -> Unit) {
+private fun RetraRail(selected: AppDestination, onSelected: (AppDestination) -> Unit) {
     Surface(
         modifier = Modifier.fillMaxHeight().width(104.dp),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
@@ -306,7 +309,7 @@ private fun V3Rail(selected: V3Destination, onSelected: (V3Destination) -> Unit)
         ) {
             RetraLogoTile(size = 50.dp)
             Spacer(Modifier.weight(1f))
-            V3Destination.entries.forEach { item ->
+            AppDestination.entries.forEach { item ->
                 val active = item == selected
                 Surface(
                     onClick = { onSelected(item) },
@@ -330,7 +333,7 @@ private fun V3Rail(selected: V3Destination, onSelected: (V3Destination) -> Unit)
     }
 }
 
-private val SUPPORTED_IMPORT_MIME_TYPES_V3 = arrayOf(
+private val SUPPORTED_IMPORT_MIME_TYPES = arrayOf(
     "application/octet-stream",
     "application/zip",
     "application/x-gba-rom",

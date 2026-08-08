@@ -45,13 +45,13 @@ import app.retra.emulator.ui.theme.RetraBlue
 import app.retra.emulator.ui.theme.SaveMint
 
 @Composable
-internal fun V3Onboarding(viewModel: RetraViewModel) {
+internal fun RetraOnboarding(viewModel: RetraViewModel) {
     var page by rememberSaveable { mutableIntStateOf(0) }
     val pages = listOf(
-        V3OnboardingPage("A private archive for games you return to", "Retra is built around resuming play, understanding your saves, and keeping every imported file exact.", Icons.Default.SportsEsports, RetraBlue),
-        V3OnboardingPage("A real homebrew game is already here", "Retra Drift is an original GBA mini-game included to verify the player without bundling copyrighted commercial ROMs.", Icons.Default.Gamepad, SaveMint),
-        V3OnboardingPage("Patches need the exact base", "UPS, IPS, and BPS files are transformations, not games. Retra checks size and checksum before creating a separate patched copy.", Icons.Default.AutoAwesome, MemoryCoral),
-        V3OnboardingPage("Your progress stays recoverable", "Manual states, rotating backups, screenshots, patch lineage, and checksum identity remain local and visible.", Icons.Default.Shield, MemoryAqua)
+        RetraOnboardingPage("A private archive for games you return to", "Retra is built around resuming play, understanding your saves, and keeping every imported file exact.", Icons.Default.SportsEsports, RetraBlue),
+        RetraOnboardingPage("A real homebrew game is already here", "Retra Drift is an original GBA mini-game included to verify the player without bundling copyrighted commercial ROMs.", Icons.Default.Gamepad, SaveMint),
+        RetraOnboardingPage("Patches need the exact base", "UPS, IPS, and BPS files are transformations, not games. Retra checks size and checksum before creating a separate patched copy.", Icons.Default.AutoAwesome, MemoryCoral),
+        RetraOnboardingPage("Your progress stays recoverable", "Manual states, rotating backups, screenshots, patch lineage, and checksum identity remain local and visible.", Icons.Default.Shield, MemoryAqua)
     )
     val current = pages[page]
 
@@ -60,8 +60,8 @@ internal fun V3Onboarding(viewModel: RetraViewModel) {
             val wide = maxWidth >= 720.dp
             if (wide) {
                 Row(Modifier.fillMaxSize().padding(36.dp), horizontalArrangement = Arrangement.spacedBy(36.dp)) {
-                    V3OnboardingVisual(current, Modifier.weight(0.46f).fillMaxHeight())
-                    V3OnboardingCopy(page, pages.size, current, { if (page > 0) page-- }, { if (page == pages.lastIndex) viewModel.finishOnboarding() else page++ }, Modifier.weight(0.54f).fillMaxHeight())
+                    RetraOnboardingVisual(current, Modifier.weight(0.46f).fillMaxHeight())
+                    RetraOnboardingCopy(page, pages.size, current, { if (page > 0) page-- }, { if (page == pages.lastIndex) viewModel.finishOnboarding() else page++ }, Modifier.weight(0.54f).fillMaxHeight())
                 }
             } else {
                 Column(Modifier.fillMaxSize().padding(22.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
@@ -72,8 +72,8 @@ internal fun V3Onboarding(viewModel: RetraViewModel) {
                         Spacer(Modifier.weight(1f))
                         Text("${page + 1}/${pages.size}", style = MaterialTheme.typography.labelLarge)
                     }
-                    V3OnboardingVisual(current, Modifier.fillMaxWidth().weight(0.42f))
-                    V3OnboardingCopy(page, pages.size, current, { if (page > 0) page-- }, { if (page == pages.lastIndex) viewModel.finishOnboarding() else page++ }, Modifier.weight(0.58f))
+                    RetraOnboardingVisual(current, Modifier.fillMaxWidth().weight(0.42f))
+                    RetraOnboardingCopy(page, pages.size, current, { if (page > 0) page-- }, { if (page == pages.lastIndex) viewModel.finishOnboarding() else page++ }, Modifier.weight(0.58f))
                 }
             }
         }
@@ -81,7 +81,7 @@ internal fun V3Onboarding(viewModel: RetraViewModel) {
 }
 
 @Composable
-internal fun V3OnboardingVisual(page: V3OnboardingPage, modifier: Modifier = Modifier) {
+internal fun RetraOnboardingVisual(page: RetraOnboardingPage, modifier: Modifier = Modifier) {
     GlassPanel(modifier, shape = MaterialTheme.shapes.extraLarge) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Surface(shape = MaterialTheme.shapes.extraLarge, color = page.accent.copy(alpha = 0.14f), contentColor = page.accent) {
@@ -92,10 +92,10 @@ internal fun V3OnboardingVisual(page: V3OnboardingPage, modifier: Modifier = Mod
 }
 
 @Composable
-internal fun V3OnboardingCopy(
+internal fun RetraOnboardingCopy(
     pageIndex: Int,
     pageCount: Int,
-    page: V3OnboardingPage,
+    page: RetraOnboardingPage,
     onBack: () -> Unit,
     onNext: () -> Unit,
     modifier: Modifier = Modifier
@@ -124,4 +124,4 @@ internal fun V3OnboardingCopy(
     }
 }
 
-internal data class V3OnboardingPage(val title: String, val body: String, val icon: ImageVector, val accent: Color)
+internal data class RetraOnboardingPage(val title: String, val body: String, val icon: ImageVector, val accent: Color)

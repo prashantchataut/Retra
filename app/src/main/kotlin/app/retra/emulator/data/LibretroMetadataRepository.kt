@@ -123,7 +123,7 @@ class LibretroMetadataRepository @Inject constructor(
             connection.requestMethod = "GET"
             connection.setRequestProperty("Accept", "text/plain, application/octet-stream")
             connection.setRequestProperty("Accept-Encoding", "identity")
-            connection.setRequestProperty("User-Agent", "Retra/2.0 Android")
+            connection.setRequestProperty("User-Agent", "Retra/3.0 Android")
             val code = connection.responseCode
             if (code != HttpURLConnection.HTTP_OK) {
                 throw IllegalArgumentException("Metadata server returned HTTP $code.")
