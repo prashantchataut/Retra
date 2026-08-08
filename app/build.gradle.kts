@@ -77,6 +77,12 @@ android {
         buildConfig = true
     }
 
+    // Patch files are already compressed binary containers. Prevent aapt2 from
+    // spending minutes recompressing the 32 MiB reviewed UPS asset on every APK.
+    androidResources {
+        noCompress += "ups"
+    }
+
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
