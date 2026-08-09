@@ -91,9 +91,10 @@ class LibretroMetadataRepository @Inject constructor(
         var matched = 0
         gameDao.getAll().forEach { entity ->
             val record = index.match(entity.sha1, entity.crc32, entity.sizeBytes) ?: return@forEach
+            val targetTitle = if (entity.canonicalTitle == null || entity.title == entity.canonicalTitle) record.canonicalTitle else entity.title
             gameDao.applyCanonicalMetadata(
                 entity.id,
-                record.canonicalTitle,
+                targetTitle,
                 record.canonicalTitle,
                 SOURCE_LABEL
             )
