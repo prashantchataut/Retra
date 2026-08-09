@@ -69,6 +69,7 @@ object AppModule {
             .build()
 
     @Provides
+    @Singleton
     fun provideGameDao(database: RetraDatabase): GameDao = database.gameDao()
 
     @Provides
