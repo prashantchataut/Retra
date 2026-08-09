@@ -34,7 +34,6 @@ class EmulationSurfaceView @JvmOverloads constructor(
         holder.addCallback(this)
         keepScreenOn = true
         contentDescription = "Emulation video output"
-        setBackgroundColor(Color.BLACK)
     }
 
     fun configure(scalingMode: ScreenScalingMode, smoothing: Boolean) {
