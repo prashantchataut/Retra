@@ -90,7 +90,7 @@ object RetraCheatCatalogParser {
                         if (globals.put(key, value) != null) throw InvalidCheatCatalogException("Duplicate index field $key.")
                     } else {
                         if (key !in entryKeys) throw InvalidCheatCatalogException("Unknown pack field $key at line ${line.number}.")
-                        if (current!!.put(key, value) != null) throw InvalidCheatCatalogException("Duplicate pack field $key at line ${line.number}.")
+                        if (current.put(key, value) != null) throw InvalidCheatCatalogException("Duplicate pack field $key at line ${line.number}.")
                     }
                 }
             }

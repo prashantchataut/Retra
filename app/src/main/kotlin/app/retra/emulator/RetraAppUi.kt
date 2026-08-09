@@ -55,6 +55,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.retra.core.model.AppSettings
 import app.retra.core.model.GameRecord
 import app.retra.core.model.StartupDestination
+import app.retra.emulator.data.ImportReport
 import app.retra.emulator.ui.theme.RetraTheme
 import kotlinx.coroutines.launch
 
@@ -277,13 +278,13 @@ private fun RetraShell(viewModel: RetraViewModel, settings: AppSettings) {
                     Text(report.summary, style = MaterialTheme.typography.bodyMedium)
                     if (report.rejectedReasons.isNotEmpty()) {
                         Text("Details:", fontWeight = FontWeight.SemiBold)
-                        report.rejectedReasons.take(5).forEach { reason ->
+                        for (reason in report.rejectedReasons.take(5)) {
                             Text("• $reason", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     if (report.pendingPatches.isNotEmpty()) {
                         Text("Queued Patches:", fontWeight = FontWeight.SemiBold)
-                        report.pendingPatches.take(3).forEach { patch ->
+                        for (patch in report.pendingPatches.take(3)) {
                             Text("• ${patch.displayName} (requires matching base ROM)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                         }
                     }

@@ -60,6 +60,7 @@ import app.retra.emulator.data.HomebrewInstallOutcome
 import app.retra.emulator.data.LibretroCheatRepository
 import app.retra.emulator.data.LibretroMetadataRepository
 import app.retra.emulator.data.ImportOutcome
+import app.retra.emulator.data.ImportReport
 import app.retra.emulator.data.KnownPatchHints
 import app.retra.emulator.data.MultiplayerRepository
 import app.retra.emulator.data.PendingPatch
