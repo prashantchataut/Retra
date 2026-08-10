@@ -19,6 +19,12 @@
       "skillPath": "anti-ui-slop/SKILL.md",
       "computedHash": "18f9d0c2429a2ee6f5466c43dcda81180cf2a30bbdfb85e05d048d0859546a9a"
     },
+    "onboarding": {
+      "source": "coreyhaines31/marketingskills",
+      "sourceType": "skills.sh",
+      "skillPath": "onboarding/SKILL.md",
+      "computedHash": "d8f619e04bc28a11394f728c3066d03d344ff1e389e9f906f238515c00713b19"
+    },
     "retra-product-redesign": {
       "source": "local",
       "sourceType": "project",
