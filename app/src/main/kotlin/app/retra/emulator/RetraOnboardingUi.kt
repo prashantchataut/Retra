@@ -98,6 +98,8 @@ import app.retra.emulator.ui.theme.MemoryCoral
 import app.retra.emulator.ui.theme.PeachGlow
 import app.retra.emulator.ui.theme.RaspberryPink
 import app.retra.emulator.ui.theme.SaveMint
+import app.retra.emulator.ui.theme.SurfaceMidnight
+import app.retra.emulator.ui.theme.NightPlum
 import app.retra.emulator.ui.theme.VoidBlack
 import app.retra.emulator.ui.theme.WarmCream
 import kotlinx.coroutines.launch

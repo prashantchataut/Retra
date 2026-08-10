@@ -93,6 +93,7 @@ import app.retra.core.model.StartupDestination
 import app.retra.emulator.data.ImportReport
 import app.retra.emulator.ui.components.RetraBadge
 import app.retra.emulator.ui.components.RetraPanel
+import app.retra.emulator.ui.theme.AdventureGold
 import app.retra.emulator.ui.theme.ElectricLilac
 import app.retra.emulator.ui.theme.MemoryCoral
 import app.retra.emulator.ui.theme.NightPlum
