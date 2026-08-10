@@ -262,7 +262,7 @@ private fun RetraShell(viewModel: RetraViewModel, settings: AppSettings) {
                     RetraFloatingDock(
                         selected = destination,
                         onSelected = {
-                            viewModel.emitFeedback(FeedbackCue.TICK)
+                            viewModel.emitFeedback(FeedbackCue.TAP)
                             destination = it
                         },
                         onAdd = {

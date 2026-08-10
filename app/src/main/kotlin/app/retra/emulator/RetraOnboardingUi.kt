@@ -468,7 +468,7 @@ private fun StepFourPersonalizeVisual(viewModel: RetraViewModel) {
                 Surface(
                     onClick = {
                         previewPressed = !previewPressed
-                        viewModel.emitFeedback(FeedbackCue.TICK)
+                        viewModel.emitFeedback(FeedbackCue.TAP)
                     },
                     shape = CircleShape,
                     color = if (previewPressed) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
