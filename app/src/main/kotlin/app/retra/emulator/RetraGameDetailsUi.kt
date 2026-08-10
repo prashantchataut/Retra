@@ -17,7 +17,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DeleteOutline
@@ -30,6 +33,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -56,6 +60,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.retra.core.model.GameRecord
+import app.retra.emulator.data.KnownPatchHints
+import app.retra.emulator.data.PendingPatch
 import app.retra.emulator.ui.components.RetraBadge
 import app.retra.emulator.ui.components.RetraPanel
 import app.retra.emulator.ui.theme.AdventureGold
@@ -319,4 +325,84 @@ internal fun RetraGameSheet(
             }
         )
     }
+}
+
+@Composable
+internal fun RetraPatchDialog(
+    patch: PendingPatch,
+    compatibleGames: List<GameRecord>,
+    onImportBase: () -> Unit,
+    onApply: (GameRecord) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val hint = KnownPatchHints.match(patch.descriptor)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Default.AutoAwesome, null, tint = MemoryCoral) },
+        title = { Text("Patch Studio", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Text(patch.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(
+                    "This UPS file is a patch, not a standalone ROM. Retra verified the patch format and now needs the compatible locally supplied base ROM.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                RetraPanel(shape = MaterialTheme.shapes.medium, contentPadding = PaddingValues(14.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        RetraDetailLine("Format", patch.descriptor.format.name)
+                        RetraDetailLine("Base size", patch.descriptor.sourceSizeBytes?.let(::formatBytes) ?: "Not declared")
+                        RetraDetailLine("Base CRC32", patch.descriptor.sourceCrc32?.let { "%08X".format(it) } ?: "Not declared")
+                        RetraDetailLine("Output size", patch.descriptor.targetSizeBytes?.let(::formatBytes) ?: "Not declared")
+                        RetraDetailLine("Patch CRC", patch.descriptor.patchCrc32?.let { "%08X".format(it) } ?: "Not declared")
+                    }
+                }
+                if (hint != null) {
+                    Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.85f)) {
+                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Required base ROM", fontWeight = FontWeight.Bold)
+                            Text("Pokémon Emerald (USA/Europe), revision 0")
+                            Text("16 MiB · CRC32 1F1C08FB", style = MaterialTheme.typography.bodySmall)
+                            Text("Retra checks the complete file; renaming another ROM will not bypass compatibility.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.80f))
+                        }
+                    }
+                }
+                if (compatibleGames.isEmpty()) {
+                    Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.errorContainer) {
+                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("No matching base ROM in your library", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onErrorContainer)
+                            Text("Import a legally obtained backup of the required revision.", color = MaterialTheme.colorScheme.onErrorContainer, style = MaterialTheme.typography.bodySmall)
+                            Button(onClick = onImportBase) { Icon(Icons.Default.Add, null); Spacer(Modifier.width(6.dp)); Text("Import base game") }
+                        }
+                    }
+                } else {
+                    Text("Select compatible base game:", fontWeight = FontWeight.Bold)
+                    compatibleGames.forEach { game ->
+                        Surface(
+                            onClick = { onApply(game) },
+                            shape = MaterialTheme.shapes.medium,
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f)
+                        ) {
+                            Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Icon(Icons.Default.Verified, null, tint = SaveMint)
+                                Column(Modifier.weight(1f)) {
+                                    Text(game.title, fontWeight = FontWeight.Bold)
+                                    Text("CRC32 ${game.crc32?.let { "%08X".format(it) } ?: "verified on apply"}", style = MaterialTheme.typography.bodySmall)
+                                }
+                                Icon(Icons.Default.PlayArrow, "Apply patch")
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Close") } }
+    )
 }
