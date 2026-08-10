@@ -1,6 +1,7 @@
 package app.retra.emulator
 
 import android.view.KeyEvent
+import app.retra.core.emulation.VaultSaveRecord
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row

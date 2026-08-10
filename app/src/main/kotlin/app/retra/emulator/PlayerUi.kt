@@ -2,6 +2,8 @@ package app.retra.emulator
 
 import android.content.pm.ActivityInfo
 import android.graphics.Bitmap
+import app.retra.core.model.AppSettings
+import app.retra.emulator.data.StoredCheatPack
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.BorderStroke

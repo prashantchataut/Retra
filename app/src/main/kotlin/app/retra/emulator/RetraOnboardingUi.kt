@@ -1,6 +1,7 @@
 package app.retra.emulator
 
 import androidx.compose.animation.AnimatedVisibility
+import app.retra.emulator.auth.AuthOperation
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing

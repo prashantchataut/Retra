@@ -27,6 +27,9 @@ import app.retra.core.model.GameRecord
 import app.retra.core.model.LibraryLayout
 import app.retra.core.model.PerformanceProfile
 import app.retra.core.model.ScreenScalingMode
+import app.retra.core.download.CatalogDownloadPolicy
+import app.retra.core.model.CatalogContentKind
+import app.retra.core.model.CatalogEntry
 import app.retra.core.model.StartupDestination
 import app.retra.core.model.ThemeMode
 import app.retra.core.multiplayer.MultiplayerMode

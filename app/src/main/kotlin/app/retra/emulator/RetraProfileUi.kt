@@ -1,6 +1,7 @@
 package app.retra.emulator
 
 import android.content.Context
+import app.retra.emulator.auth.AuthOperation
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
