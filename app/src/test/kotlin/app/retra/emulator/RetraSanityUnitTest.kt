@@ -2,8 +2,7 @@ package app.retra.emulator
 
 import app.retra.core.model.AppSettings
 import app.retra.core.model.ThemeMode
-import app.retra.emulator.data.formatCsvTags
-import app.retra.emulator.data.parseCsvTags
+import app.retra.emulator.data.GameEntity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -27,14 +26,14 @@ class RetraSanityUnitTest {
     @Test
     fun csvTagSerializationRoundTripsCorrectly() {
         val original = listOf("rpg", "favorites", "gba-classic")
-        val csv = formatCsvTags(original)
-        val parsed = parseCsvTags(csv)
+        val csv = GameEntity.encodeCsv(original)
+        val parsed = GameEntity.decodeCsv(csv)
         assertEquals(original, parsed)
     }
 
     @Test
     fun emptyCsvReturnsEmptyList() {
-        val parsed = parseCsvTags("")
+        val parsed = GameEntity.decodeCsv("")
         assertTrue(parsed.isEmpty())
     }
 
