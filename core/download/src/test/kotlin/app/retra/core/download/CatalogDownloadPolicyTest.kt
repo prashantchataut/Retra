@@ -3,14 +3,13 @@ package app.retra.core.download
 import app.retra.core.model.CatalogContentKind
 import app.retra.core.model.CatalogEntry
 import app.retra.core.model.CompatibilityStatus
-import kotlin.test.Test
-import kotlin.test.assertFailsWith
-import kotlin.test.assertTrue
+import org.junit.Assert.assertTrue
+import org.junit.Test
 
 class CatalogDownloadPolicyTest {
     @Test
     fun acceptsVerifiedGbaZipAndPatchUrls() {
-        listOf(".gba", ".zip", ".ups", ".ips", ".bps").forEach { extension ->
+        for (extension in listOf(".gba", ".zip", ".ups", ".ips", ".bps")) {
             val entry = sampleEntry(
                 url = "https://cdn.example.org/files/fixture$extension",
                 kind = when (extension) {
@@ -24,25 +23,21 @@ class CatalogDownloadPolicyTest {
         }
     }
 
-    @Test
+    @Test(expected = UnsafeDownloadException::class)
     fun blocksExternalKindFromInAppDownload() {
-        assertFailsWith<UnsafeDownloadException> {
-            CatalogDownloadPolicy.validateEntry(
-                sampleEntry(
-                    url = "https://cdn.example.org/files/fixture.gba",
-                    kind = CatalogContentKind.EXTERNAL
-                )
+        CatalogDownloadPolicy.validateEntry(
+            sampleEntry(
+                url = "https://cdn.example.org/files/fixture.gba",
+                kind = CatalogContentKind.EXTERNAL
             )
-        }
+        )
     }
 
-    @Test
+    @Test(expected = UnsafeDownloadException::class)
     fun blocksPrivateNetworkTargets() {
-        assertFailsWith<UnsafeDownloadException> {
-            CatalogDownloadPolicy.validateEntry(
-                sampleEntry(url = "https://127.0.0.1/files/fixture.gba")
-            )
-        }
+        CatalogDownloadPolicy.validateEntry(
+            sampleEntry(url = "https://127.0.0.1/files/fixture.gba")
+        )
     }
 
     @Test

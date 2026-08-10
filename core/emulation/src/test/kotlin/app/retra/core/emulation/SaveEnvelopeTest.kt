@@ -1,9 +1,9 @@
 package app.retra.core.emulation
 
-import kotlin.test.Test
-import kotlin.test.assertContentEquals
-import kotlin.test.assertEquals
-import kotlin.test.assertFails
+import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
+import org.junit.Test
 
 class SaveEnvelopeTest {
     @Test
@@ -13,13 +13,13 @@ class SaveEnvelopeTest {
         assertEquals(original.kind, decoded.kind)
         assertEquals(original.gameSha256, decoded.gameSha256)
         assertEquals(original.slot, decoded.slot)
-        assertContentEquals(original.payload, decoded.payload)
+        assertArrayEquals(original.payload, decoded.payload)
     }
 
     @Test
     fun payloadCorruptionIsRejected() {
         val bytes = SaveEnvelope(SaveKind.SUSPEND, "b".repeat(64), "test-core", "1.0", -1, 42L, byteArrayOf(1, 2, 3)).encode()
         bytes[bytes.lastIndex] = 8
-        assertFails { SaveEnvelope.decode(bytes) }
+        assertThrows(IllegalArgumentException::class.java) { SaveEnvelope.decode(bytes) }
     }
 }

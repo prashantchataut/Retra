@@ -1,10 +1,9 @@
 
 package app.retra.core.rom
 
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertTrue
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
 
 class GbaRomParserTest {
     @Test
@@ -17,11 +16,11 @@ class GbaRomParserTest {
         assertTrue(header.headerChecksumValid)
     }
 
-    @Test
+    @Test(expected = InvalidRomException::class)
     fun rejectsBadFixedValue() {
         val rom = TestRomFactory.create()
         rom[0xB2] = 0
-        assertFailsWith<InvalidRomException> { GbaRomParser.parse(rom) }
+        GbaRomParser.parse(rom)
     }
 }
 

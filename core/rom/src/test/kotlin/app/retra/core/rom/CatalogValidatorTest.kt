@@ -4,13 +4,13 @@ package app.retra.core.rom
 import app.retra.core.model.CatalogEntry
 import app.retra.core.model.CatalogManifest
 import app.retra.core.model.CompatibilityStatus
-import kotlin.test.Test
-import kotlin.test.assertIs
+import org.junit.Assert.assertTrue
+import org.junit.Test
 
 class CatalogValidatorTest {
     @Test
     fun acceptsAuthorizedHttpsCatalog() {
-        assertIs<CatalogValidationResult.Valid>(CatalogValidator.validate(validManifest()))
+        assertTrue(CatalogValidator.validate(validManifest()) is CatalogValidationResult.Valid)
     }
 
     @Test
@@ -18,7 +18,7 @@ class CatalogValidatorTest {
         val manifest = validManifest().copy(
             games = validManifest().games.map { it.copy(downloadUrl = "http://example.com/test.gba") }
         )
-        assertIs<CatalogValidationResult.Invalid>(CatalogValidator.validate(manifest))
+        assertTrue(CatalogValidator.validate(manifest) is CatalogValidationResult.Invalid)
     }
 
     private fun validManifest() = CatalogManifest(
