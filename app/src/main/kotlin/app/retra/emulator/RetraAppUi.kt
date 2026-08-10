@@ -2,6 +2,7 @@ package app.retra.emulator
 
 import android.content.Intent
 import android.net.Uri
+import app.retra.emulator.auth.AuthOperation
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
