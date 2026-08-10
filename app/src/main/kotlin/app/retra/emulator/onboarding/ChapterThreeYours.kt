@@ -34,7 +34,6 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Gamepad
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -230,7 +229,7 @@ fun ChapterThreeYours(
 
                 InteractiveOrbButton(
                     label = "Screen Shader",
-                    icon = Icons.Default.Tv,
+                    icon = Icons.Default.Tune,
                     glowColor = OnboardingTokens.DreamCyan,
                     onClick = { screenFilterIndex++ }
                 )
