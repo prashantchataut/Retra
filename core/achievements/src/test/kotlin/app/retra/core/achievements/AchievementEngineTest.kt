@@ -28,7 +28,7 @@ class AchievementEngineTest {
 
         assertTrue(result.newlyUnlocked)
         assertEquals(1000L, result.progress.unlockedAtEpochMillis)
-        assertEquals(100f, result.completionRatio, 0.01f)
+        assertEquals(1.0f, AchievementEngine.completionRatio(definition, result.progress), 0.01f)
     }
 
     @Test

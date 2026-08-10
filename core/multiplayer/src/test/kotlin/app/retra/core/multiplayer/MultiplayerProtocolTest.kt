@@ -30,8 +30,8 @@ class MultiplayerProtocolTest {
     @Test
     fun packetCodecAndOrderedBuffer() {
         val code = RoomCode.normalize("ABC234")
-        val packet0 = MultiplayerPacket(MultiplayerPacketType.LINK_DATA, code, 0, 0, byteArrayOf(1, 2))
-        val packet1 = MultiplayerPacket(MultiplayerPacketType.LINK_DATA, code, 1, 1, byteArrayOf(3, 4))
+        val packet0 = MultiplayerPacket(MultiplayerPacketType.LINK_DATA, code, 0L, 0, byteArrayOf(1, 2))
+        val packet1 = MultiplayerPacket(MultiplayerPacketType.LINK_DATA, code, 1L, 1, byteArrayOf(3, 4))
 
         val encoded0 = MultiplayerPacketCodec.encode(packet0)
         val decoded0 = MultiplayerPacketCodec.decode(encoded0)
