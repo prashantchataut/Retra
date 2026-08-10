@@ -6,6 +6,24 @@
       "sourceType": "github",
       "skillPath": "plugins/ui-design/skills/mobile-android-design/SKILL.md",
       "computedHash": "bcb274bcc4e0ad076b5947f90e5a247f370ed4da1274b2b7347dc293ee396309"
+    },
+    "ui-ux-pro-max": {
+      "source": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sourceType": "skills.sh",
+      "skillPath": "ui-ux-pro-max/SKILL.md",
+      "computedHash": "9a38f74a04d5a92c300898516ee71752b0e6dfb4c2e5bfa7bc2c42ce095ba887"
+    },
+    "anti-ui-slop": {
+      "source": "uizze.com/anti-ui-slop",
+      "sourceType": "skills.sh",
+      "skillPath": "anti-ui-slop/SKILL.md",
+      "computedHash": "18f9d0c2429a2ee6f5466c43dcda81180cf2a30bbdfb85e05d048d0859546a9a"
+    },
+    "retra-product-redesign": {
+      "source": "local",
+      "sourceType": "project",
+      "skillPath": ".agents/skills/retra-product-redesign/SKILL.md",
+      "computedHash": "70d1e57c13a216be58ab5b6a3782b13c7dbba3efeb3c4f74d0d3cb1e2aa05753"
     }
   }
 }

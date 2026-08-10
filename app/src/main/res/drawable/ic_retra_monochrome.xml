@@ -3,11 +3,13 @@
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
-    android:viewportHeight="108">
-    <path android:fillColor="#FFFFFF" android:pathData="M20,12h68a16,16 0,0 1,16 16v52a16,16 0,0 1,-16 16H20A16,16 0,0 1,4 80V28A16,16 0,0 1,20 12z" />
-    <path android:fillColor="#000000" android:pathData="M31,27h46a13,13 0,0 1,13 13v28a13,13 0,0 1,-13 13H31A13,13 0,0 1,18 68V40A13,13 0,0 1,31 27z" />
-    <path android:fillColor="#000000" android:pathData="M43,8h22a4,4 0,0 1,4 4v8a4,4 0,0 1,-4 4H43a4,4 0,0 1,-4 -4v-8a4,4 0,0 1,4 -4zM43,84h22a4,4 0,0 1,4 4v8a4,4 0,0 1,-4 4H43a4,4 0,0 1,-4 -4v-8a4,4 0,0 1,4 -4zM8,43h8a4,4 0,0 1,4 4v14a4,4 0,0 1,-4 4H8a4,4 0,0 1,-4 -4V47a4,4 0,0 1,4 -4zM92,43h8a4,4 0,0 1,4 4v14a4,4 0,0 1,-4 4h-8a4,4 0,0 1,-4 -4V47a4,4 0,0 1,4 -4z" />
-    <path android:fillColor="#FFFFFF" android:pathData="M54,35l19,19 -19,19 -19,-19z" />
-    <path android:fillColor="#000000" android:pathData="M54,45l9,9 -9,9 -9,-9z" />
-    <path android:fillColor="#FFFFFF" android:pathData="M54,50a4,4 0,1 1,0,8a4,4 0,1 1,0,-8" />
+    android:viewportHeight="108"
+    android:tint="?attr/colorControlNormal">
+    <!-- Distinctive Monochrome Silhouette with Lobe and Cutout Eyes -->
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M 54,22 C 73,20 86,34 86,52 C 86,69 75,84 55,85 C 35,86 23,72 23,54 C 23,37 36,24 54,22 Z" />
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M 68,24 C 79,19 88,27 82,39 C 77,42 72,36 68,24 Z" />
 </vector>

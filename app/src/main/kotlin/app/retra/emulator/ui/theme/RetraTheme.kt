@@ -23,78 +23,95 @@ import app.retra.core.model.AccentPalette
 import app.retra.core.model.AppSettings
 import app.retra.core.model.ThemeMode
 
-/** Retra 3.0 "Archive Glass" palette: mineral, cool, and deliberately non-purple. */
-val VoidBlack = Color(0xFF050A0D)
-val NightNavy = Color(0xFF091219)
-val Graphite = Color(0xFF101A20)
-val InkBlue = Color(0xFF16262F)
-val RetraBlue = Color(0xFF75D7F2)
-val FrostBlue = Color(0xFFB7ECF8)
-val MemoryAqua = Color(0xFF66E1D1)
-val MemoryCoral = Color(0xFFFF806F)
-val SaveMint = Color(0xFF62D99E)
-val AdventureGold = Color(0xFFFFC65C)
-val ErrorCoral = Color(0xFFFF6F78)
-val CloudWhite = Color(0xFFF7FBFC)
-val SoftCloud = Color(0xFFF1F5F6)
-val IceMist = Color(0xFFE5EFF1)
-val DeepInk = Color(0xFF10191D)
-val MutedInk = Color(0xFF5E6C72)
+/**
+ * Retra Design System: Sophisticated Deep Aubergine / Liquid Glass Palette.
+ *
+ * Grounded in near-black aubergine and deep plum-charcoal with electric lilac,
+ * raspberry, warm coral, mint aqua, and warm nostalgic cream accents.
+ */
+val VoidBlack = Color(0xFF09070D)
+val NightPlum = Color(0xFF13101A)
+val SurfaceMidnight = Color(0xFF1B1624)
+val SurfaceElevated = Color(0xFF261F33)
+val SurfaceHighlight = Color(0xFF332A44)
+val Graphite = Color(0xFF14131A)
+val InkBlue = Color(0xFF161522)
 
-// Compatibility aliases retained for existing feature surfaces and persisted enum values.
-val RetraIndigo = RetraBlue
-val SoftViolet = FrostBlue
-val PrismCyan = RetraBlue
-val MemoryViolet = FrostBlue
+// Accents
+val ElectricLilac = Color(0xFFC7ACFC)
+val SoftViolet = Color(0xFFB898F8)
+val RaspberryPink = Color(0xFFFF6B8B)
+val MemoryCoral = Color(0xFFFF9376)
+val PeachGlow = Color(0xFFFFB088)
+val SaveMint = Color(0xFF5EEAD4)
+val MemoryAqua = Color(0xFF48D1B0)
+val AdventureGold = Color(0xFFFFD166)
+val WarmCream = Color(0xFFFFF4E0)
+val ErrorCoral = Color(0xFFFF6B7A)
+
+// Text & Surfaces
+val CloudWhite = Color(0xFFF7F4FB)
+val SoftCloud = Color(0xFFEDE8F5)
+val IceMist = Color(0xFFDCD4E8)
+val DeepInk = Color(0xFF0F0D14)
+val MutedInk = Color(0xFFA197B4)
+val SubduedInk = Color(0xFF746A88)
+
+// Compatibility aliases
+val RetraBlue = ElectricLilac
+val FrostBlue = SoftViolet
+val RetraIndigo = ElectricLilac
+val PrismCyan = SaveMint
+val MemoryViolet = SoftViolet
 
 private val DarkBase = darkColorScheme(
-    primary = RetraBlue,
-    onPrimary = Color(0xFF002832),
-    primaryContainer = Color(0xFF123C47),
-    onPrimaryContainer = Color(0xFFCAF4FF),
-    secondary = MemoryAqua,
-    onSecondary = Color(0xFF00201C),
-    secondaryContainer = Color(0xFF123E3A),
-    onSecondaryContainer = Color(0xFFCCF8F1),
+    primary = ElectricLilac,
+    onPrimary = Color(0xFF28104E),
+    primaryContainer = Color(0xFF442B70),
+    onPrimaryContainer = Color(0xFFEBDCFF),
+    secondary = SaveMint,
+    onSecondary = Color(0xFF003730),
+    secondaryContainer = Color(0xFF1B4E47),
+    onSecondaryContainer = Color(0xFF86F7E5),
     tertiary = MemoryCoral,
-    onTertiary = Color(0xFF3B0904),
-    tertiaryContainer = Color(0xFF5E302A),
-    onTertiaryContainer = Color(0xFFFFDAD3),
+    onTertiary = Color(0xFF3E1208),
+    tertiaryContainer = Color(0xFF65291C),
+    onTertiaryContainer = Color(0xFFFFDBD2),
     background = VoidBlack,
     onBackground = CloudWhite,
-    surface = NightNavy,
+    surface = NightPlum,
     onSurface = CloudWhite,
-    surfaceVariant = InkBlue,
-    onSurfaceVariant = Color(0xFFC3D0D4),
-    outline = Color(0xFF82949B),
-    outlineVariant = Color(0xFF2A3A42),
+    surfaceVariant = SurfaceMidnight,
+    onSurfaceVariant = MutedInk,
+    outline = Color(0xFF5A4F6E),
+    outlineVariant = Color(0xFF2C243B),
     error = ErrorCoral,
-    onError = Color(0xFF3B0710),
-    errorContainer = Color(0xFF5B2430),
+    onError = Color(0xFF41000C),
+    errorContainer = Color(0xFF651B27),
     onErrorContainer = Color(0xFFFFD9DE)
 )
 
 private val LightBase = lightColorScheme(
-    primary = Color(0xFF00677B),
+    primary = Color(0xFF6748A8),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFB8EBF6),
-    onPrimaryContainer = Color(0xFF001F27),
-    secondary = Color(0xFF006B60),
+    primaryContainer = Color(0xFFEBDCFF),
+    onPrimaryContainer = Color(0xFF23005A),
+    secondary = Color(0xFF006B5F),
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFA4F2E5),
+    secondaryContainer = Color(0xFF73F8E4),
     onSecondaryContainer = Color(0xFF00201C),
-    tertiary = Color(0xFFA43D31),
+    tertiary = Color(0xFF944535),
     onTertiary = Color.White,
-    tertiaryContainer = Color(0xFFFFDAD4),
-    onTertiaryContainer = Color(0xFF410001),
+    tertiaryContainer = Color(0xFFFFDBD2),
+    onTertiaryContainer = Color(0xFF3B0801),
     background = SoftCloud,
     onBackground = DeepInk,
-    surface = Color(0xFFFAFDFD),
+    surface = Color(0xFFFCFAFF),
     onSurface = DeepInk,
     surfaceVariant = IceMist,
-    onSurfaceVariant = MutedInk,
-    outline = Color(0xFF6D7B80),
-    outlineVariant = Color(0xFFC8D5D8),
+    onSurfaceVariant = SubduedInk,
+    outline = Color(0xFF7E7292),
+    outlineVariant = Color(0xFFCEC2E0),
     error = Color(0xFFBA1A1A),
     errorContainer = Color(0xFFFFDAD6),
     onErrorContainer = Color(0xFF410002)
@@ -102,30 +119,26 @@ private val LightBase = lightColorScheme(
 
 private data class Palette(val primary: Color, val secondary: Color, val tertiary: Color)
 
-/**
- * Enum names are intentionally preserved so existing DataStore values keep loading.
- * The visible colors no longer contain violet or purple.
- */
 private fun palette(value: AccentPalette, dark: Boolean): Palette = when (value) {
     AccentPalette.RETRA_INDIGO -> Palette(
-        primary = if (dark) RetraBlue else Color(0xFF00677B),
-        secondary = if (dark) MemoryAqua else Color(0xFF006B60),
-        tertiary = if (dark) MemoryCoral else Color(0xFFA43D31)
+        primary = if (dark) ElectricLilac else Color(0xFF6748A8),
+        secondary = if (dark) SaveMint else Color(0xFF006B5F),
+        tertiary = if (dark) MemoryCoral else Color(0xFF944535)
     )
     AccentPalette.GRAPHITE -> Palette(
-        primary = if (dark) Color(0xFFD4E0E3) else Color(0xFF4D5A60),
-        secondary = if (dark) RetraBlue else Color(0xFF00677B),
-        tertiary = if (dark) AdventureGold else Color(0xFF775A00)
+        primary = if (dark) Color(0xFFDED8EB) else Color(0xFF534C60),
+        secondary = if (dark) ElectricLilac else Color(0xFF6748A8),
+        tertiary = if (dark) AdventureGold else Color(0xFF7A5900)
     )
     AccentPalette.SOFT_VIOLET -> Palette(
-        primary = if (dark) FrostBlue else Color(0xFF286A78),
-        secondary = if (dark) MemoryAqua else Color(0xFF006B60),
-        tertiary = if (dark) MemoryCoral else Color(0xFFA43D31)
+        primary = if (dark) SoftViolet else Color(0xFF593E94),
+        secondary = if (dark) RaspberryPink else Color(0xFF9E2A4D),
+        tertiary = if (dark) MemoryCoral else Color(0xFF944535)
     )
     AccentPalette.CLASSIC_GRAY -> Palette(
-        primary = if (dark) Color(0xFFE0E6E8) else Color(0xFF50595D),
-        secondary = if (dark) Color(0xFFBAC7CA) else Color(0xFF5C686C),
-        tertiary = if (dark) AdventureGold else Color(0xFF775A00)
+        primary = if (dark) Color(0xFFECE7F4) else Color(0xFF5E576B),
+        secondary = if (dark) Color(0xFFCCC4D9) else Color(0xFF645D70),
+        tertiary = if (dark) AdventureGold else Color(0xFF7A5900)
     )
 }
 
@@ -141,30 +154,30 @@ private fun typography(scale: Float) = Typography(
     displaySmall = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Black,
-        fontSize = (40 * scale).sp,
-        lineHeight = (43 * scale).sp,
-        letterSpacing = (-1.15 * scale).sp
+        fontSize = (38 * scale).sp,
+        lineHeight = (42 * scale).sp,
+        letterSpacing = (-1.2 * scale).sp
     ),
     headlineLarge = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.ExtraBold,
-        fontSize = (31 * scale).sp,
-        lineHeight = (35 * scale).sp,
-        letterSpacing = (-0.65 * scale).sp
+        fontSize = (30 * scale).sp,
+        lineHeight = (34 * scale).sp,
+        letterSpacing = (-0.7 * scale).sp
     ),
     headlineMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Bold,
-        fontSize = (25 * scale).sp,
-        lineHeight = (30 * scale).sp,
-        letterSpacing = (-0.25 * scale).sp
+        fontSize = (24 * scale).sp,
+        lineHeight = (29 * scale).sp,
+        letterSpacing = (-0.3 * scale).sp
     ),
     titleLarge = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Bold,
         fontSize = (20 * scale).sp,
         lineHeight = (25 * scale).sp,
-        letterSpacing = (-0.1 * scale).sp
+        letterSpacing = (-0.15 * scale).sp
     ),
     titleMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
@@ -224,7 +237,7 @@ private fun shapes(scale: Float) = Shapes(
     small = RoundedCornerShape((12 * scale).dp),
     medium = RoundedCornerShape((18 * scale).dp),
     large = RoundedCornerShape((24 * scale).dp),
-    extraLarge = RoundedCornerShape((30 * scale).dp)
+    extraLarge = RoundedCornerShape((32 * scale).dp)
 )
 
 @Composable
@@ -245,8 +258,8 @@ fun RetraTheme(settings: AppSettings, content: @Composable () -> Unit) {
         }
         settings.themeMode == ThemeMode.OLED -> DarkBase.copy(
             background = Color.Black,
-            surface = Color(0xFF05090B),
-            surfaceVariant = Color(0xFF0E171C)
+            surface = Color(0xFF08060B),
+            surfaceVariant = Color(0xFF130F1A)
         )
         dark -> DarkBase
         else -> LightBase

@@ -1,15 +1,87 @@
-<!-- Retra Vault Aperture / Memory Prism canonical mark -->
+<!-- Retra Sprite: Liquid glass memory creature (evolved from Vault Aperture / Memory Prism concept) -->
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <rect width="1024" height="1024" rx="250" fill="#050A0D"/>
-  <rect x="160" y="160" width="704" height="704" rx="215" fill="#F7FBFC"/>
-  <rect x="280" y="280" width="464" height="464" rx="140" fill="#050A0D"/>
-  <rect x="400" y="126" width="224" height="72" rx="36" fill="#050A0D"/>
-  <rect x="400" y="826" width="224" height="72" rx="36" fill="#050A0D"/>
-  <rect x="126" y="400" width="72" height="224" rx="36" fill="#050A0D"/>
-  <rect x="826" y="400" width="72" height="224" rx="36" fill="#050A0D"/>
-  <g transform="rotate(45 512 512)">
-    <rect x="382" y="382" width="260" height="260" rx="52" fill="#F7FBFC"/>
-    <rect x="448" y="448" width="128" height="128" rx="24" fill="#050A0D"/>
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bgGrad" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#1B1528"/>
+      <stop offset="100%" stop-color="#09070D"/>
+    </radialGradient>
+
+    <!-- Liquid Glass Body Gradient -->
+    <linearGradient id="spriteBody" x1="20%" y1="10%" x2="85%" y2="90%">
+      <stop offset="0%" stop-color="#E2D4FF"/>
+      <stop offset="25%" stop-color="#C7ACFC"/>
+      <stop offset="60%" stop-color="#9366E8"/>
+      <stop offset="100%" stop-color="#FF8E79"/>
+    </linearGradient>
+
+    <!-- Specular Highlight Gradient -->
+    <linearGradient id="specularGlow" x1="30%" y1="0%" x2="70%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.85"/>
+      <stop offset="40%" stop-color="#FFFFFF" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.0"/>
+    </linearGradient>
+
+    <!-- Internal Core Gradient -->
+    <radialGradient id="coreGlow" cx="45%" cy="65%" r="50%">
+      <stop offset="0%" stop-color="#5EEAD4" stop-opacity="0.6"/>
+      <stop offset="50%" stop-color="#B898F8" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.0"/>
+    </radialGradient>
+
+    <!-- Shadow -->
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="24" stdDeviation="32" flood-color="#000000" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+
+  <!-- Container Base with Deep Rounded Squircle -->
+  <rect width="1024" height="1024" rx="240" fill="url(#bgGrad)"/>
+  
+  <!-- Subtle Internal Rim -->
+  <rect x="12" y="12" width="1000" height="1000" rx="230" fill="none" stroke="#FFFFFF" stroke-opacity="0.06" stroke-width="4"/>
+
+  <!-- Sprite Character Silhouette and Liquid Material -->
+  <g filter="url(#softShadow)">
+    <!-- Organic Asymmetrical Body Silhouette -->
+    <path d="M 512 210 
+             C 690 190, 810 320, 810 490 
+             C 810 650, 710 790, 520 800 
+             C 330 810, 220 680, 220 510 
+             C 220 350, 340 230, 512 210 Z" 
+          fill="url(#spriteBody)"/>
+
+    <!-- Asymmetrical Signature Top Lobe -->
+    <path d="M 640 230 
+             C 750 180, 830 260, 780 370 
+             C 730 400, 680 340, 640 230 Z" 
+          fill="url(#spriteBody)"/>
+
+    <!-- Internal Refractive Light Core -->
+    <ellipse cx="512" cy="560" rx="220" ry="160" fill="url(#coreGlow)"/>
+
+    <!-- Upper Rim / Spectral Highlight -->
+    <path d="M 320 320 
+             C 420 230, 630 230, 720 310 
+             C 650 260, 450 260, 320 320 Z" 
+          fill="url(#specularGlow)"/>
+
+    <!-- Left Eye -->
+    <ellipse cx="410" cy="480" rx="34" ry="46" fill="#13101A"/>
+    <ellipse cx="400" cy="465" rx="13" ry="17" fill="#FFFFFF"/>
+    <circle cx="422" cy="495" r="7" fill="#FFFFFF"/>
+
+    <!-- Right Eye -->
+    <ellipse cx="614" cy="480" rx="34" ry="46" fill="#13101A"/>
+    <ellipse cx="604" cy="465" rx="13" ry="17" fill="#FFFFFF"/>
+    <circle cx="626" cy="495" r="7" fill="#FFFFFF"/>
+
+    <!-- Charming Minimal Smile -->
+    <path d="M 488 565 C 502 580, 522 580, 536 565" 
+          stroke="#13101A" stroke-width="12" stroke-linecap="round" fill="none"/>
+
+    <!-- Cheerful Cheek Glows -->
+    <ellipse cx="345" cy="530" rx="22" ry="14" fill="#FF806F" fill-opacity="0.45"/>
+    <ellipse cx="679" cy="530" rx="22" ry="14" fill="#FF806F" fill-opacity="0.45"/>
   </g>
-  <circle cx="512" cy="512" r="42" fill="#FF806F"/>
 </svg>

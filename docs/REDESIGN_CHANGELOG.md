@@ -1,32 +1,29 @@
-# Retra 3.0 Redesign Change Log
+# Retra Redesign Changelog
 
-## Rebuilt
+## Retra 3.0 Complete Product Design & Architecture
 
-- Active app shell and responsive navigation.
-- Onboarding, Home, Library, Discover, Profile, Settings, game details, external import review, and Patch Studio.
-- Root content-color handling and dark/light surface hierarchy.
-- Launcher/in-app logo system.
+### Brand Identity & Visual System
+- Replaced legacy geometric mark with original **Retra Sprite** memory-creature identity in SVG, vector XML, and high-resolution raster assets.
+- Implemented multi-tiered **Liquid Glass System** (`GlassTier.THIN`, `REGULAR`, `ELEVATED`, `STRONG`, `OPAQUE`) with background light pools, rim highlights, and zero-compromise accessibility fallbacks.
+- Transitioned default color palette to deep near-black aubergine (`#09070D`), deep plum-charcoal (`#13101A`), electric lilac (`#C7ACFC`), raspberry pink (`#FF6B8B`), mint aqua (`#5EEAD4`), and warm coral (`#FF9376`).
 
-## Added
+### Navigation & Shell
+- Replaced old bottom navigation with a **Floating Liquid-Glass Dock** on phones and an **Adaptive Rail** on tablets/wide screens.
+- Added elevated center **Add Action Sheet** covering File Import, Folder Scan, Patch Studio, Retra Drift Demo, and Vault Restore.
+- Restructured navigation flow: Home, Library, Add Sheet, Profile, Settings.
 
-- Original Retra Drift GBA homebrew ROM and deterministic source build.
-- Idempotent first-run demo import.
-- Exact uploaded UPS diagnostics and compatible-base recovery.
-- Core-readiness status and honest disabled Play state.
-- Source-only Homebrew Hub behavior unless explicit redistribution permission, published SHA-256, and bounded size exist.
-- Retra 3.0 audit, implementation, patch, recommendation, test, and deletion documentation.
+### Onboarding Experience
+- Created 5 interactive, animated onboarding screens:
+  1. Emotional Introduction (Retra Sprite with spring physics drag).
+  2. Your Games, Your Library (Parallax floating game cards).
+  3. ROM Hacks & Patches Made Simple (Visual patch pairing metaphor).
+  4. Make The Handheld Yours (Interactive live controller preview).
+  5. Identity & Sign-In (Google sign-in + offline continuation).
 
-## Preserved
-
-- Repository/ViewModel state ownership.
-- Room/DataStore persistence.
-- Imports, patching, saves, timeline, health, achievements, cheats, screenshots, rewind, controller profiles, performance advice, and ROM-free backups.
-- Existing mGBA/libretro build and CI staging path.
-
-## Removed
-
-- `RetraV23Ui.kt`, the stale active product monolith.
-- Any implication that a patch file is a standalone game.
-- Any implication that a diagnostic fallback is a playable GBA core.
-
-See the root `CHANGELOG.md` for release history.
+### Screens & Components
+- **Home**: Asymmetrical "Continue" hero card, recently played shelf, quick feature banners, on-device privacy guarantee.
+- **Library**: Visual-first poster grid, floating glass search, comprehensive filter chips, detailed list view toggle.
+- **Game Details**: Modal bottom sheet over artwork, 52dp primary action, favorite toggle, cheats installer, expandable ROM identity & provenance.
+- **Profile**: Local-first profile, optional Google identity link, save health monitor, milestone achievements.
+- **Settings**: Deeply organized categories (Appearance, Player, Controls, Saves, Privacy, Diagnostics, About & Developer with Prashant Chataut profile links).
+- **Player UI**: Liquid glass touch controls, 1-tap screen rotation toggle, prioritized pause overlay.
