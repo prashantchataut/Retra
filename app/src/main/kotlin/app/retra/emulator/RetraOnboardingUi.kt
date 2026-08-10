@@ -1,5 +1,7 @@
 package app.retra.emulator
 
+import android.content.Context
+import app.retra.emulator.auth.AuthOperation
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -270,7 +272,7 @@ internal fun RetraOnboarding(viewModel: RetraViewModel) {
 @Composable
 private fun RenderChapter(
     chapter: Int,
-    authOperation: app.retra.emulator.auth.AuthOperation,
+    authOperation: AuthOperation,
     onNext: () -> Unit,
     onGoogleSignIn: () -> Unit,
     onContinueOffline: () -> Unit
