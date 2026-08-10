@@ -602,7 +602,7 @@ private fun RetraBlobMascot(
                     ),
                     center = Offset(cx, cy)
                 ),
-                style = Stroke(width = 1.5.dp.toPx())
+                style = Stroke(width = 1.5f.dp.toPx())
             )
 
             // Expressive Gaze Tracking Eyes
@@ -785,7 +785,7 @@ private fun ChapterOneRemember(
                 )
 
                 RetraBlobMascot(
-                    size = (w * 0.34f).coerceIn(110f, 150f).dp,
+                    size = ((w * 0.34f).coerceIn(110f, 150f)).dp,
                     primaryAccent = OnboardingTokens.ElectricLavender,
                     secondaryAccent = OnboardingTokens.MemoryPink,
                     interactive = true,
@@ -1016,7 +1016,7 @@ private fun MemoryTileCard(
         shape = RoundedCornerShape(18.dp),
         color = OnboardingTokens.MidnightBlack,
         border = BorderStroke(
-            width = if (isPressed) 1.5.dp else 1.dp,
+            width = if (isPressed) 1.5f.dp else 1.dp,
             color = if (isPressed) OnboardingTokens.MemoryPink else OnboardingTokens.PlumAtmosphere3
         ),
         shadowElevation = if (isPressed) 12.dp else 4.dp
@@ -1189,7 +1189,7 @@ private fun ChapterThreeYours(
                         .height(210.dp),
                     shape = RoundedCornerShape(32.dp),
                     color = OnboardingTokens.GlassSurface.copy(alpha = 0.88f),
-                    border = BorderStroke(1.5.dp, activeColor.copy(alpha = 0.55f)),
+                    border = BorderStroke(1.5f.dp, activeColor.copy(alpha = 0.55f)),
                     shadowElevation = 18.dp
                 ) {
                     Box(
