@@ -145,7 +145,7 @@ fun RetraSettingsScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                SettingsCategory.entries.forEach { item ->
+                for (item in SettingsCategory.entries) {
                     FilterChip(
                         selected = category == item,
                         onClick = { category = item },
@@ -436,7 +436,7 @@ private fun RetraSlider(
 @Composable
 private fun <T> RetraChoiceRow(values: List<T>, selected: T, label: (T) -> String, onSelected: (T) -> Unit) {
     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        values.forEach { value ->
+        for (value in values) {
             FilterChip(selected = value == selected, onClick = { onSelected(value) }, label = { Text(label(value)) })
         }
     }

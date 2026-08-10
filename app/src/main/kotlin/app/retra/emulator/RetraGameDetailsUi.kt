@@ -383,7 +383,7 @@ internal fun RetraPatchDialog(
                     }
                 } else {
                     Text("Select compatible base game:", fontWeight = FontWeight.Bold)
-                    compatibleGames.forEach { game ->
+                    for (game in compatibleGames) {
                         Surface(
                             onClick = { onApply(game) },
                             shape = MaterialTheme.shapes.medium,

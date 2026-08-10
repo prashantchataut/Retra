@@ -519,7 +519,7 @@ private fun StepFourPersonalizeVisual(viewModel: RetraViewModel) {
             Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            AccentPalette.entries.forEach { palette ->
+            for (palette in AccentPalette.entries) {
                 FilterChip(
                     selected = settings.accentPalette == palette,
                     onClick = { viewModel.setAccentPalette(palette) },

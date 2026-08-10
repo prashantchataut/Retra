@@ -167,7 +167,7 @@ internal fun RetraLibrary(
                     LibraryFilter.CONTINUE,
                     LibraryFilter.FAVORITES
                 )
-                visible.forEach { item ->
+                for (item in visible) {
                     RetraGlassFilterChip(
                         label = item.label,
                         selected = filter == item,

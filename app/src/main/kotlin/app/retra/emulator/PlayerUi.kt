@@ -1031,7 +1031,7 @@ private fun SessionMenu(
 
                 Text("Save-state slot", style = MaterialTheme.typography.labelLarge)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    (0..4).forEach { slot ->
+                    for (slot in 0..4) {
                         FilterChip(
                             selected = slot == selectedSlot,
                             onClick = { onSlotSelected(slot) },
@@ -1139,9 +1139,9 @@ private fun RetraCodesDialog(
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
-                packs.forEach { stored ->
+                for (stored in packs) {
                     Text(stored.provider, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    stored.pack.cheats.forEach { cheat ->
+                    for (cheat in stored.pack.cheats) {
                         Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
                             Row(
                                 Modifier.fillMaxWidth().padding(12.dp),

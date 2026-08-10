@@ -515,7 +515,7 @@ private fun RetraRail(
 
             Spacer(Modifier.weight(1f))
 
-            AppDestination.entries.forEach { item ->
+            for (item in AppDestination.entries) {
                 val active = item == selected
                 Surface(
                     onClick = { onSelected(item) },
