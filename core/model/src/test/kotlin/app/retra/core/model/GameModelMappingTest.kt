@@ -78,7 +78,7 @@ class GameModelMappingTest {
         val values = CompatibilityStatus.entries
         assertTrue(values.contains(CompatibilityStatus.PLAYABLE))
         assertTrue(values.contains(CompatibilityStatus.UNKNOWN))
-        assertTrue(values.contains(CompatibilityStatus.HAS_ISSUES))
-        assertTrue(values.contains(CompatibilityStatus.UNPLAYABLE))
+        assertTrue(values.contains(CompatibilityStatus.PERFECT))
+        assertTrue(values.contains(CompatibilityStatus.BROKEN))
     }
 }

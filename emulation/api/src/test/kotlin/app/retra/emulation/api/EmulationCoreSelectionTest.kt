@@ -43,7 +43,7 @@ class EmulationCoreSelectionTest {
             id = "native-reference",
             displayName = "Retra Reference Diagnostic",
             version = "1.0",
-            tier = CoreTier.REFERENCE_DIAGNOSTICS,
+            tier = CoreTier.DIAGNOSTIC_PIPELINE,
             supportsBatterySaves = false,
             supportsSaveStates = true,
             supportsAudio = false,
@@ -53,7 +53,7 @@ class EmulationCoreSelectionTest {
         )
 
         assertEquals("native-reference", descriptor.id)
-        assertEquals(CoreTier.REFERENCE_DIAGNOSTICS, descriptor.tier)
+        assertEquals(CoreTier.DIAGNOSTIC_PIPELINE, descriptor.tier)
         assertFalse(descriptor.supportsBatterySaves)
         assertFalse(descriptor.supportsCheats)
         assertFalse(descriptor.supportsAudio)
@@ -63,10 +63,10 @@ class EmulationCoreSelectionTest {
     @Test
     fun coreTiersAreDistinctAndEnforceGameplayBoundary() {
         val gameplayTier = CoreTier.GBA_GAMEPLAY
-        val diagnosticTier = CoreTier.REFERENCE_DIAGNOSTICS
+        val diagnosticTier = CoreTier.DIAGNOSTIC_PIPELINE
 
         assertTrue(gameplayTier != diagnosticTier)
         assertEquals("GBA_GAMEPLAY", gameplayTier.name)
-        assertEquals("REFERENCE_DIAGNOSTICS", diagnosticTier.name)
+        assertEquals("DIAGNOSTIC_PIPELINE", diagnosticTier.name)
     }
 }
