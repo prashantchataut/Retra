@@ -19,6 +19,7 @@ class HeartAndSoulPatchWorkflowTest {
     fun emeraldBaseDescriptorMatchesExpectedParameters() {
         val descriptor = PatchDescriptor(
             format = PatchFormat.UPS,
+            patchSizeBytes = 32_558_217,
             sourceSizeBytes = 16_777_216L,
             targetSizeBytes = 33_554_432L,
             sourceCrc32 = 0x1F1C08FBL,
@@ -28,6 +29,7 @@ class HeartAndSoulPatchWorkflowTest {
             patchIntegrityValid = true
         )
 
+        assertEquals(32_558_217, descriptor.patchSizeBytes)
         assertEquals(16_777_216L, descriptor.sourceSizeBytes)
         assertEquals(33_554_432L, descriptor.targetSizeBytes)
         assertEquals(0x1F1C08FBL, descriptor.sourceCrc32)

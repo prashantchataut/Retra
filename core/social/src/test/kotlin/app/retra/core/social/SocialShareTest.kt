@@ -21,7 +21,7 @@ class SocialShareTest {
     fun achievementShareExcludesFriendCodeInSummaryMode() {
         val friendCode = FriendCode.fromProfileId("test-profile")
         val profile = PlayerProfile(
-            id = "test-profile",
+            profileId = "test-profile",
             displayName = "Player Seven",
             friendCode = friendCode
         )
