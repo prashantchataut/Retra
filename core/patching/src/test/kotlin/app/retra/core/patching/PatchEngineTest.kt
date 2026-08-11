@@ -2,10 +2,10 @@ package app.retra.core.patching
 
 import java.io.ByteArrayOutputStream
 import java.util.zip.CRC32
-import kotlin.test.Test
-import kotlin.test.assertContentEquals
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
+import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
 
 class PatchEngineTest {
     @Test
@@ -18,20 +18,20 @@ class PatchEngineTest {
             'E'.code.toByte(), 'O'.code.toByte(), 'F'.code.toByte()
         )
         val output = PatchEngine.apply(source, patch).output
-        assertContentEquals(byteArrayOf(1, 2, 3), output.copyOfRange(0x200, 0x203))
-        assertContentEquals(ByteArray(4) { 0x7F }, output.copyOfRange(0x300, 0x304))
+        assertArrayEquals(byteArrayOf(1, 2, 3), output.copyOfRange(0x200, 0x203))
+        assertArrayEquals(ByteArray(4) { 0x7F }, output.copyOfRange(0x300, 0x304))
     }
 
-    @Test
+    @Test(expected = InvalidPatchException::class)
     fun rejectsUnknownSignature() {
-        assertFailsWith<InvalidPatchException> { PatchEngine.apply(ByteArray(0xC0), byteArrayOf(1, 2, 3)) }
+        PatchEngine.apply(ByteArray(0xC0), byteArrayOf(1, 2, 3))
     }
 
     @Test
     fun appliesBpsTargetRead() {
         val source = ByteArray(0x400) { it.toByte() }
         val target = source.copyOf().also { it[0x210] = 0x55; it[0x211] = 0x66 }
-        assertContentEquals(target, PatchEngine.apply(source, bpsTargetRead(source, target)).output)
+        assertArrayEquals(target, PatchEngine.apply(source, bpsTargetRead(source, target)).output)
     }
 
     private fun bpsTargetRead(source: ByteArray, target: ByteArray): ByteArray {

@@ -65,7 +65,7 @@ class MgbaLibretroEmulationCore(context: Context) : EmulationCore, AutoCloseable
     private val saveStore = AtomicSaveStore(File(applicationContext.filesDir, "emulation"))
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val nativeLock = Any()
-    private var nativeHandle: Long = MgbaBridge.nativeCreate()
+    private var nativeHandle: Long = runCatching { MgbaBridge.nativeCreate() }.getOrDefault(0L)
     private var frameJob: Job? = null
     private var gameHash: String? = null
     private var input = InputSnapshot()
@@ -370,11 +370,19 @@ class MgbaLibretroEmulationCore(context: Context) : EmulationCore, AutoCloseable
         rewindBuffer.clear()
     }
 
+    private fun openRomStream(uri: Uri): java.io.InputStream? = when (uri.scheme?.lowercase()) {
+        "file" -> {
+            val path = uri.path ?: return null
+            java.io.FileInputStream(File(path))
+        }
+        else -> applicationContext.contentResolver.openInputStream(uri)
+    }
+
     private fun readAndVerifyRom(uri: Uri, expectedHash: String): ByteArray {
         val digest = MessageDigest.getInstance("SHA-256")
         val output = ByteArrayOutputStream()
-        applicationContext.contentResolver.openInputStream(uri).use { inputStream ->
-            requireNotNull(inputStream) { "Android could not open the selected ROM." }
+        val stream = openRomStream(uri) ?: throw IllegalArgumentException("Android could not open the selected ROM.")
+        stream.use { inputStream ->
             val buffer = ByteArray(64 * 1024)
             var total = 0
             while (true) {

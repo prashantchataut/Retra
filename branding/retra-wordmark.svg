@@ -1,17 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="640" viewBox="0 0 1800 640">
-  <rect width="1800" height="640" rx="112" fill="#050A0D"/>
-  <g transform="translate(70 70) scale(.49)">
-    <rect x="160" y="160" width="704" height="704" rx="215" fill="#F7FBFC"/>
-    <rect x="280" y="280" width="464" height="464" rx="140" fill="#050A0D"/>
-    <rect x="400" y="126" width="224" height="72" rx="36" fill="#050A0D"/>
-    <rect x="400" y="826" width="224" height="72" rx="36" fill="#050A0D"/>
-    <rect x="126" y="400" width="72" height="224" rx="36" fill="#050A0D"/>
-    <rect x="826" y="400" width="72" height="224" rx="36" fill="#050A0D"/>
-    <g transform="rotate(45 512 512)">
-      <rect x="382" y="382" width="260" height="260" rx="52" fill="#F7FBFC"/>
-      <rect x="448" y="448" width="128" height="128" rx="24" fill="#050A0D"/>
-    </g>
-    <circle cx="512" cy="512" r="42" fill="#FF806F"/>
+<!-- Retra Sprite Wordmark -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360">
+  <defs>
+    <linearGradient id="wordmarkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="60%" stop-color="#E8DCFC"/>
+      <stop offset="100%" stop-color="#C7ACFC"/>
+    </linearGradient>
+    <linearGradient id="spriteMini" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#C7ACFC"/>
+      <stop offset="100%" stop-color="#FF9376"/>
+    </linearGradient>
+  </defs>
+  <!-- Mini Mascot Mark -->
+  <g transform="translate(60, 60) scale(0.24)">
+    <path d="M 512 210 C 690 190, 810 320, 810 490 C 810 650, 710 790, 520 800 C 330 810, 220 680, 220 510 C 220 350, 340 230, 512 210 Z" fill="url(#spriteMini)"/>
+    <path d="M 640 230 C 750 180, 830 260, 780 370 C 730 400, 680 340, 640 230 Z" fill="url(#spriteMini)"/>
+    <ellipse cx="410" cy="480" rx="34" ry="46" fill="#13101A"/>
+    <ellipse cx="400" cy="465" rx="13" ry="17" fill="#FFFFFF"/>
+    <ellipse cx="614" cy="480" rx="34" ry="46" fill="#13101A"/>
+    <ellipse cx="604" cy="465" rx="13" ry="17" fill="#FFFFFF"/>
+    <path d="M 488 565 C 502 580, 522 580, 536 565" stroke="#13101A" stroke-width="12" stroke-linecap="round" fill="none"/>
   </g>
-  <text x="660" y="402" fill="#F7FBFC" font-family="Inter,Arial,sans-serif" font-size="280" font-weight="800" letter-spacing="-14">Retra</text>
+  <!-- Wordmark Text -->
+  <text x="320" y="225" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="160" letter-spacing="-4" fill="url(#wordmarkGrad)">retra</text>
 </svg>

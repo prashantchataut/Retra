@@ -1,56 +1,58 @@
-# Retra 3.0 Final UI/UX Specification
+# Retra Final UI/UX Product Specification
 
-## Product thesis
+## 1. Product Vision
+Retra is a beloved handheld memory from childhood rebuilt as a premium, tactile modern object. It balances nostalgia, playfulness, charm, tactile responsiveness, and sleek, calm design without generic AI clichés, neon gradients, or card soup.
 
-Retra is a private memory player for Game Boy Advance worlds. The first question is “What do I return to?”, not “Which file-management tool do I open?”
+## 2. Brand Identity: Retra Sprite
+- **Concept**: A living memory-creature crafted from liquid glass that floats from nostalgic game worlds.
+- **Silhouette**: An asymmetrical, rounded organic silhouette with an iconic top-right crown lobe and expressive glossy eyes.
+- **Materiality**: Translucent internal core gradient, subtle refractive rim light, specular top highlight, and warm cheek glows.
+- **States & Expressions**:
+  - `IDLE`: Gentle breathing and responsive spring physics on touch/drag.
+  - `IMPORTING` / `ANALYZING`: Inquisitive scanning eye motion.
+  - `EMPTY`: Curious wide-eyed stance inviting game discovery.
+  - `SUCCESS`: Joyful squint and vibrant cheek glow.
+  - `ERROR`: Empathetic, calm expression.
+  - `PATCH_READY`: Dual-color aura illustrating base ROM + patch pairing.
 
-## Visual system
+## 3. Color & Material System
+- **Base Surfaces**:
+  - `VoidBlack` (`#09070D`): Near-black aubergine foundational canvas.
+  - `NightPlum` (`#13101A`): Deep plum-charcoal surface layer.
+  - `SurfaceMidnight` (`#1B1624`): Elevated glass container base.
+- **Accent Family**:
+  - `ElectricLilac` (`#C7ACFC`): Primary brand highlight.
+  - `RaspberryPink` (`#FF6B8B`): Warm expressive accents.
+  - `SaveMint` (`#5EEAD4`): Verification, healthy states, and demo homebrew.
+  - `MemoryCoral` (`#FFFF9376`): Patches, favorites, and actions.
+  - `AdventureGold` (`#FFD166`): Milestones and diagnostics.
+  - `WarmCream` (`#FFF4E0`): Nostalgic moments.
+- **Liquid Glass Tiers**:
+  - `GlassTier.THIN`: Subtle translucent layer for filter chips and secondary panels.
+  - `GlassTier.REGULAR`: Standard surface with rim lighting and ambient blur.
+  - `GlassTier.ELEVATED`: Hero feature cards and prominent sheets.
+  - `GlassTier.STRONG`: Floating navigation dock and modal action sheets.
+  - `GlassTier.OPAQUE`: 100% solid high-contrast accessibility fallback.
 
-- Archive Glass with mineral black/navy foundations.
-- Ice, aqua, coral, mint, and restrained warm-gold semantic accents.
-- Translucency only for grouping/navigation/high-value actions.
-- No blurred text, purple gaming chrome, rainbow gradients, letter logo, copied console trade dress, or copyrighted character branding.
-- Opaque reduced-transparency mode, reduced motion, high contrast, scalable system typography.
-- Vault Aperture / Memory Prism brand across launcher and in-app surfaces.
+## 4. Navigation Architecture
+- **Primary Destinations**:
+  - `HOME`: Clean top identity bar, prominent asymmetric "Continue" hero card, recently played shelf, quick feature banners.
+  - `LIBRARY`: Visual-first 2-column poster grid, floating glass search field, responsive filter chips (All, Played, Favorites, Patched, Homebrew, Unplayed), grid/list toggle.
+  - `ADD (+)`: Elevated action in the floating dock opening the liquid-glass Add Action Sheet (Import Game, Scan Folder, Apply Patch Studio, Play Retra Drift Demo, Restore Backup).
+  - `PROFILE`: Local-first player profile, Google identity linking, save health summary, milestone tracker.
+- **Form Factors**:
+  - Phone: Floating liquid-glass dock centered above system navigation insets.
+  - Tablet / Foldable / Landscape: Intelligently docked adaptive glass rail.
 
-## Primary information architecture
+## 5. 5-Screen Interactive Onboarding
+1. **Emotional Introduction**: Large lowercase wordmark, Retra Sprite with spring drag physics, clear mission message.
+2. **Your Games, Your Library**: Floating interactive game cards with parallax drag, local privacy ownership message.
+3. **ROM Hacks & Patches Made Simple**: Animated visual metaphor of Base ROM + Patch pairing producing a new game copy.
+4. **Make The Handheld Yours**: Live interactive controller preview reacting to touch, instant theme palette switcher.
+5. **Identity & Sign-In**: Retra Sprite culmination, prominent "Continue with Google", unmistakable "Use Retra offline" option.
 
-### Home
-
-Continue hero, core readiness, recent/favorite worlds, compact saves/milestones, and local privacy.
-
-### Library
-
-Search; file/folder import; All, Continue, Favorites, Patched, Homebrew, Unplayed filters; adaptive artwork grid; detailed list; demo recovery.
-
-### Discover
-
-Original built-in homebrew, Patch Studio, creator-first gallery, and explicit source-only behavior when redistribution/checksum requirements are absent.
-
-### Profile
-
-Local identity, archive progress, save health, achievements, and recent play without invented social metrics.
-
-### Settings
-
-Appearance, Player, Controls, Saves, Privacy, and About. Settings exposed in UI must change real persisted behavior.
-
-### Game details
-
-Artwork, provenance, core readiness, Play, favorite, artwork, cheats, technical identity, and confirmed removal.
-
-### Player
-
-Game canvas first; compact controls; saves, load, pause, fast-forward, screenshots, rewind, per-game profiles, controller-first mode, and honest performance telemetry.
-
-## Legal/trust behavior
-
-- Commercial ROMs are user-supplied only.
-- UPS/IPS/BPS remain patches and require a compatible local base.
-- Direct downloads require HTTPS, explicit redistribution permission, a published SHA-256, a bounded size, and creator/license/source metadata.
-- External imports are reviewed before repository mutation.
-- ROMs and saves remain local unless the user explicitly exports or shares them.
-
-## Validation standard
-
-The source implementation is not release-complete until Android compilation, resource linking, mGBA ABI loading, instrumented tests, responsive screenshots, accessibility passes, and physical-device gameplay are successful.
+## 6. Player Chrome & Emulation
+- Edge-to-edge game canvas with immersive mode support.
+- Liquid-glass touch controls with live opacity, scale, spacing, and layout customization.
+- 1-tap screen rotation toggle button between portrait and landscape.
+- Prioritized session pause overlay: Resume, Save State, Load State, Fast-Forward, Rewind, Screenshot, Settings, Exit.

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="retra_launcher_background">#050A0D</color>
-    <color name="retra_splash_background">#050A0D</color>
-    <color name="retra_accent">#75D7F2</color>
+    <color name="retra_launcher_background">#09070D</color>
+    <color name="retra_splash_background">#09070D</color>
+    <color name="retra_accent">#C7ACFC</color>
 </resources>

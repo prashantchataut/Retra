@@ -10,4 +10,6 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:emulation"))
     implementation(libs.kotlinx.coroutines.core)
+    testImplementation(kotlin("test-junit"))
+    testImplementation(libs.junit)
 }

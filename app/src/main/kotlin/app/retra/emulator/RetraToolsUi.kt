@@ -1,6 +1,7 @@
 package app.retra.emulator
 
 import android.view.KeyEvent
+import app.retra.core.emulation.VaultSaveRecord
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -97,7 +98,7 @@ fun ControllerStudioPanel(viewModel: RetraViewModel) {
             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            devices.forEach { item ->
+            for (item in devices) {
                 FilterChip(
                     selected = item.descriptor == device?.descriptor,
                     onClick = { selectedDescriptor = item.descriptor },
@@ -162,7 +163,7 @@ fun ControllerStudioPanel(viewModel: RetraViewModel) {
             }
 
             Text("Bindings", fontWeight = FontWeight.SemiBold)
-            CONTROLLER_ACTIONS.forEach { action ->
+            for (action in CONTROLLER_ACTIONS) {
                 val keys = profile.bindings.filterValues { it == action }.keys.sorted()
                 Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f)) {
                     Row(
@@ -219,35 +220,35 @@ fun SaveTimelinePanel(viewModel: RetraViewModel, games: List<GameRecord>) {
         if (records.isEmpty()) {
             Text("No save records are available yet.")
         }
-        games.filter { game -> records.any { it.gameSha256.equals(game.sha256, true) } || timelineByGame.containsKey(game.sha256.lowercase()) }
-            .forEach { game ->
-                val gameRecords = records.filter { it.gameSha256.equals(game.sha256, true) }
-                val entries = timelineByGame[game.sha256.lowercase()].orEmpty()
-                Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f)) {
-                    Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(Icons.Default.History, null)
-                            Text(game.title, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                            Text("${entries.size} checkpoints", style = MaterialTheme.typography.labelMedium)
+        val targetGames = games.filter { game -> records.any { it.gameSha256.equals(game.sha256, true) } || timelineByGame.containsKey(game.sha256.lowercase()) }
+        for (game in targetGames) {
+            val gameRecords = records.filter { it.gameSha256.equals(game.sha256, true) }
+            val entries = timelineByGame[game.sha256.lowercase()].orEmpty()
+            Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f)) {
+                Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Default.History, null)
+                        Text(game.title, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        Text("${entries.size} checkpoints", style = MaterialTheme.typography.labelMedium)
+                    }
+                    gameRecords.firstOrNull()?.let { latest ->
+                        FilledTonalButton(onClick = {
+                            snapshotTarget = latest
+                            snapshotTitle = "Before next session"
+                        }) {
+                            Text("Create named checkpoint")
                         }
-                        gameRecords.firstOrNull()?.let { latest ->
-                            FilledTonalButton(onClick = {
-                                snapshotTarget = latest
-                                snapshotTitle = "Before next session"
-                            }) {
-                                Text("Create named checkpoint")
-                            }
-                        }
-                        entries.take(8).forEach { entry ->
-                            TimelineEntryRow(
-                                entry = entry,
-                                onRestore = { viewModel.restoreTimelineSnapshot(entry) },
-                                onDelete = { viewModel.deleteTimelineSnapshot(entry) }
-                            )
-                        }
+                    }
+                    for (entry in entries.take(8)) {
+                        TimelineEntryRow(
+                            entry = entry,
+                            onRestore = { viewModel.restoreTimelineSnapshot(entry) },
+                            onDelete = { viewModel.deleteTimelineSnapshot(entry) }
+                        )
                     }
                 }
             }
+        }
     }
 
     snapshotTarget?.let { record ->
@@ -315,7 +316,7 @@ fun PerformanceAdvisorPanel(viewModel: RetraViewModel, games: List<GameRecord>) 
         if (relevantGames.isEmpty()) {
             Text("Play a game for at least two minutes to create a local measurement window.")
         }
-        relevantGames.forEach { game ->
+        for (game in relevantGames) {
             val advice = adviceByGame[game.sha256.lowercase()]
             val selected = profiles[game.sha256.lowercase()]?.performanceProfile
             Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f)) {
@@ -334,7 +335,9 @@ fun PerformanceAdvisorPanel(viewModel: RetraViewModel, games: List<GameRecord>) 
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        advice.reasons.forEach { Text("• $it", style = MaterialTheme.typography.bodySmall) }
+                        for (reason in advice.reasons) {
+                            Text("• $reason", style = MaterialTheme.typography.bodySmall)
+                        }
                         if (advice.ready && advice.recommendedProfile != null) {
                             Button(onClick = { viewModel.applyPerformanceRecommendation(game) }) {
                                 Text("Apply ${advice.recommendedProfile.prettyName()}")
@@ -371,7 +374,7 @@ fun CompatibilityNotebookDialog(
                     Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    CompatibilityStatus.entries.forEach { value ->
+                    for (value in CompatibilityStatus.entries) {
                         FilterChip(
                             selected = status == value,
                             onClick = { status = value },
@@ -429,7 +432,7 @@ fun GameLaunchProfileDialog(
                     Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    listOf(PerformanceProfile.AUTHENTIC, PerformanceProfile.BALANCED, PerformanceProfile.BATTERY_SAVER).forEach { value ->
+                    for (value in listOf(PerformanceProfile.AUTHENTIC, PerformanceProfile.BALANCED, PerformanceProfile.BATTERY_SAVER)) {
                         FilterChip(selected = performance == value, onClick = { performance = value }, label = { Text(value.prettyName()) })
                     }
                 }
@@ -438,7 +441,7 @@ fun GameLaunchProfileDialog(
                     Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    ScreenScalingMode.entries.forEach { value ->
+                    for (value in ScreenScalingMode.entries) {
                         FilterChip(selected = scaling == value, onClick = { scaling = value }, label = { Text(value.name.lowercase().replaceFirstChar(Char::titlecase)) })
                     }
                 }
@@ -447,7 +450,7 @@ fun GameLaunchProfileDialog(
                     Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    ControlLayoutPreset.entries.forEach { value ->
+                    for (value in ControlLayoutPreset.entries) {
                         FilterChip(selected = controls == value, onClick = { controls = value }, label = { Text(value.name.lowercase().replace('_', ' ')) })
                     }
                 }

@@ -345,6 +345,8 @@ class GameRepository @Inject constructor(
         val stream = openUriStream(uri) ?: return ImportOutcome.Rejected("Android could not open the archive.")
         val gbaEntries = mutableListOf<Pair<String, ByteArray>>()
         val patchEntries = mutableListOf<Pair<String, ByteArray>>()
+        val rejectedEntries = mutableListOf<String>()
+        val uncompressedEntries = mutableListOf<String>()
         var entries = 0
         var totalUncompressed = 0
         stream.use { input ->
@@ -352,35 +354,44 @@ class GameRepository @Inject constructor(
                 while (true) {
                     val entry = zip.nextEntry ?: break
                     entries++
-                    if (entries > 128) return ImportOutcome.Rejected("Archive contains too many files.")
+                    if (entries > 128) return ImportOutcome.Rejected("Archive contains too many files (safety limit: 128).")
                     if (entry.isDirectory) continue
                     val name = File(entry.name).name
+                    uncompressedEntries += name
                     if (name.contains("..") || entry.name.contains("\\")) {
-                        return ImportOutcome.Rejected("Archive path traversal was blocked.")
+                        return ImportOutcome.Rejected("Archive path traversal was blocked for $name.")
                     }
                     val bytes = zip.readBytesLimited(GbaRomParser.MAX_ROM_SIZE_BYTES)
                     totalUncompressed += bytes.size
                     if (totalUncompressed > 96 * 1024 * 1024) {
-                        return ImportOutcome.Rejected("Archive expands beyond Retra's safety limit.")
+                        return ImportOutcome.Rejected("Archive expands beyond Retra's 96 MiB safety limit.")
                     }
                     val lower = name.lowercase()
                     when {
                         lower.endsWith(".gba") -> gbaEntries += name to bytes
                         lower.endsWith(".ups") || lower.endsWith(".ips") || lower.endsWith(".bps") -> patchEntries += name to bytes
-                        lower.endsWith(".nds") -> return ImportOutcome.Rejected(
-                            "This archive contains a Nintendo DS (.nds) game. Pokémon HeartGold and SoulSilver are DS titles; Retra currently supports Game Boy Advance content only."
-                        )
+                        lower.endsWith(".nds") -> {
+                            rejectedEntries += "$name (Nintendo DS title: Retra supports GBA only)"
+                        }
+                        else -> {
+                            rejectedEntries += "$name (unsupported file extension)"
+                        }
                     }
                 }
             }
         }
         if (gbaEntries.isEmpty() && patchEntries.isEmpty()) {
-            return ImportOutcome.Rejected("No supported .gba or patch files were found in $displayName.")
+            val fileList = uncompressedEntries.take(5).joinToString(", ")
+            return ImportOutcome.Rejected(
+                "No supported .gba or patch files found in $displayName. Found entries: ${if (fileList.isBlank()) "empty archive" else fileList}."
+            )
         }
         var imported = 0
         var duplicates = 0
         var rejected = 0
         val pending = mutableListOf<PendingPatch>()
+        val rejectionReasons = ArrayList(rejectedEntries)
+
         for ((name, bytes) in gbaEntries) {
             when (
                 val outcome = importGbaBytes(
@@ -394,9 +405,17 @@ class GameRepository @Inject constructor(
                 )
             ) {
                 is ImportOutcome.Imported -> imported++
-                is ImportOutcome.Duplicate -> duplicates++
-                is ImportOutcome.Rejected -> rejected++
-                else -> rejected++
+                is ImportOutcome.Duplicate -> {
+                    duplicates++
+                    rejectionReasons += "$name: already exists in your library"
+                }
+                is ImportOutcome.Rejected -> {
+                    rejected++
+                    rejectionReasons += "$name: ${outcome.reason}"
+                }
+                else -> {
+                    rejected++
+                }
             }
         }
         for ((name, bytes) in patchEntries) {
@@ -405,10 +424,12 @@ class GameRepository @Inject constructor(
                 PatchEngine.inspect(bytes)
             } catch (error: InvalidPatchException) {
                 rejected++
+                rejectionReasons += "$name: invalid patch container (${error.message ?: "corrupted"})"
                 continue
             }
             if (!descriptor.patchIntegrityValid && descriptor.format.name != "IPS") {
                 rejected++
+                rejectionReasons += "$name: patch CRC verification failed"
                 continue
             }
             val stored = File(patchInbox, "${descriptor.patchSha256}.${descriptor.format.extension}")
@@ -425,9 +446,9 @@ class GameRepository @Inject constructor(
             // Prefer a single Imported result for the common one-ROM archive case.
             val games = gameDao.getBySha256(Sha256.of(gbaEntries.first().second))
             if (games != null) ImportOutcome.Imported(games.toRecord())
-            else ImportOutcome.Batch(imported, duplicates, rejected, pending)
+            else ImportOutcome.Batch(imported, duplicates, rejected, pending, rejectionReasons)
         } else {
-            ImportOutcome.Batch(imported, duplicates, rejected, pending)
+            ImportOutcome.Batch(imported, duplicates, rejected, pending, rejectionReasons)
         }
     }
 

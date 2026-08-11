@@ -13,6 +13,16 @@ data class PendingPatch(
     val knownHint: String? = null
 )
 
+data class ImportReport(
+    val title: String,
+    val summary: String,
+    val importedCount: Int,
+    val duplicateCount: Int,
+    val rejectedCount: Int,
+    val rejectedReasons: List<String> = emptyList(),
+    val pendingPatches: List<PendingPatch> = emptyList()
+)
+
 sealed interface ImportOutcome {
     data class Imported(val game: GameRecord) : ImportOutcome
     data class Duplicate(val title: String) : ImportOutcome
@@ -20,7 +30,8 @@ sealed interface ImportOutcome {
         val imported: Int,
         val duplicates: Int,
         val rejected: Int,
-        val pendingPatches: List<PendingPatch> = emptyList()
+        val pendingPatches: List<PendingPatch> = emptyList(),
+        val rejectedReasons: List<String> = emptyList()
     ) : ImportOutcome
     data class PatchDetected(val pending: PendingPatch) : ImportOutcome
     data class Rejected(val reason: String) : ImportOutcome

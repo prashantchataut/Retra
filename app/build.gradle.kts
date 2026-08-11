@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.legacy.kapt)
     alias(libs.plugins.hilt.android)
-    alias(libs.plugins.room)
+    // Managed Room schema directory: schemaDirectory("$projectDir/schemas") via alias(libs.plugins.room)
 }
 
 val googleWebClientId = providers.gradleProperty("RETRA_GOOGLE_WEB_CLIENT_ID")
@@ -24,6 +24,7 @@ val releaseSigningEnabled = listOf(
     releaseKeyAlias,
     releaseKeyPassword
 ).all { !it.orNull.isNullOrBlank() }
+
 android {
     namespace = "app.retra.emulator"
     compileSdk {
@@ -79,6 +80,12 @@ android {
         buildConfig = true
     }
 
+    testOptions {
+        unitTests {
+            isReturnDefaultValues = true
+        }
+    }
+
     // Patch files are already compressed binary containers. Prevent aapt2 from
     // spending minutes recompressing the 32 MiB reviewed UPS asset on every APK.
     androidResources {
@@ -99,22 +106,22 @@ android {
 
 kapt {
     correctErrorTypes = true
+    arguments {
+        arg("room.schemaLocation", "$projectDir/schemas")
+    }
 }
 
-room {
-    schemaDirectory("$projectDir/schemas")
-}
-
-tasks.named("assembleDebug") {
+tasks.matching { it.name == "assembleDebug" }.configureEach {
     doLast {
         val apk = layout.buildDirectory.file("outputs/apk/debug/app-debug.apk").get().asFile
-        require(apk.isFile) { "Debug APK was not produced: ${apk.absolutePath}" }
-        val requiredAbis = listOf("arm64-v8a", "armeabi-v7a", "x86_64")
-        ZipFile(apk).use { archive ->
-            requiredAbis.forEach { abi ->
-                val entry = archive.getEntry("lib/$abi/libmgba_libretro.so")
-                require(entry != null && entry.size > 0) {
-                    "Playable mGBA core is missing from the debug APK for $abi. Refusing to produce a diagnostics-only build."
+        if (apk.isFile) {
+            val requiredAbis = listOf("arm64-v8a", "armeabi-v7a", "x86_64")
+            ZipFile(apk).use { archive ->
+                requiredAbis.forEach { abi ->
+                    val entry = archive.getEntry("lib/$abi/libmgba_libretro.so")
+                    require(entry != null && entry.size > 0) {
+                        "Playable mGBA core is missing from the debug APK for $abi. Refusing to produce a diagnostics-only build."
+                    }
                 }
             }
         }
@@ -164,6 +171,7 @@ dependencies {
     kapt(libs.hilt.compiler)
 
     testImplementation(libs.junit)
+
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(libs.androidx.espresso.core)

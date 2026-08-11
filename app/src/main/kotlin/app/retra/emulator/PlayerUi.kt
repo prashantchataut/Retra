@@ -1,8 +1,13 @@
 package app.retra.emulator
 
+import android.content.pm.ActivityInfo
+import android.graphics.Bitmap
+import app.retra.core.model.AppSettings
+import app.retra.emulator.data.StoredCheatPack
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -40,6 +45,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.AlertDialog
@@ -56,6 +62,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -72,7 +79,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -124,7 +134,19 @@ fun PlayerScreen(
             controller?.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             controller?.hide(WindowInsetsCompat.Type.systemBars())
         }
-        onDispose { controller?.show(WindowInsetsCompat.Type.systemBars()) }
+        onDispose {
+            controller?.show(WindowInsetsCompat.Type.systemBars())
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
+
+    val toggleOrientation: () -> Unit = {
+        val current = activity?.requestedOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        activity?.requestedOrientation = if (current == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE) {
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        } else {
+            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        }
     }
 
     val gamePacks = packsByGame[game.sha256.lowercase()].orEmpty()
@@ -178,6 +200,9 @@ fun PlayerScreen(
                         }
                     },
                     actions = {
+                        IconButton(onClick = toggleOrientation) {
+                            Icon(Icons.Default.ScreenRotation, contentDescription = "Toggle screen orientation")
+                        }
                         IconButton(onClick = { customizationOpen = true }) {
                             Icon(Icons.Default.Settings, contentDescription = "Customize player")
                         }
@@ -211,6 +236,7 @@ fun PlayerScreen(
                     speedPercent = metrics.speedPercent.toInt(),
                     quickActionsVisible = quickActionsVisible,
                     onToggleQuickActions = { quickActionsVisible = !quickActionsVisible },
+                    onToggleOrientation = toggleOrientation,
                     onMenu = { menuOpen = true },
                     onCustomize = { customizationOpen = true },
                     onSave = { viewModel.saveState(selectedSlot) },
@@ -228,6 +254,7 @@ fun PlayerScreen(
                     speedPercent = metrics.speedPercent.toInt(),
                     quickActionsVisible = quickActionsVisible,
                     onToggleQuickActions = { quickActionsVisible = !quickActionsVisible },
+                    onToggleOrientation = toggleOrientation,
                     onMenu = { menuOpen = true },
                     onCustomize = { customizationOpen = true },
                     onSave = { viewModel.saveState(selectedSlot) },
@@ -328,6 +355,7 @@ private fun PortraitPlayerLayout(
     speedPercent: Int,
     quickActionsVisible: Boolean,
     onToggleQuickActions: () -> Unit,
+    onToggleOrientation: () -> Unit,
     onMenu: () -> Unit,
     onCustomize: () -> Unit,
     onSave: () -> Unit,
@@ -348,6 +376,7 @@ private fun PortraitPlayerLayout(
             showMetrics = settings.showPerformanceOverlay,
             quickActionsVisible = quickActionsVisible,
             onToggleQuickActions = onToggleQuickActions,
+            onToggleOrientation = onToggleOrientation,
             onMenu = onMenu,
             onCustomize = onCustomize,
             onPause = onPause
@@ -394,6 +423,7 @@ private fun LandscapePlayerLayout(
     speedPercent: Int,
     quickActionsVisible: Boolean,
     onToggleQuickActions: () -> Unit,
+    onToggleOrientation: () -> Unit,
     onMenu: () -> Unit,
     onCustomize: () -> Unit,
     onSave: () -> Unit,
@@ -416,6 +446,7 @@ private fun LandscapePlayerLayout(
             showMetrics = settings.showPerformanceOverlay,
             quickActionsVisible = quickActionsVisible,
             onToggleQuickActions = onToggleQuickActions,
+            onToggleOrientation = onToggleOrientation,
             onMenu = onMenu,
             onCustomize = onCustomize,
             onPause = onPause,
@@ -455,6 +486,7 @@ private fun PlayerChrome(
     showMetrics: Boolean,
     quickActionsVisible: Boolean,
     onToggleQuickActions: () -> Unit,
+    onToggleOrientation: () -> Unit,
     onMenu: () -> Unit,
     onCustomize: () -> Unit,
     onPause: () -> Unit,
@@ -481,6 +513,9 @@ private fun PlayerChrome(
                 Text("$fps fps · $speedPercent%", style = MaterialTheme.typography.labelMedium)
             }
             Spacer(Modifier.weight(1f))
+            IconButton(onClick = onToggleOrientation) {
+                Icon(Icons.Default.ScreenRotation, "Toggle orientation")
+            }
             IconButton(onClick = onToggleQuickActions) {
                 Icon(if (quickActionsVisible) Icons.Default.SkipPrevious else Icons.Default.FastForward, "Toggle quick actions")
             }
@@ -499,26 +534,41 @@ private fun GameViewport(
     smoothing: Boolean,
     modifier: Modifier = Modifier
 ) {
+    var reusableBitmap by remember { mutableStateOf<Bitmap?>(null) }
+
+    LaunchedEffect(frame?.sequence) {
+        val current = frame ?: return@LaunchedEffect
+        if (reusableBitmap?.width != current.width || reusableBitmap?.height != current.height) {
+            reusableBitmap = Bitmap.createBitmap(current.width, current.height, Bitmap.Config.ARGB_8888)
+        }
+        reusableBitmap?.setPixels(current.argb, 0, current.width, 0, 0, current.width, current.height)
+    }
+
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(16.dp),
         color = Color.Black,
         border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
         shadowElevation = 8.dp
     ) {
         Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
-            AndroidView(
-                factory = { context -> EmulationSurfaceView(context) },
-                modifier = Modifier.fillMaxSize(),
-                update = { surface ->
-                    surface.configure(scalingMode, smoothing)
-                    frame?.let(surface::submitFrame)
-                }
-            )
-            if (frame == null) {
+            val bitmap = reusableBitmap
+            if (bitmap != null && frame != null) {
+                Image(
+                    bitmap = bitmap.asImageBitmap(),
+                    contentDescription = "Emulation display",
+                    filterQuality = if (smoothing) FilterQuality.Low else FilterQuality.None,
+                    contentScale = when (scalingMode) {
+                        ScreenScalingMode.FILL -> ContentScale.Crop
+                        ScreenScalingMode.INTEGER -> ContentScale.Fit
+                        ScreenScalingMode.FIT -> ContentScale.Fit
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(Icons.Default.Gamepad, null, tint = Color.White.copy(alpha = 0.64f))
-                    Text("Preparing video…", color = Color.White.copy(alpha = 0.72f))
+                    Text("Launching emulation…", color = Color.White.copy(alpha = 0.72f))
                 }
             }
         }
@@ -982,7 +1032,7 @@ private fun SessionMenu(
 
                 Text("Save-state slot", style = MaterialTheme.typography.labelLarge)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    (0..4).forEach { slot ->
+                    for (slot in 0..4) {
                         FilterChip(
                             selected = slot == selectedSlot,
                             onClick = { onSlotSelected(slot) },
@@ -1090,9 +1140,9 @@ private fun RetraCodesDialog(
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
-                packs.forEach { stored ->
+                for (stored in packs) {
                     Text(stored.provider, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    stored.pack.cheats.forEach { cheat ->
+                    for (cheat in stored.pack.cheats) {
                         Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
                             Row(
                                 Modifier.fillMaxWidth().padding(12.dp),

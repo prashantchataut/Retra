@@ -33,13 +33,14 @@ fun ControllerInputTester(viewModel: RetraViewModel) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        listOf(
+        val buttonRows = listOf(
             listOf(EmulatorButton.UP, EmulatorButton.DOWN, EmulatorButton.LEFT, EmulatorButton.RIGHT),
             listOf(EmulatorButton.A, EmulatorButton.B, EmulatorButton.L, EmulatorButton.R),
             listOf(EmulatorButton.START, EmulatorButton.SELECT)
-        ).forEach { rowButtons ->
+        )
+        for (rowButtons in buttonRows) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                rowButtons.forEach { button ->
+                for (button in rowButtons) {
                     Surface(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(14.dp),

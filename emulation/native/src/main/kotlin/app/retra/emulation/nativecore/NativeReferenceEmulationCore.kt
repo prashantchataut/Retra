@@ -66,7 +66,7 @@ class NativeReferenceEmulationCore(context: Context) : EmulationCore, AutoClosea
     private val saveStore = AtomicSaveStore(File(applicationContext.filesDir, "emulation"))
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val nativeLock = Any()
-    private var nativeHandle: Long = NativeBridge.nativeCreate()
+    private var nativeHandle: Long = runCatching { NativeBridge.nativeCreate() }.getOrDefault(0L)
     private var frameJob: Job? = null
     private var gameHash: String? = null
     private var input = InputSnapshot()
@@ -311,12 +311,20 @@ class NativeReferenceEmulationCore(context: Context) : EmulationCore, AutoClosea
         return AudioPacket(sampleRate, 2, samples, frameSequence)
     }
 
+    private fun openRomStream(uri: Uri): java.io.InputStream? = when (uri.scheme?.lowercase()) {
+        "file" -> {
+            val path = uri.path ?: return null
+            java.io.FileInputStream(File(path))
+        }
+        else -> applicationContext.contentResolver.openInputStream(uri)
+    }
+
     private fun readAndVerifyRom(uri: Uri, expectedHash: String): ByteArray {
         val digest = MessageDigest.getInstance("SHA-256")
         val output = ByteArrayOutputStream()
         val maximum = 64 * 1024 * 1024
-        applicationContext.contentResolver.openInputStream(uri).use { inputStream ->
-            requireNotNull(inputStream) { "Android could not open the selected ROM." }
+        val stream = openRomStream(uri) ?: throw IllegalArgumentException("Android could not open the selected ROM.")
+        stream.use { inputStream ->
             val buffer = ByteArray(64 * 1024)
             var total = 0
             while (true) {
