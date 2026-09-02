@@ -61,6 +61,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -158,6 +160,11 @@ fun PlayerScreen(
     }
     var selectedSlot by remember { mutableIntStateOf(0) }
     var selectedSpeed by remember { mutableFloatStateOf(1f) }
+    val snackbarHost = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.messages.collect { snackbarHost.showSnackbar(it) }
+    }
 
     LaunchedEffect(game.sha256, settings.autoSaveIntervalMinutes) {
         val minutes = settings.autoSaveIntervalMinutes
@@ -181,6 +188,7 @@ fun PlayerScreen(
 
     Scaffold(
         containerColor = Color.Black,
+        snackbarHost = { SnackbarHost(snackbarHost) },
         topBar = {
             if (!settings.playerImmersiveMode || menuOpen) {
                 TopAppBar(
