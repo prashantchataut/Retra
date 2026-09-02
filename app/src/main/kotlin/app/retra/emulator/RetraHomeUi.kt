@@ -222,7 +222,7 @@ private fun HomeTopBar(
         // Settings Button
         FilledIconButton(
             onClick = onSettings,
-            modifier = Modifier.size(44.dp)
+            modifier = Modifier.size(48.dp)
         ) {
             Icon(Icons.Default.Settings, contentDescription = "Settings", modifier = Modifier.size(20.dp))
         }

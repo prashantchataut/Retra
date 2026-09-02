@@ -284,7 +284,7 @@ fun RetraSettingsScreen(
                                         val diag = "Retra 3.0.0 | ABI: ${Build.SUPPORTED_ABIS.firstOrNull()} | Core: ${viewModel.coreStatus} | Android: ${Build.VERSION.SDK_INT}"
                                         clipboard.setPrimaryClip(ClipData.newPlainText("Retra Diagnostics", diag))
                                     },
-                                    modifier = Modifier.fillMaxWidth().heightIn(min = 46.dp)
+                                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
                                 ) {
                                     Icon(Icons.Default.ContentCopy, null, Modifier.size(18.dp))
                                     Spacer(Modifier.width(6.dp))
@@ -321,7 +321,7 @@ fun RetraSettingsScreen(
                                         onClick = {
                                             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://knowprashant.vercel.app")))
                                         },
-                                        modifier = Modifier.fillMaxWidth().heightIn(min = 46.dp)
+                                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
                                     ) {
                                         Icon(Icons.Default.Language, null, Modifier.size(18.dp))
                                         Spacer(Modifier.width(8.dp))
@@ -334,7 +334,7 @@ fun RetraSettingsScreen(
                                         onClick = {
                                             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/prashantchataut")))
                                         },
-                                        modifier = Modifier.fillMaxWidth().heightIn(min = 46.dp)
+                                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
                                     ) {
                                         Icon(Icons.Default.Person, null, Modifier.size(18.dp))
                                         Spacer(Modifier.width(8.dp))
@@ -347,7 +347,7 @@ fun RetraSettingsScreen(
                                         onClick = {
                                             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/prashantchataut/Retra")))
                                         },
-                                        modifier = Modifier.fillMaxWidth().heightIn(min = 46.dp)
+                                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
                                     ) {
                                         Icon(Icons.Default.Code, null, Modifier.size(18.dp))
                                         Spacer(Modifier.width(8.dp))

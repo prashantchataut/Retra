@@ -20,6 +20,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
@@ -44,7 +46,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import app.retra.core.model.GameRecord
 import app.retra.core.model.LibraryLayout
@@ -74,6 +78,7 @@ internal fun RetraLibrary(
     var query by rememberSaveable { mutableStateOf("") }
     var filter by rememberSaveable { mutableStateOf(LibraryFilter.ALL) }
     var filtersExpanded by rememberSaveable { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
 
     val filtered = remember(games, query, filter) {
         games.filter { game ->
@@ -135,6 +140,8 @@ internal fun RetraLibrary(
                     },
                     placeholder = { Text("Search title, code, tag...") },
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                     shape = MaterialTheme.shapes.large,
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f),
@@ -189,7 +196,7 @@ internal fun RetraLibrary(
             ) {
                 OutlinedButton(
                     onClick = onFolder,
-                    modifier = Modifier.heightIn(min = 44.dp)
+                    modifier = Modifier.heightIn(min = 48.dp)
                 ) {
                     Icon(Icons.Default.FolderOpen, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))

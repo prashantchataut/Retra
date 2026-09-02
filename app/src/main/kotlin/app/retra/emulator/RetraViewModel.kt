@@ -553,6 +553,10 @@ class RetraViewModel @Inject constructor(
         recordElapsedPlaytime(game)
         performanceAdvisorRepository.endSession()
         if (game != null) recordAchievement(AchievementEventType.SESSION_COMPLETED, uniqueKey = "${game.sha256}:${System.currentTimeMillis()}", game = game)
+        // The session menu promises "Save and exit", so snapshot before the core stops.
+        if (game != null && emulationCore.descriptor.supportsSaveStates) {
+            saveState(AUTO_SAVE_SLOT)
+        }
         audioOutput.pause()
         emulationCore.stop()
         clearInput()

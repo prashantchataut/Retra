@@ -121,7 +121,7 @@ fun RetraGlassFilterChip(
     val colors = MaterialTheme.colorScheme
     Surface(
         onClick = onClick,
-        modifier = modifier.heightIn(min = 44.dp),
+        modifier = modifier.heightIn(min = 48.dp),
         shape = MaterialTheme.shapes.medium,
         color = if (selected) colors.primaryContainer.copy(alpha = 0.85f) else colors.surface.copy(alpha = 0.65f),
         contentColor = if (selected) colors.onPrimaryContainer else colors.onSurfaceVariant,

@@ -224,7 +224,7 @@ internal fun RetraGameSheet(
                     ) {
                         OutlinedButton(
                             onClick = onArtwork,
-                            modifier = Modifier.weight(1f).heightIn(min = 46.dp)
+                            modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                         ) {
                             Icon(Icons.Default.Image, null, Modifier.size(18.dp))
                             Spacer(Modifier.width(6.dp))
@@ -233,7 +233,7 @@ internal fun RetraGameSheet(
 
                         OutlinedButton(
                             onClick = onCheats,
-                            modifier = Modifier.weight(1f).heightIn(min = 46.dp)
+                            modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                         ) {
                             Icon(Icons.Default.Tune, null, Modifier.size(18.dp))
                             Spacer(Modifier.width(6.dp))
@@ -242,7 +242,7 @@ internal fun RetraGameSheet(
 
                         OutlinedButton(
                             onClick = { confirmDelete = true },
-                            modifier = Modifier.heightIn(min = 46.dp)
+                            modifier = Modifier.heightIn(min = 48.dp)
                         ) {
                             Icon(Icons.Default.DeleteOutline, "Delete", tint = MaterialTheme.colorScheme.error)
                         }
