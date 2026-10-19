@@ -5,6 +5,20 @@ plugins {
     alias(libs.plugins.roborazzi)
 }
 
+// Release signing is supplied by the environment (CI materialises a keystore from repo secrets).
+// Without all four variables the release variant falls back to the debug key, so CI artifacts
+// still install.
+val releaseStoreFile = providers.environmentVariable("RETRA_SIGNING_STORE_FILE")
+val releaseStorePassword = providers.environmentVariable("RETRA_SIGNING_STORE_PASSWORD")
+val releaseKeyAlias = providers.environmentVariable("RETRA_SIGNING_KEY_ALIAS")
+val releaseKeyPassword = providers.environmentVariable("RETRA_SIGNING_KEY_PASSWORD")
+val releaseSigningEnabled = listOf(
+    releaseStoreFile,
+    releaseStorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword,
+).all { !it.orNull.isNullOrBlank() }
+
 android {
     namespace = "app.retra"
     compileSdk {
@@ -19,13 +33,27 @@ android {
         versionName = "4.0.0"
     }
 
+    signingConfigs {
+        if (releaseSigningEnabled) {
+            create("release") {
+                storeFile = file(releaseStoreFile.get())
+                storePassword = releaseStorePassword.get()
+                keyAlias = releaseKeyAlias.get()
+                keyPassword = releaseKeyPassword.get()
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Signed with the debug key unless a release keystore is configured, so CI artifacts install.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (releaseSigningEnabled) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 
