@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Glossy liquid-glass tile: pastel sky gradient, a soft light pool and a specular sheen. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <path android:pathData="M0,0h108v108h-108z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="10" android:startY="0" android:endX="98" android:endY="108">
+                <item android:offset="0" android:color="#FFFFE6EE"/>
+                <item android:offset="0.55" android:color="#FFFFC9DA"/>
+                <item android:offset="1" android:color="#FFE3D6FF"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:pathData="M0,0h108v108h-108z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="radial" android:centerX="78" android:centerY="86" android:gradientRadius="56">
+                <item android:offset="0" android:color="#80FFE2C2"/>
+                <item android:offset="1" android:color="#00FFE2C2"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:pathData="M0,0h108v52c-30,-14 -70,-8 -108,10z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="54" android:startY="0" android:endX="54" android:endY="60">
+                <item android:offset="0" android:color="#8CFFFFFF"/>
+                <item android:offset="1" android:color="#00FFFFFF"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+</vector>

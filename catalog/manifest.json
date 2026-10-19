@@ -1,0 +1,883 @@
+{
+  "schema": 1,
+  "updated": "2026-10-19",
+  "collections": [
+    {
+      "id": "featured",
+      "title": "Featured",
+      "subtitle": "Hand-picked highlights from the library",
+      "entryIds": [
+        "mochi-hop",
+        "apotris",
+        "the-purple-night",
+        "pokemon-unbound"
+      ]
+    },
+    {
+      "id": "pokemon",
+      "title": "Pokémon fan games",
+      "subtitle": "Patches you apply to your own legally dumped base ROM",
+      "entryIds": [
+        "pokemon-heart-soul",
+        "pokemon-unbound",
+        "pokemon-radical-red",
+        "pokemon-emerald-rogue",
+        "pokemon-gaia",
+        "pokemon-light-platinum",
+        "pokemon-clover",
+        "pokemon-emerald-seaglass",
+        "pokemon-emerald-crest",
+        "pokemon-emerald-imperium",
+        "inclement-emerald",
+        "pokemon-liquid-crystal",
+        "pokemon-ash-gray",
+        "firered-rocket-edition",
+        "pokemon-dark-rising",
+        "pokemon-emerald-kaizo",
+        "theta-emerald-ex"
+      ]
+    },
+    {
+      "id": "challenge",
+      "title": "Hard mode / challenge",
+      "subtitle": "Notoriously tough hacks for veteran trainers",
+      "entryIds": [
+        "pokemon-emerald-kaizo",
+        "pokemon-radical-red",
+        "pokemon-emerald-rogue",
+        "inclement-emerald",
+        "pokemon-emerald-imperium",
+        "theta-emerald-ex",
+        "pokemon-dark-rising"
+      ]
+    },
+    {
+      "id": "homebrew",
+      "title": "Homebrew gems",
+      "subtitle": "Original games made for the GBA, free to download",
+      "entryIds": [
+        "skyland",
+        "apotris",
+        "minicraft-gba",
+        "ucity-advance",
+        "attack-on-voxelburg",
+        "the-hat-chooses-the-wizard",
+        "the-purple-night",
+        "beatbeast",
+        "meteorain",
+        "trogdor-gba",
+        "solar-guard"
+      ]
+    }
+  ],
+  "entries": [
+    {
+      "id": "mochi-hop",
+      "kind": "rom",
+      "title": "Mochi Hop",
+      "author": "Retra Team",
+      "version": null,
+      "description": "Retra's own original game, bundled with the app so you can play it offline the moment you install.",
+      "tags": [
+        "homebrew",
+        "original",
+        "platformer"
+      ],
+      "status": "complete",
+      "license": "MIT",
+      "homepage": "https://github.com/prashantchataut/Retra",
+      "source": null,
+      "download": {
+        "url": "https://raw.githubusercontent.com/prashantchataut/Retra/main/catalog/games/mochi_hop.gba",
+        "size": 217088,
+        "sha256": "3b4e24e44b53dcd2e7ceef241f70c2bd60fb8f0c25a96ff02a3dccfd38f6ea9b",
+        "format": "gba"
+      },
+      "base": null,
+      "accent": "#FFC9A9",
+      "featured": true,
+      "bundled": true
+    },
+    {
+      "id": "skyland",
+      "kind": "rom",
+      "title": "Skyland",
+      "author": "evanbowman",
+      "version": null,
+      "description": "A sprawling open-world adventure with exploration, crafting and building in a vast floating world.",
+      "tags": [
+        "adventure",
+        "rpg",
+        "sandbox"
+      ],
+      "status": "complete",
+      "license": "MPL-2.0",
+      "homepage": "https://github.com/evanbowman/skyland",
+      "source": "https://github.com/gbadev-org/games/tree/master/entries/skyland",
+      "download": {
+        "url": "https://raw.githubusercontent.com/gbadev-org/games/master/entries/skyland/Skyland.gba",
+        "size": 24693968,
+        "sha256": "1446735f17c00d4a2d369160e7716a0c66ea9ea292f89fdf998783682a044044",
+        "format": "gba"
+      },
+      "base": null,
+      "accent": "#BDE3F0",
+      "featured": false,
+      "bundled": false
+    },
+    {
+      "id": "apotris",
+      "kind": "rom",
+      "title": "Apotris",
+      "author": "akouzoukos",
+      "version": null,
+      "description": "A feature-rich falling-block puzzler with smooth controls, multiple game modes and even multiplayer.",
+      "tags": [
+        "puzzle",
+        "falling-blocks"
+      ],
+      "status": "in-development",
+      "license": "GPL-3.0",
+      "homepage": "https://akouzoukos.com/apotris",
+      "source": "https://github.com/gbadev-org/games/tree/master/entries/apotris",
+      "download": {
+        "url": "https://raw.githubusercontent.com/gbadev-org/games/master/entries/apotris/Apotris.gba",
+        "size": 4194304,
+        "sha256": "e5e7b124407d97cb1268b3bde4239bd2f018e133b1cb7990a635fc01937e78f6",
+        "format": "gba"
+      },
+      "base": null,
+      "accent": "#C9CFF0",
+      "featured": true,
+      "bundled": false
+    },
+    {
+      "id": "minicraft-gba",
+      "kind": "rom",
+      "title": "Minicraft for GBA",
+      "author": "Vulcalien",
+      "version": null,
+      "description": "A faithful GBA port of Minicraft: gather resources, craft tools and defeat the air wizard before your food runs out.",
+      "tags": [
+        "survival",
+        "crafting",
+        "port"
+      ],
+      "status": "complete",
+      "license": "GPL-3.0-or-later",
+      "homepage": "https://github.com/Vulcalien/minicraft-gba",
+      "source": "https://github.com/gbadev-org/games/tree/master/entries/minicraft-gba",
+      "download": {
+        "url": "https://raw.githubusercontent.com/gbadev-org/games/master/entries/minicraft-gba/minicraft.gba",
+        "size": 131072,
+        "sha256": "d0a62b6457b0d6fab383c417dca7ce9bcb9e239ced4c047e5fcbd1e010844caf",
+        "format": "gba"
+      },
+      "base": null,
+      "accent": "#B8E6C9",
+      "featured": false,
+      "bundled": false
+    },
+    {
+      "id": "ucity-advance",
+      "kind": "rom",
+      "title": "µCity Advance",
+      "author": "AntonioND",
+      "version": "1.0.1",
+      "description": "A surprisingly deep city-building simulation with zoning, transport networks and infrastructure management.",
+      "tags": [
+        "simulation",
+        "city-builder"
+      ],
+      "status": "complete",
+      "license": "GPL-3.0-or-later",
+      "homepage": "https://github.com/AntonioND/ucity-advance",
+      "source": "https://github.com/gbadev-org/games/tree/master/entries/ucity-advance",
+      "download": {
+        "url": "https://raw.githubusercontent.com/gbadev-org/games/master/entries/ucity-advance/ucity-advance-v1.0.1.gba",
+        "size": 1925124,
+        "sha256": "c94413b46c45af5d4ba050f69a53db0df7a4bd5f58b13e347f64f8eed03cff7a",
+        "format": "gba"
+      },
+      "base": null,
+      "accent": "#E0D8C3",
+      "featured": false,
+      "bundled": false
+    },
+    {
+      "id": "attack-on-voxelburg",
+      "kind": "rom",
+      "title": "Attack on Voxelburg",
+      "author": "MutantStargoat",
+      "version": null,
+      "description": "Stomp through a fully destructible voxel city, blasting buildings and defenders in this GBA Jam 2022 entry.",
+      "tags": [
+        "action",
+        "voxel",
+        "destruction"
+      ],
+      "status": "complete",
+      "license": "GPL-3.0-or-later",
+      "homepage": "https://github.com/MutantStargoat/voxelburg",
+      "source": "https://github.com/gbadev-org/games/tree/master/entries/attack-on-voxelburg",
+      "download": {
+        "url": "https://raw.githubusercontent.com/gbadev-org/games/master/entries/attack-on-voxelburg/voxelburg_jam.gba",
+        "size": 827676,
+        "sha256": "9522f3e7a89640616c5397cf259785a85839692df9099a6caf73cc8a422a80ec",
+        "format": "gba"
+      },
+      "base": null,
+      "accent": "#F5C6C6",
+      "featured": false,
+      "bundled": false
+    },
+    {
+      "id": "the-hat-chooses-the-wizard",
+      "kind": "rom",
+      "title": "The Hat Chooses the Wizard",
+      "author": "Corwin Kuiper and Gwilym Kuiper",
+      "version": null,
+      "description": "A charming puzzle platformer where the hat you wear grants new abilities, built with the AGB Rust framework.",
+      "tags": [
+        "platformer",
+        "puzzle"
+      ],
+      "status": "complete",
+      "license": "MPL-2.0",
+      "homepage": "https://github.com/agbrs/agb/tree/master/examples/the-hat-chooses-the-wizard",
+      "source": "https://github.com/gbadev-org/games/tree/master/entries/the-hat-chooses-the-wizard",
+      "download": {
+        "url": "https://raw.githubusercontent.com/gbadev-org/games/master/entries/the-hat-chooses-the-wizard/the-hat-chooses-the-wizard.gba",
+        "size": 2097152,
+        "sha256": "77d180e4d4668256e7af39403d107ff522bdaa0ede27a206772ac05d5b36a066",
+        "format": "gba"
+      },
+      "base": null,
+      "accent": "#E3C9F5",
+      "featured": false,
+      "bundled": false
+    },
+    {
+      "id": "the-purple-night",
+      "kind": "rom",
+      "title": "The Purple Night",
+      "author": "Corwin Kuiper and Gwilym Kuiper",
+      "version": null,
+      "description": "An atmospheric puzzle platformer set in a dreamlike twilight world, another showcase game from the AGB project.",
+      "tags": [
+        "platformer",
+        "atmospheric"
+      ],
+      "status": "complete",
+      "license": "MPL-2.0",
+      "homepage": "https://github.com/agbrs/agb/tree/master/examples/the-purple-night",
+      "source": "https://github.com/gbadev-org/games/tree/master/entries/the-purple-night",
+      "download": {
+        "url": "https://raw.githubusercontent.com/gbadev-org/games/master/entries/the-purple-night/the-purple-night.gba",
+        "size": 8388608,
+        "sha256": "646c2a5d3405c82c7f165bfdff99e3ffd372b02f861017da9ec1f623cdfb3edc",
+        "format": "gba"
+      },
+      "base": null,
+      "accent": "#C9B8F0",
+      "featured": true,
+      "bundled": false
+    },
+    {
+      "id": "beatbeast",
+      "kind": "rom",
+      "title": "BeatBeast",
+      "author": "afska and contributors",
+      "version": null,
+      "description": "A rhythm-driven boss battler where every attack and dodge lands on the beat of the soundtrack.",
+      "tags": [
+        "rhythm",
+        "action",
+        "music"
+      ],
+      "status": "complete",
+      "license": "MIT",
+      "homepage": "https://github.com/afska/beat-beast",
+      "source": "https://github.com/gbadev-org/games/tree/master/entries/afska_beat-beast",
+      "download": {
+        "url": "https://raw.githubusercontent.com/gbadev-org/games/master/entries/afska_beat-beast/files/BeatBeast_jam.gba",
+        "size": 33506864,
+        "sha256": "2a4986bdf6bd65601f1ae08f471d0aafc3e23d57f594162f77f351a1150e43eb",
+        "format": "gba"
+      },
+      "base": null,
+      "accent": "#F5C9DD",
+      "featured": false,
+      "bundled": false
+    },
+    {
+      "id": "meteorain",
+      "kind": "rom",
+      "title": "MeteoRain",
+      "author": "Dr. Ludos",
+      "version": null,
+      "description": "An intense arcade shooter where you blast a relentless meteor shower out of the sky.",
+      "tags": [
+        "shooter",
+        "arcade"
+      ],
+      "status": "complete",
+      "license": "MIT",
+      "homepage": "https://github.com/drludos/meteorain-gba",
+      "source": "https://github.com/gbadev-org/games/tree/master/entries/meteorain-gba-jam-2021",
+      "download": {
+        "url": "https://raw.githubusercontent.com/gbadev-org/games/master/entries/meteorain-gba-jam-2021/MeteoRain.gba",
+        "size": 1710503,
+        "sha256": "ce45d4624c385bf2aa4545aee8613cfff5f4b1f3879a0c704dfc5e349f64798d",
+        "format": "gba"
+      },
+      "base": null,
+      "accent": "#C9EBF0",
+      "featured": false,
+      "bundled": false
+    },
+    {
+      "id": "trogdor-gba",
+      "kind": "rom",
+      "title": "Trogdor for GBA",
+      "author": "Jeremy Elkayam",
+      "version": null,
+      "description": "A faithful GBA port of the classic Trogdor flash game: burninate the countryside and dodge endless arrows.",
+      "tags": [
+        "arcade",
+        "fangame",
+        "action"
+      ],
+      "status": "complete",
+      "license": "MIT",
+      "homepage": "https://github.com/jeremyelkayam/trogba",
+      "source": "https://github.com/gbadev-org/games/tree/master/entries/jeremyelkayam_trogba",
+      "download": {
+        "url": "https://raw.githubusercontent.com/gbadev-org/games/master/entries/jeremyelkayam_trogba/files/trogba.gba",
+        "size": 4854904,
+        "sha256": "0dffc8fadf30fad67942c35aa5996a2d0aa92da66be585ea52e3b5961770ca36",
+        "format": "gba"
+      },
+      "base": null,
+      "accent": "#F7DFA8",
+      "featured": false,
+      "bundled": false
+    },
+    {
+      "id": "solar-guard",
+      "kind": "rom",
+      "title": "Solar Guard",
+      "author": "Deft-Spade",
+      "version": null,
+      "description": "A retro space shooter where you defend the solar system against wave after wave of invaders.",
+      "tags": [
+        "shooter",
+        "space",
+        "arcade"
+      ],
+      "status": "complete",
+      "license": "GPL-3.0-only",
+      "homepage": "https://github.com/Deft-Spade/Solar-Guard",
+      "source": "https://github.com/gbadev-org/games/tree/master/entries/solar-guard",
+      "download": {
+        "url": "https://raw.githubusercontent.com/gbadev-org/games/master/entries/solar-guard/Solar_Guard_GBA_JAM_2021.gba",
+        "size": 4272776,
+        "sha256": "cfd07990e0fa05611fb36b3230d68cea4b65ae11482e822b5b6f97a32a8b88b0",
+        "format": "gba"
+      },
+      "base": null,
+      "accent": "#FBD9A0",
+      "featured": false,
+      "bundled": false
+    },
+    {
+      "id": "pokemon-heart-soul",
+      "kind": "patch",
+      "title": "Pokémon Heart & Soul",
+      "author": "PokemonHnS-Development",
+      "version": "1.2.1",
+      "description": "A from-scratch remake of Gold and Silver: explore Johto and Kanto with modern battle mechanics and quality-of-life features.",
+      "tags": [
+        "remake",
+        "johto",
+        "story"
+      ],
+      "status": "in-development",
+      "license": null,
+      "homepage": "https://github.com/PokemonHnS-Development/pokemonHnS",
+      "source": null,
+      "download": {
+        "url": "https://github.com/PokemonHnS-Development/pokemonHnS/releases/download/Release-v1.2.1/pokemonHnS_v1.2.1.ups",
+        "size": 32558217,
+        "sha256": "c8e70f448b481d2980266ca8f021aa8b3c462f4e582cf80228ced4636c6154eb",
+        "format": "ups"
+      },
+      "patchFormat": "ups",
+      "base": {
+        "title": "Pokémon Emerald (U)",
+        "gameCode": "BPEE",
+        "crc32": "1F1C08FB",
+        "size": 16777216
+      },
+      "accent": "#F5B8B8",
+      "featured": false,
+      "bundled": false
+    },
+    {
+      "id": "pokemon-unbound",
+      "kind": "patch",
+      "title": "Pokémon Unbound",
+      "author": "Skeli",
+      "version": null,
+      "description": "A massive original-region adventure in Borrius with a full story, Battle Frontier, missions and modern battle features throughout.",
+      "tags": [
+        "original-region",
+        "story",
+        "postgame"
+      ],
+      "status": "complete",
+      "license": null,
+      "homepage": "https://www.pokecommunity.com/threads/pok%C3%A9mon-unbound-completed.382178/",
+      "source": null,
+      "download": null,
+      "patchFormat": "ups",
+      "base": {
+        "title": "Pokémon FireRed (U) v1.0",
+        "gameCode": "BPRE",
+        "crc32": "DD88761C",
+        "size": 16777216
+      },
+      "accent": "#A8C9F5",
+      "featured": true,
+      "bundled": false
+    },
+    {
+      "id": "pokemon-radical-red",
+      "kind": "patch",
+      "title": "Pokémon Radical Red",
+      "author": "soupercell and koala4",
+      "version": "4.1",
+      "description": "A FireRed difficulty overhaul with modern mechanics, DexNav, character customisation and Pokémon up to Gen 9.",
+      "tags": [
+        "difficulty",
+        "enhancement",
+        "kanto"
+      ],
+      "status": "complete",
+      "license": null,
+      "homepage": "https://www.pokecommunity.com/threads/pok%C3%A9mon-radical-red-version-4-1-released-gen-9-dlc-pokemon-character-customization-now-available.437688/",
+      "source": null,
+      "download": null,
+      "patchFormat": null,
+      "base": {
+        "title": "Pokémon FireRed (U) v1.0",
+        "gameCode": "BPRE",
+        "crc32": "DD88761C",
+        "size": 16777216
+      },
+      "accent": "#F5AFAF",
+      "featured": false,
+      "bundled": false
+    },
+    {
+      "id": "pokemon-emerald-rogue",
+      "kind": "patch",
+      "title": "Pokémon Emerald Rogue",
+      "author": "Pokabbie",
+      "version": null,
+      "description": "A roguelike reimagining of Emerald: procedurally generated runs, a persistent upgrade hub and configurable difficulty.",
+      "tags": [
+        "roguelike",
+        "difficulty",
+        "procedural"
+      ],
+      "status": "in-development",
+      "license": null,
+      "homepage": "https://www.pokecommunity.com/threads/pokemon-emerald-rogue.479406/",
+      "source": null,
+      "download": null,
+      "patchFormat": null,
+      "base": {
+        "title": "Pokémon Emerald (U)",
+        "gameCode": "BPEE",
+        "crc32": "1F1C08FB",
+        "size": 16777216
+      },
+      "accent": "#B8F0C9",
+      "featured": false,
+      "bundled": false
+    },
+    {
+      "id": "pokemon-gaia",
+      "kind": "patch",
+      "title": "Pokémon Gaia",
+      "author": "Spherical Ice",
+      "version": null,
+      "description": "A polished original-region adventure in Orbtus with a modern battle engine, Mega Evolution and original music.",
+      "tags": [
+        "original-region",
+        "story",
+        "enhancement"
+      ],
+      "status": "complete",
+      "license": null,
+      "homepage": "https://www.pokecommunity.com/threads/pok%C3%A9mon-gaia-version.326118/",
+      "source": null,
+      "download": null,
+      "patchFormat": null,
+      "base": {
+        "title": "Pokémon FireRed (U) v1.0",
+        "gameCode": "BPRE",
+        "crc32": "DD88761C",
+        "size": 16777216
+      },
+      "accent": "#C9E3A8",
+      "featured": false,
+      "bundled": false
+    },
+    {
+      "id": "pokemon-light-platinum",
+      "author": "Wesley FG",
+      "base": {
+        "crc32": "F0815EE7",
+        "gameCode": "AXVE",
+        "size": 16777216,
+        "title": "Pokémon Ruby (U) v1.0"
+      },
+      "bundled": false,
+      "description": "A classic Hack of the Year winner spanning two new regions with Gen 4-5 Pokémon and a World Championship to conquer.",
+      "download": null,
+      "featured": false,
+      "homepage": "https://www.pokecommunity.com/threads/hack-of-the-year-2012-pok%C3%A9mon-light-platinum.158324/",
+      "kind": "patch",
+      "license": null,
+      "patchFormat": "ips",
+      "source": null,
+      "status": "complete",
+      "tags": [
+        "classic",
+        "new-regions",
+        "story"
+      ],
+      "title": "Pokémon Light Platinum",
+      "version": null,
+      "accent": "#E8E0F5"
+    },
+    {
+      "id": "pokemon-clover",
+      "kind": "patch",
+      "title": "Pokémon Clover",
+      "author": "The Clover team",
+      "version": "1.3.3",
+      "description": "A meme-fuelled but genuinely deep FireRed overhaul with a fresh Fakemon dex, new regions and uncompromising difficulty.",
+      "tags": [
+        "fakemon",
+        "difficulty",
+        "comedy"
+      ],
+      "status": "complete",
+      "license": null,
+      "homepage": "https://poclo.net/download",
+      "source": null,
+      "download": {
+        "url": "https://poclo.net/assets/files/Clover%20v1.3.3.zip",
+        "size": 7773925,
+        "sha256": "4fddae36f22dd5de5d38990a2dabc9d3409b4a8b634d7f36b461c12fac7c542b",
+        "format": "zip",
+        "archiveEntry": "Clover v1.3.3.bps",
+        "archiveEntrySize": 11417880,
+        "archiveEntrySha256": "6c95dc9070d1b9bb9398017c831440e0df90fe4ea86adb292a555d8253062c97"
+      },
+      "patchFormat": "bps",
+      "base": {
+        "title": "Pokémon FireRed (U) v1.0",
+        "gameCode": "BPRE",
+        "crc32": "DD88761C",
+        "size": 16777216
+      },
+      "accent": "#B8E3B8",
+      "featured": false,
+      "bundled": false
+    },
+    {
+      "id": "pokemon-emerald-seaglass",
+      "kind": "patch",
+      "title": "Pokémon Emerald Seaglass",
+      "author": "Nemo622",
+      "version": "3.0",
+      "description": "A Gen 2-styled visual and gameplay reimagining of Hoenn with the full Gen 1-3 dex, cross-gen evolutions and new side activities.",
+      "tags": [
+        "visual-overhaul",
+        "expansion",
+        "aesthetic"
+      ],
+      "status": "complete",
+      "license": null,
+      "homepage": "https://ko-fi.com/s/4a1535f351",
+      "source": null,
+      "download": null,
+      "patchFormat": "ips",
+      "base": {
+        "title": "Pokémon Emerald (U)",
+        "gameCode": "BPEE",
+        "crc32": "1F1C08FB",
+        "size": 16777216
+      },
+      "accent": "#B8E8E0",
+      "featured": false,
+      "bundled": false
+    },
+    {
+      "id": "pokemon-emerald-crest",
+      "kind": "patch",
+      "title": "Pokémon Emerald Crest",
+      "author": "Aaghat",
+      "version": "1.0.F",
+      "description": "An expanded Emerald with Pokémon and moves from every generation, DexNav, Mega Evolution and a built-in map randomizer.",
+      "tags": [
+        "enhancement",
+        "expansion",
+        "randomizer"
+      ],
+      "status": "in-development",
+      "license": null,
+      "homepage": "https://www.pokecommunity.com/threads/emerald-crest-v1-0-f-is-here-gen-9-dlc-in-game-map-randomizer-a-debug-menu-%E2%80%BC%EF%B8%8F.487986/",
+      "source": null,
+      "download": null,
+      "patchFormat": null,
+      "base": {
+        "title": "Pokémon Emerald (U)",
+        "gameCode": "BPEE",
+        "crc32": "1F1C08FB",
+        "size": 16777216
+      },
+      "accent": "#B5E3A8",
+      "featured": false,
+      "bundled": false
+    },
+    {
+      "id": "pokemon-emerald-imperium",
+      "kind": "patch",
+      "title": "Pokémon Emerald Imperium",
+      "author": "iriv24",
+      "version": "1.3.1",
+      "description": "A modern, competitive-leaning Emerald overhaul with difficulty modes, level caps, Mega Evolution and randomizer options.",
+      "tags": [
+        "difficulty",
+        "decomp",
+        "competitive"
+      ],
+      "status": "beta",
+      "license": null,
+      "homepage": "https://emeraldimperium.net/patch",
+      "source": null,
+      "download": null,
+      "patchFormat": "bps",
+      "base": {
+        "title": "Pokémon Emerald (U)",
+        "gameCode": "BPEE",
+        "crc32": "1F1C08FB",
+        "size": 16777216
+      },
+      "accent": "#D9C9F5",
+      "featured": false,
+      "bundled": false
+    },
+    {
+      "id": "inclement-emerald",
+      "kind": "patch",
+      "title": "Inclement Emerald",
+      "author": "Buffel Saft",
+      "version": "1.13",
+      "description": "A decomp-based difficulty and catch-'em-all overhaul of Hoenn inspired by Drayano's hacks, with a modern battle engine.",
+      "tags": [
+        "difficulty",
+        "decomp",
+        "hoenn"
+      ],
+      "status": "in-development",
+      "license": null,
+      "homepage": "https://www.pokecommunity.com/threads/pok%C3%A9mon-inclement-emerald-a-decomp-difficulty-hack-version-1-13.457039/",
+      "source": null,
+      "download": null,
+      "patchFormat": null,
+      "base": {
+        "title": "Pokémon Emerald (U)",
+        "gameCode": "BPEE",
+        "crc32": "1F1C08FB",
+        "size": 16777216
+      },
+      "accent": "#A8E6D9",
+      "featured": false,
+      "bundled": false
+    },
+    {
+      "id": "pokemon-liquid-crystal",
+      "kind": "patch",
+      "title": "Pokémon Liquid Crystal",
+      "author": "Linkandzelda",
+      "version": "3.3",
+      "description": "A long-running FireRed-based remake of Pokémon Crystal covering Johto, Kanto and the Orange Islands with a day-night cycle.",
+      "tags": [
+        "remake",
+        "johto",
+        "classic"
+      ],
+      "status": "beta",
+      "license": null,
+      "homepage": "https://www.pokecommunity.com/threads/pok%C3%A9mon-liquid-crystal-3-3-xxxxx-live-beta.242023/",
+      "source": null,
+      "download": null,
+      "patchFormat": null,
+      "base": {
+        "title": "Pokémon FireRed (U) v1.0",
+        "gameCode": "BPRE",
+        "crc32": "DD88761C",
+        "size": 16777216
+      },
+      "accent": "#A8D9F0",
+      "featured": false,
+      "bundled": false
+    },
+    {
+      "id": "pokemon-ash-gray",
+      "kind": "patch",
+      "title": "Pokémon Ash Gray",
+      "author": "metapod23",
+      "version": "4.5",
+      "description": "Play through the Pokémon anime: follow Ash's Kanto and Orange Islands journey episode by episode with his exact team and decisions.",
+      "tags": [
+        "anime",
+        "story",
+        "classic"
+      ],
+      "status": "beta",
+      "license": null,
+      "homepage": "https://www.pokecommunity.com/threads/pok%C3%A9mon-ashgray-version-beta-4-5-released.180722/",
+      "source": null,
+      "download": null,
+      "patchFormat": "ips",
+      "base": {
+        "title": "Pokémon FireRed (U) v1.0",
+        "gameCode": "BPRE",
+        "crc32": "DD88761C",
+        "size": 16777216
+      },
+      "accent": "#D9D9D9",
+      "featured": false,
+      "bundled": false
+    },
+    {
+      "id": "firered-rocket-edition",
+      "kind": "patch",
+      "title": "Pokémon FireRed: Rocket Edition",
+      "author": "colonelsalt",
+      "version": null,
+      "description": "Play as a Team Rocket grunt during the events of FireRed: climb Kanto's criminal underworld and steal Pokémon from defeated trainers.",
+      "tags": [
+        "story",
+        "kanto",
+        "alternate-perspective"
+      ],
+      "status": "complete",
+      "license": null,
+      "homepage": "https://rocket-edition.com/",
+      "source": null,
+      "download": null,
+      "patchFormat": null,
+      "base": {
+        "title": "Pokémon FireRed (U) v1.0",
+        "gameCode": "BPRE",
+        "crc32": "DD88761C",
+        "size": 16777216
+      },
+      "accent": "#F0C9B8",
+      "featured": false,
+      "bundled": false
+    },
+    {
+      "id": "pokemon-dark-rising",
+      "kind": "patch",
+      "title": "Pokémon Dark Rising",
+      "author": "DarkRisingGirl",
+      "version": null,
+      "description": "A story-driven FireRed epic across the Core Region featuring Pokémon from five generations and a famously steep difficulty curve.",
+      "tags": [
+        "difficulty",
+        "story",
+        "classic"
+      ],
+      "status": "complete",
+      "license": null,
+      "homepage": "https://www.pokecommunity.com/threads/pokemon-dark-rising.279049/",
+      "source": null,
+      "download": null,
+      "patchFormat": null,
+      "base": {
+        "title": "Pokémon FireRed (U) v1.0",
+        "gameCode": "BPRE",
+        "crc32": "DD88761C",
+        "size": 16777216
+      },
+      "accent": "#C9C9D9",
+      "featured": false,
+      "bundled": false
+    },
+    {
+      "id": "pokemon-emerald-kaizo",
+      "kind": "patch",
+      "title": "Pokémon Emerald Kaizo",
+      "author": "SinisterHoodedFigure",
+      "version": null,
+      "description": "A notoriously brutal Emerald difficulty hack with itemless boss battles, six-Pokémon gym teams and all 386 Pokémon obtainable.",
+      "tags": [
+        "difficulty",
+        "kaizo",
+        "nuzlocke"
+      ],
+      "status": "complete",
+      "license": null,
+      "homepage": "https://www.pokecommunity.com/threads/pokemon-emerald-kaizo.395830/",
+      "source": null,
+      "download": null,
+      "patchFormat": null,
+      "base": {
+        "title": "Pokémon Emerald (U)",
+        "gameCode": "BPEE",
+        "crc32": "1F1C08FB",
+        "size": 16777216
+      },
+      "accent": "#F5C9A8",
+      "featured": false,
+      "bundled": false
+    },
+    {
+      "id": "theta-emerald-ex",
+      "kind": "patch",
+      "title": "Pokémon Theta Emerald EX",
+      "author": "LCCoolJ95",
+      "version": null,
+      "description": "A mega-expansion of Emerald with 721 Pokémon, Mega Evolutions, the Fairy type and the physical/special split. No longer updated.",
+      "tags": [
+        "enhancement",
+        "expansion",
+        "classic"
+      ],
+      "status": "archived",
+      "license": null,
+      "homepage": "https://www.pokecommunity.com/threads/pok%C3%A9mon-theta-emerald-ex.386240/",
+      "source": null,
+      "download": null,
+      "patchFormat": null,
+      "base": {
+        "title": "Pokémon Emerald (U)",
+        "gameCode": "BPEE",
+        "crc32": "1F1C08FB",
+        "size": 16777216
+      },
+      "accent": "#B8F0A8",
+      "featured": false,
+      "bundled": false
+    }
+  ]
+}
