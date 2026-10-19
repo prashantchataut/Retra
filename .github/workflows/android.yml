@@ -54,7 +54,33 @@ jobs:
           sdkmanager "platforms;android-37.0" "build-tools;37.0.0" "ndk;28.2.13676358" "cmake;3.22.1"
       - name: Unit tests
         run: ./gradlew --stacktrace :patcher:test :app:testDebugUnitTest
+      - name: Prepare optional release signing
+        env:
+          KEYSTORE_B64: ${{ secrets.RETRA_SIGNING_KEYSTORE_B64 }}
+          STORE_PASSWORD: ${{ secrets.RETRA_SIGNING_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.RETRA_SIGNING_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.RETRA_SIGNING_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "No release-signing secrets supplied; the release APK will use the debug key."
+            exit 0
+          fi
+          for v in KEYSTORE_B64 STORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            [ -n "$(eval echo \"\$$v\")" ] || {
+              echo "::error::Release signing is partially configured. Supply all four RETRA_SIGNING_* secrets or none."
+              exit 1
+            }
+          done
+          KEYSTORE="$RUNNER_TEMP/retra-release.jks"
+          printf '%s' "$KEYSTORE_B64" | base64 -d > "$KEYSTORE"
+          test -s "$KEYSTORE" || { echo "::error::Decoded release keystore is empty."; exit 1; }
+          echo "RETRA_RELEASE_KEYSTORE_PATH=$KEYSTORE" >> "$GITHUB_ENV"
       - name: Assemble APKs
+        env:
+          RETRA_SIGNING_STORE_FILE: ${{ env.RETRA_RELEASE_KEYSTORE_PATH }}
+          RETRA_SIGNING_STORE_PASSWORD: ${{ secrets.RETRA_SIGNING_STORE_PASSWORD }}
+          RETRA_SIGNING_KEY_ALIAS: ${{ secrets.RETRA_SIGNING_KEY_ALIAS }}
+          RETRA_SIGNING_KEY_PASSWORD: ${{ secrets.RETRA_SIGNING_KEY_PASSWORD }}
         run: ./gradlew --stacktrace :app:assembleDebug :app:assembleRelease
       - name: Collect APKs
         run: |
