@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Monochrome (themed icon) layer: Mochi's silhouette. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#000000"
+        android:pathData="M54,37C50,29 45,24.5 38.5,22.5C40.5,31 45,35.5 54,37Z" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M54,37C58,29 63,24.5 69.5,22.5C67.5,31 63,35.5 54,37Z" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M52.6,38h2.8v-7h-2.8z" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M54,58m-23,0a23,21 0 1,0 46,0a23,21 0 1,0 -46,0" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#000000"
+        android:strokeWidth="1.6"
+        android:pathData="M50.5,63.5C52.5,66 55.5,66 57.5,63.5" />
+</vector>
