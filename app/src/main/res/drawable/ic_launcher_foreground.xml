@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Launcher foreground: Mochi, the rice-cake mascot. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- sprout -->
+    <path
+        android:fillColor="#3D8A58"
+        android:pathData="M54,37C50,29 45,24.5 38.5,22.5C40.5,31 45,35.5 54,37Z" />
+    <path
+        android:fillColor="#6FCF7A"
+        android:pathData="M54,37C58,29 63,24.5 69.5,22.5C67.5,31 63,35.5 54,37Z" />
+    <path
+        android:fillColor="#3D8A58"
+        android:pathData="M52.6,38h2.8v-7h-2.8z" />
+    <!-- body -->
+    <path
+        android:fillColor="#F9B3C9"
+        android:strokeColor="#5A2A4E"
+        android:strokeWidth="1.6"
+        android:pathData="M54,58m-23,0a23,21 0 1,0 46,0a23,21 0 1,0 -46,0" />
+    <!-- sheen -->
+    <path
+        android:fillColor="#66FFD6E2"
+        android:pathData="M44,48C40,50 37.5,54 37,58C41,54 44,52 49,51C48,49.5 46,48.4 44,48Z" />
+    <!-- blush -->
+    <path
+        android:fillColor="#FF7B9C"
+        android:pathData="M37,62m-4.2,0a4.2,2.7 0 1,0 8.4,0a4.2,2.7 0 1,0 -8.4,0" />
+    <path
+        android:fillColor="#FF7B9C"
+        android:pathData="M71,62m-4.2,0a4.2,2.7 0 1,0 8.4,0a4.2,2.7 0 1,0 -8.4,0" />
+    <!-- eyes -->
+    <path
+        android:fillColor="#5A2A4E"
+        android:pathData="M46.5,55m-2.6,0a2.6,2.6 0 1,0 5.2,0a2.6,2.6 0 1,0 -5.2,0" />
+    <path
+        android:fillColor="#5A2A4E"
+        android:pathData="M61.5,55m-2.6,0a2.6,2.6 0 1,0 5.2,0a2.6,2.6 0 1,0 -5.2,0" />
+    <!-- smile -->
+    <path
+        android:strokeColor="#5A2A4E"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round"
+        android:pathData="M50.5,63.5C52.5,66 55.5,66 57.5,63.5" />
+</vector>

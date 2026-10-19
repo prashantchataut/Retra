@@ -1,0 +1,13 @@
+memory 1552
+io-read 130
+timing 1392
+timer-count-up 355
+timer-irq 44
+shifter 140
+carry 93
+multiply-long 52
+bios-math 615
+dma 1244
+sio-rw 25
+sio-timing 0
+misc-edge 3
