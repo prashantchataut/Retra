@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
@@ -48,6 +49,7 @@ fun Mochi(
     mood: MochiMood = MochiMood.HAPPY,
     size: Dp = 96.dp,
     description: String? = null,
+    glossy: Boolean = false,
 ) {
     val reduce = Retra.reduceMotion
     val motion = if (reduce) null else rememberMochiMotion(mood)
@@ -61,7 +63,7 @@ fun Mochi(
         val hop = motion?.hop?.value ?: 0f
         val blink = motion?.blink?.value ?: 0f
         scale(this.size.width / 100f, this.size.height / 100f, pivot = Offset.Zero) {
-            drawMochi(mood, body, squish, hop, blink)
+            drawMochi(mood, body, squish, hop, blink, glossy)
         }
     }
 }
@@ -121,7 +123,11 @@ private fun mochiBodyPath(): Path {
     return path
 }
 
-private fun DrawScope.drawMochi(mood: MochiMood, body: Path, squish: Float, hop: Float, blink: Float) {
+/**
+ * [glossy] adds form shading, bounce light and a softer outline: the "clay" look used by the logo
+ * tile and the launcher icon (tools/brand/make_launcher_icon.py mirrors it).
+ */
+private fun DrawScope.drawMochi(mood: MochiMood, body: Path, squish: Float, hop: Float, blink: Float, glossy: Boolean) {
     // Hop: parabola up, squash on landing.
     val hopY = if (hop > 0f) -16f * (4f * hop * (1f - hop)) else 0f
     val landing = if (hop > 0f) (1f - (4f * hop * (1f - hop))) else 0f
@@ -157,7 +163,22 @@ private fun DrawScope.drawMochi(mood: MochiMood, body: Path, squish: Float, hop:
                 ),
                 topLeft = Offset(24f, 56f), size = Size(52f, 34f),
             )
-            drawPath(body, MochiPalette.outline, style = Stroke(2.6f))
+            if (glossy) {
+                clipPath(body) {
+                    drawRect(
+                        Brush.radialGradient(
+                            0f to Color.Transparent, 0.62f to Color.Transparent, 1f to Color(0xFFC95A80).copy(alpha = 0.55f),
+                            center = Offset(41f, 50f), radius = 52f,
+                        ),
+                    )
+                    drawRect(Brush.verticalGradient(0f to Color.Transparent, 1f to MochiPalette.cream.copy(alpha = 0.45f), startY = 76f, endY = 90f))
+                    drawCircle(
+                        Brush.radialGradient(listOf(Color.White.copy(alpha = 0.7f), Color.Transparent), center = Offset(35f, 41f), radius = 26f),
+                        radius = 26f, center = Offset(35f, 41f),
+                    )
+                }
+            }
+            drawPath(body, if (glossy) Color(0xFF6E2F57) else MochiPalette.outline, style = Stroke(if (glossy) 2.3f else 2.6f))
             // Glossy highlight.
             rotate(-24f, pivot = Offset(32f, 42f)) {
                 drawOval(Color.White.copy(alpha = 0.85f), topLeft = Offset(24f, 38.5f), size = Size(15f, 7f))
