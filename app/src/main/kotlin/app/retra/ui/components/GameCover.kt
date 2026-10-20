@@ -49,6 +49,8 @@ data class CoverModel(
     val fileStamp: Long = 0,
     /** Optional ARGB pastel (catalog accent) used instead of the seeded palette. */
     val accent: Int? = null,
+    /** Box art (a painted, roughly square image): shown whole over a soft wash, smooth-filtered. */
+    val boxArt: Boolean = false,
 )
 
 /** Small decode cache shared by all covers. */
@@ -88,7 +90,11 @@ fun GameCover(model: CoverModel, modifier: Modifier = Modifier, showTitle: Boole
     }
     Box(modifier) {
         val img = image
-        if (img != null) {
+        if (img != null && model.boxArt) {
+            Image(img, contentDescription = null, contentScale = ContentScale.Crop, alpha = 0.35f, filterQuality = FilterQuality.Low, modifier = Modifier.fillMaxSize())
+            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.18f)))
+            Image(img, contentDescription = null, contentScale = ContentScale.Fit, filterQuality = FilterQuality.Medium, modifier = Modifier.fillMaxSize().padding(6.dp))
+        } else if (img != null) {
             Image(
                 img, contentDescription = null, contentScale = ContentScale.Crop,
                 filterQuality = FilterQuality.None, modifier = Modifier.fillMaxSize(),
@@ -100,12 +106,12 @@ fun GameCover(model: CoverModel, modifier: Modifier = Modifier, showTitle: Boole
 }
 
 private val coverPalettes = listOf(
-    Triple(Color(0xFFFFD6E2), Color(0xFFFFB8CE), Color(0xFF7A2E4C)),
-    Triple(Color(0xFFD7E8FF), Color(0xFFB4D2FF), Color(0xFF29467A)),
-    Triple(Color(0xFFDDF5D3), Color(0xFFBCE8AE), Color(0xFF2C5A2E)),
-    Triple(Color(0xFFFFE9C7), Color(0xFFFFD49A), Color(0xFF6E4512)),
-    Triple(Color(0xFFE8DEFF), Color(0xFFD0BEFF), Color(0xFF4A3480)),
-    Triple(Color(0xFFD3F3EF), Color(0xFFAEE6DE), Color(0xFF1F5A54)),
+    Triple(Color(0xFFFFDCE5), Color(0xFFFFC4D4), Color(0xFF7A2E4C)),
+    Triple(Color(0xFFD6EEF7), Color(0xFFB9E0F0), Color(0xFF1D4A5E)),
+    Triple(Color(0xFFD5F2E3), Color(0xFFB5E6CC), Color(0xFF1F5139)),
+    Triple(Color(0xFFFFEBCB), Color(0xFFFFD9A3), Color(0xFF6E4512)),
+    Triple(Color(0xFFE4EFD4), Color(0xFFCFE2B6), Color(0xFF39502A)),
+    Triple(Color(0xFFFFE2D4), Color(0xFFFFCBB3), Color(0xFF6B3420)),
 )
 
 /** Deterministic cute cover: pastel pattern (stripes / dots / waves) + title + game code. */
@@ -114,7 +120,7 @@ fun GeneratedCover(model: CoverModel, modifier: Modifier = Modifier, showTitle: 
     val seed = model.seed and 0x7FFFFFFF
     val (bg, fg, ink) = model.accent?.let { a ->
         val base = Color(a)
-        Triple(base, lerp(base, Color(0xFF7A4A60), 0.10f), lerp(base, Color(0xFF2B2130), 0.82f))
+        Triple(base, lerp(base, Color(0xFF2E5A4C), 0.10f), lerp(base, Color(0xFF14231E), 0.82f))
     } ?: coverPalettes[(seed % coverPalettes.size).toInt()]
     val pattern = ((seed / 7) % 3).toInt()
     BoxWithConstraints(modifier.background(bg)) {
