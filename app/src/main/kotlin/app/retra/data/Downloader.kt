@@ -33,6 +33,21 @@ class Downloader(private val tempDir: File, private val io: CoroutineDispatcher 
         }
     }
 
+    /** Small unverified GET (cover art); throws on non-2xx answers or oversized bodies. */
+    suspend fun fetchBytes(url: String, maxBytes: Int = 4 * 1024 * 1024): ByteArray = withContext(io) {
+        val conn = open(url)
+        try {
+            if (conn.responseCode !in 200..299) throw DownloadException("Server answered ${conn.responseCode}")
+            conn.inputStream.use { input ->
+                val bytes = input.readNBytesCompat(maxBytes + 1)
+                if (bytes.size > maxBytes) throw DownloadException("Response too large")
+                bytes
+            }
+        } finally {
+            conn.disconnect()
+        }
+    }
+
     /**
      * Downloads [download] and returns the verified payload bytes (the extracted `archiveEntry`
      * for zips). [onProgress] receives 0..1.
