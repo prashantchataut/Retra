@@ -112,7 +112,9 @@ class PlayerCallbacks(
     val onShare: (String) -> Unit = {},
     val onReset: () -> Unit = {},
     val onExit: () -> Unit = {},
+    val onExitWithoutSaving: () -> Unit = {},
     val onCheats: (List<Cheat>) -> Unit = {},
+    val onImportCheats: (() -> Unit)? = null,
     val onSettings: ((Settings) -> Settings) -> Unit = {},
 )
 
@@ -155,9 +157,12 @@ fun PlayerScreen(container: AppContainer, gameId: String, slot: Int, origin: Str
     val gamepad = rememberGamepadConnected()
     PhysicalInput(vm)
 
-    val exit: () -> Unit = {
+    val pickCheats = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) vm.importCheats(uri)
+    }
+    val exit: (Boolean) -> Unit = { save ->
         scope.launch {
-            vm.finish()
+            vm.finish(saveState = save)
             actions.back()
         }
     }
@@ -186,8 +191,10 @@ fun PlayerScreen(container: AppContainer, gameId: String, slot: Int, origin: Str
                 context.startActivity(Intent.createChooser(send, "Share screenshot"))
             },
             onReset = { vm.reset() },
-            onExit = exit,
+            onExit = { exit(true) },
+            onExitWithoutSaving = { exit(false) },
             onCheats = { vm.setCheats(it) },
+            onImportCheats = { pickCheats.launch(arrayOf("*/*")) },
             onSettings = { t -> container.settings.update(t) },
         ),
         screen = { mod ->
@@ -309,7 +316,7 @@ fun PlayerContent(
                     Column(Modifier.padding(Space.l), horizontalAlignment = Alignment.CenterHorizontally) {
                         Mochi(mood = MochiMood.LOADING, size = 72.dp)
                         Spacer(Modifier.height(Space.xs))
-                        Text("Saving your spot…", style = RetraType.bodyStrong, color = Retra.colors.ink)
+                        Text(if (state.savingOnExit) "Saving your spot…" else "Leaving the game…", style = RetraType.bodyStrong, color = Retra.colors.ink)
                     }
                 }
             }
