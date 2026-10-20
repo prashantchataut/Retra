@@ -30,6 +30,7 @@ import androidx.compose.material.icons.rounded.Opacity
 import androidx.compose.material.icons.rounded.OpenInFull
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Restore
+import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Unarchive
 import androidx.compose.material.icons.rounded.Vibration
@@ -144,7 +145,7 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
 
     fun licences(): List<LicenceItem> {
         val base = listOf(
-            LicenceItem("Fredoka", "Display typeface by the Fredoka Project Authors", "SIL Open Font License 1.1", asset = "licenses/OFL-Fredoka.txt"),
+            LicenceItem("Fraunces", "Display typeface by the Fraunces Project Authors", "SIL Open Font License 1.1", asset = "licenses/OFL-Fraunces.txt"),
             LicenceItem("Nunito", "Body typeface by the Nunito Project Authors", "SIL Open Font License 1.1", asset = "licenses/OFL-Nunito.txt"),
             LicenceItem("Retra engine", "Original C++ GBA core and replacement BIOS written for Retra. No code from other emulators; behaviour implemented from public documentation (GBATEK, Tonc).", "Apache-2.0"),
             LicenceItem("Mochi Hop", "Original game, art and music made for Retra", "Apache-2.0"),
@@ -255,6 +256,11 @@ fun SettingsContent(
                     SwitchRow("Sound while fast-forwarding", settings.fastForwardAudio, { v -> onUpdate { it.copy(fastForwardAudio = v) } }, icon = Icons.Rounded.FastForward)
                     Divider()
                     SwitchRow("Rewind", settings.rewindEnabled, { v -> onUpdate { it.copy(rewindEnabled = v) } }, subtitle = "Hold the rewind button to go back up to 10 seconds", icon = Icons.Rounded.FastRewind)
+                    Divider()
+                    SwitchRow(
+                        "Save a Continue point on exit", settings.autoSaveOnExit, { v -> onUpdate { it.copy(autoSaveOnExit = v) } },
+                        subtitle = "Off: leaving a game skips the snapshot. In-game saves are always kept.", icon = Icons.Rounded.Save,
+                    )
                 }
             }
             item("clock") {
