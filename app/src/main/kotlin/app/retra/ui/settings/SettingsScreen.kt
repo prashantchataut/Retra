@@ -152,6 +152,10 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
             LicenceItem("Mochi Hop", "Original game, art and music made for Retra", "Apache-2.0"),
             LicenceItem("AndroidX, Jetpack Compose, Kotlin", "Google and JetBrains", "Apache-2.0"),
             LicenceItem("Haze", "Backdrop blur and glass by Chris Banes", "Apache-2.0", url = "https://github.com/chrisbanes/haze"),
+            LicenceItem(
+                "libretro-database", "Game index and cheat books, converted for Retra (libretro team)", "CC BY-SA 4.0",
+                asset = "licenses/CC-BY-SA-4.0-libretro-database.txt",
+            ),
         )
         val homebrew = container.catalog.current?.entries.orEmpty().filter { it.isRom && it.license != null && it.id != "mochi-hop" }
             .map { LicenceItem(it.title, "Homebrew by ${it.author}", it.license!!, url = it.source ?: it.homepage) }
