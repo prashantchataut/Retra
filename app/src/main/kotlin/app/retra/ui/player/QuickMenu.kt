@@ -1,5 +1,7 @@
 package app.retra.ui.player
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +24,7 @@ import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.RestartAlt
+import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -52,16 +55,44 @@ import app.retra.ui.theme.Retra
 import app.retra.ui.theme.RetraType
 import app.retra.ui.theme.Space
 
-enum class MenuPage { MAIN, CHEATS }
+/** [EXIT] is the main page with the leave-the-game choice already open. */
+enum class MenuPage { MAIN, CHEATS, EXIT }
+
+/** Leaving the game: keep a Continue point, or just go. In-game (battery) saves are kept either way. */
+@Composable
+private fun ExitChoice(onSaveAndExit: () -> Unit, onExitWithoutSaving: () -> Unit, onCancel: () -> Unit) {
+    val c = Retra.colors
+    Column(
+        Modifier
+            .padding(top = Space.s)
+            .fillMaxWidth()
+            .clip(Radius.mediumShape)
+            .background(c.inkFaint)
+            .padding(Space.m),
+    ) {
+        Text("Leave the game?", style = RetraType.headline, color = c.ink)
+        Spacer(Modifier.height(Space.xxs))
+        Text(
+            "Progress you saved inside the game is always kept. Save & exit also keeps a Continue point right here.",
+            style = RetraType.label, color = c.inkMuted,
+        )
+        Spacer(Modifier.height(Space.s))
+        RetraButton("Save & exit", onSaveAndExit, Modifier.fillMaxWidth(), icon = Icons.Rounded.Save)
+        Spacer(Modifier.height(Space.xs))
+        RetraButton("Exit without saving", onExitWithoutSaving, Modifier.fillMaxWidth(), style = ButtonStyle.SECONDARY)
+        RetraButton("Keep playing", onCancel, Modifier.fillMaxWidth(), style = ButtonStyle.TERTIARY, compact = true)
+    }
+}
 
 /** The in-game glass menu. Opening it pauses the game. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun QuickMenu(state: PlayerUiState, settings: Settings, cb: PlayerCallbacks, initialPage: MenuPage = MenuPage.MAIN) {
     val c = Retra.colors
-    var page by remember(state.menuOpen) { mutableStateOf(initialPage) }
+    var page by remember(state.menuOpen) { mutableStateOf(if (initialPage == MenuPage.EXIT) MenuPage.MAIN else initialPage) }
     var saveMode by remember(state.menuOpen) { mutableStateOf(true) }
     var confirmReset by remember(state.menuOpen) { mutableStateOf(false) }
+    var confirmExit by remember(state.menuOpen) { mutableStateOf(initialPage == MenuPage.EXIT) }
     GlassSheet(
         visible = state.menuOpen,
         onDismiss = { if (page != MenuPage.MAIN) page = MenuPage.MAIN else cb.onMenu(false) },
@@ -73,12 +104,15 @@ fun QuickMenu(state: PlayerUiState, settings: Settings, cb: PlayerCallbacks, ini
                 Text("Cheats", style = RetraType.title, color = c.ink)
             }
             Spacer(Modifier.height(Space.s))
-            CheatsEditor(state.cheats, cb.onCheats)
+            CheatsEditor(state.cheats, cb.onCheats, book = state.cheatBook, onImportFile = cb.onImportCheats)
             return@GlassSheet
         }
         Row(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
             RetraButton("Resume", { cb.onMenu(false) }, Modifier.weight(1f), icon = Icons.Rounded.PlayArrow)
-            RetraButton("Save & exit", cb.onExit, Modifier.weight(1f), icon = Icons.AutoMirrored.Rounded.ExitToApp, style = ButtonStyle.SECONDARY)
+            RetraButton("Exit", { confirmExit = !confirmExit }, Modifier.weight(1f), icon = Icons.AutoMirrored.Rounded.ExitToApp, style = ButtonStyle.SECONDARY)
+        }
+        AnimatedVisibility(confirmExit) {
+            ExitChoice(onSaveAndExit = cb.onExit, onExitWithoutSaving = cb.onExitWithoutSaving, onCancel = { confirmExit = false })
         }
         Spacer(Modifier.height(Space.l))
         SectionHeader("Save states")
