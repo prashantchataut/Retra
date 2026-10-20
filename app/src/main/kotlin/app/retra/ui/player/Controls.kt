@@ -44,7 +44,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.retra.engine.GbaKey
-import app.retra.ui.theme.Fredoka
+import app.retra.ui.theme.Nunito
+import androidx.compose.ui.text.font.FontWeight
 import app.retra.ui.theme.Retra
 import app.retra.ui.theme.RetraType
 import kotlin.math.atan2
@@ -231,7 +232,7 @@ private fun RoundButton(label: String, key: Int, reg: ControlRegistry, pressed: 
         contentAlignment = Alignment.Center,
     ) {
         Canvas(Modifier.fillMaxSize()) { glassCircle(if (down) c.accent else fill, rim, c.shadow) }
-        Text(label, style = RetraType.title.copy(fontFamily = Fredoka), color = if (down) c.onAccent else ink)
+        Text(label, style = RetraType.title.copy(fontFamily = Nunito, fontWeight = FontWeight.ExtraBold), color = if (down) c.onAccent else ink)
     }
 }
 
