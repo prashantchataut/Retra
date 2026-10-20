@@ -24,9 +24,15 @@ data class Settings(
     val fastForwardSpeed: Int = 2,
     val fastForwardAudio: Boolean = false,
     val rewindEnabled: Boolean = true,
+    /** Leaving a game writes a Continue snapshot (auto state). In-game saves are kept either way. */
+    val autoSaveOnExit: Boolean = true,
+    /** Fetch box art for imported cartridges from libretro-thumbnails. */
+    val downloadCoverArt: Boolean = true,
     val rtcOffsetSeconds: Long = 0,
     val onboardingDone: Boolean = false,
     val bundledInstalled: Boolean = false,
+    /** Catalog ids of Retra Originals already added once (a deleted one isn't re-added). */
+    val installedOriginals: List<String> = emptyList(),
 )
 
 @Serializable
@@ -70,6 +76,8 @@ data class Game(
     val hasRtc: Boolean? = null,
     /** Asset path of bundled cover art, e.g. "games/mochi_hop_cover.png". */
     val coverAsset: String? = null,
+    /** When box art was last saved for this game (boxart/<CRC32>.png); bumps the cover. */
+    val artAt: Long? = null,
 )
 
 @Serializable
