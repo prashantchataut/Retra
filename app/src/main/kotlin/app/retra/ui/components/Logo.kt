@@ -24,7 +24,7 @@ import app.retra.ui.theme.LightColors
 import app.retra.ui.theme.Retra
 import app.retra.ui.theme.RetraType
 
-/** The app mark: Mochi on a glossy liquid-glass tile (same art as the launcher icon). */
+/** The app mark: glossy Mochi on a mint glass tile (same art as the launcher icon). */
 @Composable
 fun LogoTile(modifier: Modifier = Modifier, size: Dp = 72.dp, mood: MochiMood = MochiMood.HAPPY) {
     val shape = RoundedCornerShape(size * 0.3f)
@@ -33,11 +33,12 @@ fun LogoTile(modifier: Modifier = Modifier, size: Dp = 72.dp, mood: MochiMood = 
             .size(size)
             .shadow(size * 0.12f, shape, ambientColor = Retra.colors.shadow, spotColor = Retra.colors.shadow)
             .clip(shape)
-            .background(Brush.linearGradient(listOf(Color(0xFFFFE3EC), Color(0xFFFFC6D8), Color(0xFFE6D9FF))))
+            .background(Brush.linearGradient(listOf(Color(0xFFEAFBF4), Color(0xFFC9EFDF), Color(0xFFBFE2F2))))
+            .background(Brush.radialGradient(listOf(Color(0xFFFFE3EC).copy(alpha = 0.6f), Color.Transparent)))
             .glassHighlights(shape, LightColors, rimWidth = (size.value / 72f).coerceAtLeast(1f).dp),
         contentAlignment = Alignment.Center,
     ) {
-        Mochi(mood = mood, size = size * 0.82f, modifier = Modifier.offset(y = size * 0.03f))
+        Mochi(mood = mood, size = size * 0.84f, modifier = Modifier.offset(y = size * 0.03f), glossy = true)
     }
 }
 
