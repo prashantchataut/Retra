@@ -52,6 +52,8 @@ data class PlayerUiState(
     val cheats: List<Cheat> = emptyList(),
     val lastCapture: String? = null,
     val exiting: Boolean = false,
+    /** True while exiting writes the Continue snapshot (false = leaving without one). */
+    val savingOnExit: Boolean = true,
 )
 
 /** Converts a 240x160 ARGB frame to PNG (optionally nearest-neighbour upscaled). */
@@ -301,21 +303,27 @@ class PlayerViewModel(
     fun shareUri(context: Context, path: String): Uri =
         FileProvider.getUriForFile(context, "${context.packageName}.files", java.io.File(path))
 
-    /** Saves the auto state + last-session screenshot and stops the session. */
-    suspend fun finish() {
+    /**
+     * Stops the session. With [saveState] the auto ("Continue") state and last-session screenshot are
+     * written first; without it the game is left as-is. The game's own battery save is always flushed,
+     * because that's what the game itself saved.
+     */
+    suspend fun finish(saveState: Boolean = container.settings.current.autoSaveOnExit) {
         if (finished) return
         finished = true
-        _state.update { it.copy(exiting = true) }
+        _state.update { it.copy(exiting = true, savingOnExit = saveState) }
         val s = session ?: return
         playtime.pause()
         if (_state.value.status == PlayerStatus.Running && s.isRunning) {
             runCatching {
                 s.isPaused = true
-                val (data, frame) = s.run { it.saveState() to s.snapshotFrame() }
-                withContext(Dispatchers.IO) {
-                    val png = framePng(frame)
-                    saves.writeState(gameId, SaveRepository.AUTO_SLOT, data, png)
-                    saves.writeLastScreen(gameId, framePng(frame, 2))
+                if (saveState) {
+                    val (data, frame) = s.run { it.saveState() to s.snapshotFrame() }
+                    withContext(Dispatchers.IO) {
+                        val png = framePng(frame)
+                        saves.writeState(gameId, SaveRepository.AUTO_SLOT, data, png)
+                        saves.writeLastScreen(gameId, framePng(frame, 2))
+                    }
                 }
                 s.flushBatterySave()
             }
