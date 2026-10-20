@@ -33,6 +33,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
@@ -83,22 +84,18 @@ fun Dock(
             Canvas(Modifier.fillMaxSize()) {
                 val l = left.value * itemWidthPx
                 val r = right.value * itemWidthPx
-                val inset = 4.dp.toPx()
-                val h = size.height
+                val inset = 3.dp.toPx()
                 val stretch = ((r - l) / itemWidthPx - 1f).coerceIn(0f, 2f)
                 // Squeeze vertically a little while stretched, like a drop of liquid.
                 val vInset = stretch * 4.dp.toPx()
+                val h = size.height - vInset * 2
+                // One solid capsule; the sheen lives inside its gradient (a separate highlight bar
+                // used to poke out of the rounded ends as a stray white line).
                 drawRoundRect(
-                    brush = Brush.verticalGradient(listOf(c.accentSoft, c.accentSoft.copy(alpha = 0.85f))),
+                    brush = Brush.verticalGradient(listOf(lerp(c.accent, Color.White, if (c.isDark) 0.22f else 0.12f), c.accent), startY = vInset, endY = vInset + h),
                     topLeft = Offset(l + inset, vInset),
-                    size = Size((r - l - inset * 2).coerceAtLeast(0f), h - vInset * 2),
-                    cornerRadius = CornerRadius((h - vInset * 2) / 2),
-                )
-                drawRoundRect(
-                    color = Color.White.copy(alpha = if (c.isDark) 0.10f else 0.55f),
-                    topLeft = Offset(l + inset + 6.dp.toPx(), vInset + 3.dp.toPx()),
-                    size = Size((r - l - inset * 2 - 12.dp.toPx()).coerceAtLeast(0f), 3.dp.toPx()),
-                    cornerRadius = CornerRadius(2.dp.toPx()),
+                    size = Size((r - l - inset * 2).coerceAtLeast(0f), h),
+                    cornerRadius = CornerRadius(minOf(h / 2, 22.dp.toPx())),
                 )
             }
             Row(Modifier.fillMaxSize().selectableGroup(), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -129,10 +126,10 @@ private fun DockButton(item: DockItem, selected: Boolean, onClick: () -> Unit, m
             Icon(
                 if (selected) item.selectedIcon else item.icon,
                 contentDescription = null,
-                tint = if (selected) c.onAccentSoft else c.inkMuted,
+                tint = if (selected) c.onAccent else c.inkMuted,
                 modifier = Modifier.size(24.dp),
             )
-            Text(item.label, style = RetraType.caption, color = if (selected) c.onAccentSoft else c.inkMuted, maxLines = 1)
+            Text(item.label, style = RetraType.caption, color = if (selected) c.onAccent else c.inkMuted, maxLines = 1)
         }
     }
 }
