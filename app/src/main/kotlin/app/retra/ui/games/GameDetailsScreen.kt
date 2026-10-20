@@ -88,6 +88,7 @@ data class DetailsState(
     val game: GameUi? = null,
     val slots: List<StateSlot> = emptyList(),
     val cheats: List<Cheat> = emptyList(),
+    val cheatBook: CheatBook? = null,
     val saveBytes: Long? = null,
     val backups: Int = 0,
     val missing: Boolean = false,
@@ -101,6 +102,7 @@ class DetailsViewModel(private val container: AppContainer, private val id: Stri
             game = g.toUi(container.saves),
             slots = container.saves.slots(id),
             cheats = container.cheats.cheats(id),
+            cheatBook = container.cheatBook(g),
             saveBytes = container.saves.savFile(id).takeIf { it.exists() }?.length(),
             backups = container.saves.backups(id).size,
         )
@@ -111,6 +113,14 @@ class DetailsViewModel(private val container: AppContainer, private val id: Stri
     fun setCheats(list: List<Cheat>) = viewModelScope.launch {
         withContext(Dispatchers.IO) { container.cheats.save(id, list) }
         reload()
+    }
+    fun importCheats(uri: android.net.Uri) = viewModelScope.launch {
+        val parsed = runCatching { container.readCheatFile(uri) }.getOrElse {
+            container.messages.show(it.message ?: "Couldn't read that file.", app.retra.data.MessageTone.ERROR)
+            return@launch
+        }
+        val current = withContext(Dispatchers.IO) { container.cheats.cheats(id) }
+        setCheats(container.mergeImported(current, parsed))
     }
     fun deleteSlot(slot: Int) = viewModelScope.launch {
         withContext(Dispatchers.IO) { container.saves.deleteState(id, slot) }
@@ -128,7 +138,13 @@ fun GameDetailsScreen(container: AppContainer, gameId: String, origin: String) {
     val state by vm.state.collectAsStateWithLifecycle()
     // Refresh slots/screenshots when coming back from the player.
     LaunchedEffect(Unit) { vm.reload() }
-    GameDetailsContent(state, origin, onFavorite = vm::setFavorite, onCheats = vm::setCheats, onDeleteSlot = vm::deleteSlot)
+    val pickCheats = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) vm.importCheats(uri)
+    }
+    GameDetailsContent(
+        state, origin, onFavorite = vm::setFavorite, onCheats = vm::setCheats, onDeleteSlot = vm::deleteSlot,
+        onImportCheats = { pickCheats.launch(arrayOf("*/*")) },
+    )
 }
 
 @Composable
@@ -138,6 +154,7 @@ fun GameDetailsContent(
     onFavorite: (Boolean) -> Unit = {},
     onCheats: (List<Cheat>) -> Unit = {},
     onDeleteSlot: (Int) -> Unit = {},
+    onImportCheats: (() -> Unit)? = null,
 ) {
     val c = Retra.colors
     val actions = LocalAppActions.current
@@ -225,7 +242,7 @@ fun GameDetailsContent(
             item("cheats") {
                 SectionHeader("Cheats", Modifier.padding(g).padding(top = Space.xl, bottom = Space.s))
                 GlassGroup(Modifier.padding(g)) {
-                    Box(Modifier.padding(vertical = Space.xs)) { CheatsEditor(state.cheats, onCheats) }
+                    Box(Modifier.padding(vertical = Space.xs)) { CheatsEditor(state.cheats, onCheats, book = state.cheatBook, onImportFile = onImportCheats) }
                 }
             }
             item("info") {
