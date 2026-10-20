@@ -57,10 +57,10 @@ class BrandTest(private val dark: Boolean) {
             Row(horizontalArrangement = Arrangement.spacedBy(20.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(RoundedCornerShape(28.dp))
                 Icon(CircleShape)
-                Box(Modifier.size(96.dp).clip(CircleShape).background(if (c.isDark) Color(0xFF2C2A3A) else Color(0xFFE6E0F2)), contentAlignment = Alignment.Center) {
+                Box(Modifier.size(96.dp).clip(CircleShape).background(if (c.isDark) Color(0xFF1B2925) else Color(0xFFDDEFE7)), contentAlignment = Alignment.Center) {
                     Image(
                         painterResource(R.drawable.ic_launcher_monochrome), "Themed icon", Modifier.size(144.dp),
-                        colorFilter = ColorFilter.tint(if (c.isDark) Color(0xFFD8CCFF) else Color(0xFF4A3A78)),
+                        colorFilter = ColorFilter.tint(if (c.isDark) Color(0xFFB9F2DA) else Color(0xFF17302A)),
                     )
                 }
             }
