@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mochi, Retra's mascot (launcher foreground, 108dp canvas, 66dp safe zone). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <path android:pathData="M34.28,82.56 a19.72,2.38 0,1 0,39.44,0a19.72,2.38 0,1 0,-39.44,0Z" android:fillColor="#245A2A4E"/>
+    <path android:pathData="M54,41.42 Q54.34,37.34 56.04,35.3" android:strokeColor="#3D8A58" android:strokeWidth="1.77" android:strokeLineCap="round"/>
+    <path android:pathData="M55.36,35.98 C56.72,27.82 64.88,25.1 71,27.14 C69.64,33.94 62.84,38.7 55.36,35.98Z" android:strokeColor="#3D8A58" android:strokeWidth="1.63" android:strokeLineJoin="round">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="57.4" android:startY="27.14" android:endX="67.6" android:endY="36.66">
+                <item android:offset="0" android:color="#B9F2A2"/>
+                <item android:offset="1" android:color="#6FCF7A"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:pathData="M56.72,35.3 Q62.84,31.9 68.28,28.16" android:strokeColor="#8C3D8A58" android:strokeWidth="0.95" android:strokeLineCap="round"/>
+    <path android:pathData="M79.84,61.14 L79.76,63.63 L79.51,65.57 L79.11,67.31 L78.53,68.93 L77.81,70.43 L76.92,71.82 L75.88,73.12 L74.7,74.31 L73.36,75.41 L71.88,76.39 L70.27,77.26 L68.5,78.03 L66.6,78.68 L64.57,79.21 L62.38,79.64 L60.01,79.94 L57.38,80.11 L54,80.18 L50.62,80.11 L47.99,79.94 L45.62,79.64 L43.43,79.21 L41.4,78.68 L39.5,78.03 L37.73,77.26 L36.12,76.39 L34.64,75.41 L33.3,74.31 L32.12,73.12 L31.08,71.82 L30.19,70.43 L29.47,68.93 L28.89,67.31 L28.49,65.57 L28.24,63.63 L28.16,61.14 L28.24,58.2 L28.49,55.92 L28.89,53.87 L29.47,51.96 L30.19,50.19 L31.08,48.55 L32.12,47.02 L33.3,45.61 L34.64,44.33 L36.12,43.16 L37.73,42.13 L39.5,41.23 L41.4,40.47 L43.43,39.83 L45.62,39.34 L47.99,38.99 L50.62,38.77 L54,38.7 L57.38,38.77 L60.01,38.99 L62.38,39.34 L64.57,39.83 L66.6,40.47 L68.5,41.23 L70.27,42.13 L71.88,43.16 L73.36,44.33 L74.7,45.61 L75.88,47.02 L76.92,48.55 L77.81,50.19 L78.53,51.96 L79.11,53.87 L79.51,55.92 L79.76,58.2Z" android:strokeColor="#5A2A4E" android:strokeWidth="1.91" android:strokeLineJoin="round">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="54" android:startY="38.7" android:endX="54" android:endY="80.18">
+                <item android:offset="0" android:color="#FFD6E2"/>
+                <item android:offset="0.45" android:color="#F9B3C9"/>
+                <item android:offset="1" android:color="#E8849F"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:pathData="M36.32,47.54 a5.1,2.38 0,1 0,10.2,0a5.1,2.38 0,1 0,-10.2,0Z" android:fillColor="#D9FFFFFF"/>
+    <path android:pathData="M34.96,65.72 a3.74,1.88 0,1 0,7.48,0a3.74,1.88 0,1 0,-7.48,0ZM65.56,65.72 a3.74,1.88 0,1 0,7.48,0a3.74,1.88 0,1 0,-7.48,0Z" android:fillColor="#73FF7B9C"/>
+    <path android:pathData="M43.39,59.78 a2.45,3.19 0,1 0,4.89,0a2.45,3.19 0,1 0,-4.89,0ZM59.71,59.78 a2.45,3.19 0,1 0,4.89,0a2.45,3.19 0,1 0,-4.89,0Z" android:fillColor="#35203F"/>
+    <path android:pathData="M46.05,58.35 a0.68,0.68 0,1 0,1.36,0a0.68,0.68 0,1 0,-1.36,0ZM62.37,58.35 a0.68,0.68 0,1 0,1.36,0a0.68,0.68 0,1 0,-1.36,0Z" android:fillColor="#FFFFFF"/>
+    <path android:pathData="M50.6,64.54 Q52.3,66.92 54,64.88 Q55.7,66.92 57.4,64.54" android:strokeColor="#B8486A" android:strokeWidth="1.57" android:strokeLineCap="round"/>
+</vector>
