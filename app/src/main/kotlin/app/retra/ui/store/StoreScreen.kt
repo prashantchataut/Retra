@@ -28,6 +28,7 @@ import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Sync
@@ -57,7 +58,6 @@ import app.retra.ui.coverModel
 import app.retra.ui.gutter
 import app.retra.ui.listPadding
 import app.retra.ui.components.ButtonStyle
-import app.retra.ui.components.Divider
 import app.retra.ui.components.GameCover
 import app.retra.ui.components.GlassIconButton
 import app.retra.ui.components.GlassSheet
@@ -90,6 +90,10 @@ fun StoreScreen(container: AppContainer, openEntryId: String?) {
         val e = pickingFor
         if (uri != null && e != null) vm.pickBase(e, uri)
     }
+    val pickPatch = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        val e = pickingFor
+        if (uri != null && e != null) vm.importPatch(e, uri)
+    }
     StoreContent(
         state = state,
         selectedId = selected,
@@ -98,9 +102,10 @@ fun StoreScreen(container: AppContainer, openEntryId: String?) {
         onRefresh = { vm.refresh() },
         handlers = EntryHandlers(
             getRom = vm::getRom,
-            downloadPatch = vm::downloadPatch,
+            install = vm::install,
             cancel = vm::cancel,
             pickBase = { e -> pickingFor = e; pickBase.launch(arrayOf("*/*")) },
+            pickPatch = { e -> pickingFor = e; pickPatch.launch(arrayOf("*/*")) },
             makeGame = { e, base, force -> vm.makeGame(e, base, force) },
             reset = vm::resetJob,
         ),
@@ -109,9 +114,10 @@ fun StoreScreen(container: AppContainer, openEntryId: String?) {
 
 class EntryHandlers(
     val getRom: (CatalogEntry) -> Unit = {},
-    val downloadPatch: (CatalogEntry) -> Unit = {},
+    val install: (CatalogEntry) -> Unit = {},
     val cancel: (String) -> Unit = {},
     val pickBase: (CatalogEntry) -> Unit = {},
+    val pickPatch: (CatalogEntry) -> Unit = {},
     val makeGame: (CatalogEntry, String, Boolean) -> Unit = { _, _, _ -> },
     val reset: (String) -> Unit = {},
 )
@@ -158,6 +164,22 @@ fun StoreContent(
                     StoreRow(e, state, Modifier.padding(g).padding(bottom = Space.s).animateItem()) { onSelect(e.id) }
                 }
             } else {
+                val ready = catalog.entries.filter { e ->
+                    e.isPatch && !state.installed.containsKey(e.id) && e.base?.crc32?.uppercase()?.let { it in state.ownedBases } == true
+                }
+                if (ready.isNotEmpty()) {
+                    item("t-ready") {
+                        SectionHeader(
+                            "Ready with your games", Modifier.padding(g).padding(top = Space.xl, bottom = Space.s),
+                            subtitle = "You already own the base ROM, so these install in one tap",
+                        )
+                    }
+                    item("s-ready") {
+                        LazyRow(contentPadding = g, horizontalArrangement = Arrangement.spacedBy(Space.s)) {
+                            items(ready, key = { "ready-" + it.id }) { e -> StoreCard(e, state, large = false) { onSelect(e.id) } }
+                        }
+                    }
+                }
                 catalog.collections.forEachIndexed { i, col ->
                     val shelf = catalog.shelf(col)
                     if (shelf.isEmpty()) return@forEachIndexed
@@ -196,7 +218,9 @@ fun StoreContent(
 
 private fun statusLabel(e: CatalogEntry, state: StoreState): String = when {
     state.installed.containsKey(e.id) -> "In your games"
+    e.isRom && e.bundled -> "Included · free"
     e.isRom -> e.download?.let { "Free · ${formatBytes(it.size)}" } ?: "Free"
+    e.base?.crc32?.uppercase()?.let { it in state.ownedBases } == true -> "One-tap install"
     e.download == null -> "Patch from creator"
     else -> "${e.formatLabel} patch · ${e.base?.gameCode}"
 }
@@ -313,7 +337,11 @@ private fun RomActions(e: CatalogEntry, state: StoreState, h: EntryHandlers) {
     }
 }
 
-/** "Make this game": patch → base ROM → apply. */
+/**
+ * One-tap install for fan games: Retra fetches the patch when the creator hosts a direct file, finds
+ * the user's own base ROM in My Games, builds the game and starts it. It only stops to ask for a file
+ * it can't get by itself (the base ROM the first time, or a patch that lives on the creator's page).
+ */
 @Composable
 private fun PatchFlow(e: CatalogEntry, state: StoreState, h: EntryHandlers) {
     val c = Retra.colors
@@ -321,114 +349,127 @@ private fun PatchFlow(e: CatalogEntry, state: StoreState, h: EntryHandlers) {
     val base = e.base ?: return
     val job = state.jobs[e.id] ?: EntryJob.Idle
     val made = (job as? EntryJob.Done)?.gameId ?: state.installed[e.id]
-
-    if (job is EntryJob.Patching || job is EntryJob.Done) {
-        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            PatchProgressRing((job as? EntryJob.Patching)?.progress ?: 1f, done = job is EntryJob.Done)
+    // Start the game when an install this sheet started finishes (not if the sheet was closed).
+    var autoPlay by remember(e.id) { mutableStateOf(false) }
+    LaunchedEffect(job) {
+        if (autoPlay && job is EntryJob.Done) {
+            autoPlay = false
+            actions.play(job.gameId, false, "store")
         }
-        Spacer(Modifier.height(Space.m))
+        if (job is EntryJob.Failed) autoPlay = false
     }
-    if (made != null && job !is EntryJob.Patching) {
-        if (job !is EntryJob.Done) Notice(Icons.Rounded.CheckCircle, "You've made this game. It's in My Games.", c.success)
+    val owned = state.ownedBases[base.crc32.uppercase()]
+    val picked = state.pickedBases[e.id]
+    val patchReady = e.id in state.patchesReady
+    val baseReady = owned != null || picked?.matches == true
+
+    if (job is EntryJob.Downloading || job is EntryJob.Patching) {
+        val downloading = job is EntryJob.Downloading
+        val progress = (job as? EntryJob.Downloading)?.progress ?: (job as EntryJob.Patching).progress
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            PatchProgressRing(progress, done = false)
+            Spacer(Modifier.height(Space.s))
+            Text(if (downloading) "Downloading the patch…" else "Building your game…", style = RetraType.bodyStrong, color = c.ink)
+            Text(
+                if (downloading) "Checked with SHA-256 when it lands." else "Your ${base.gameCode} ROM stays untouched.",
+                style = RetraType.caption, color = c.inkMuted,
+            )
+            if (downloading) RetraButton("Cancel", { autoPlay = false; h.cancel(e.id) }, style = ButtonStyle.TERTIARY, compact = true)
+        }
+        return
+    }
+    if (made != null) {
+        if (job is EntryJob.Done) {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { PatchProgressRing(1f, done = true) }
+            Spacer(Modifier.height(Space.m))
+        }
+        Notice(Icons.Rounded.CheckCircle, "Installed. It's in My Games with its own saves.", c.success)
         Spacer(Modifier.height(Space.s))
         RetraButton("Play ${e.title}", { actions.play(made, false, "store") }, Modifier.fillMaxWidth(), icon = Icons.Rounded.PlayArrow)
         return
     }
-    if (job is EntryJob.Patching) return
 
-    if (e.download == null) {
-        Notice(
-            Icons.Rounded.AutoFixHigh,
-            "${e.author} shares this patch on their own page. Download the ${e.formatLabel} file there, then open it in the Patcher with your ${base.title} ROM.",
-            c.accent,
-        )
-        Spacer(Modifier.height(Space.s))
-        RetraButton("Get patch from creator", { actions.openUrl(e.homepage) }, Modifier.fillMaxWidth(), icon = Icons.AutoMirrored.Rounded.OpenInNew)
-        Spacer(Modifier.height(Space.xs))
-        RetraButton("Open the Patcher", { actions.openPatcher(state.ownedBases[base.crc32.uppercase()]?.first) }, Modifier.fillMaxWidth(), style = ButtonStyle.SECONDARY)
-        Spacer(Modifier.height(Space.xs))
-        Text("Needs: ${base.title} · ${base.gameCode} · CRC32 ${base.crc32}", style = RetraType.caption, color = c.inkMuted)
-        return
-    }
-
-    // Step 1: the patch file.
-    val ready = e.id in state.patchesReady
-    Step(1, "Patch file", done = ready) {
-        when {
-            job is EntryJob.Downloading -> {
-                ProgressPill(job.progress)
-                Spacer(Modifier.height(Space.xs))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Downloading… ${(job.progress * 100).toInt()} %", style = RetraType.caption, color = c.inkMuted, modifier = Modifier.weight(1f))
-                    RetraButton("Cancel", { h.cancel(e.id) }, style = ButtonStyle.TERTIARY, compact = true)
-                }
-            }
-            ready -> Text("Downloaded and verified.", style = RetraType.label, color = c.success)
-            else -> RetraButton("Download patch · ${formatBytes(e.download.size)}", { h.downloadPatch(e) }, Modifier.fillMaxWidth(), icon = Icons.Rounded.CloudDownload, compact = true)
-        }
-    }
-    // Step 2: the base ROM.
-    val owned = state.ownedBases[base.crc32.uppercase()]
-    val picked = state.pickedBases[e.id]
-    Step(2, "Your ${base.gameCode} cartridge", done = owned != null || picked?.matches == true) {
-        when {
-            owned != null -> Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.CheckCircle, null, tint = c.success, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("You have it: ${owned.second}", style = RetraType.label, color = c.success)
-            }
-            picked != null && !picked.matches -> {
-                Text(
-                    "\"${picked.name}\" has CRC32 ${picked.crc32}, but this patch needs ${base.title} (CRC32 ${base.crc32}). Patching a different revision usually breaks the game.",
-                    style = RetraType.label, color = c.warning,
-                )
-                Spacer(Modifier.height(Space.xs))
-                RetraButton("Choose another file", { h.pickBase(e) }, Modifier.fillMaxWidth(), icon = Icons.Rounded.FolderOpen, style = ButtonStyle.SECONDARY, compact = true)
-            }
-            else -> {
-                Text("Needs ${base.title} (${base.gameCode}, CRC32 ${base.crc32}). Retra never downloads it for you; use your own dump.", style = RetraType.label, color = c.inkMuted)
-                Spacer(Modifier.height(Space.xs))
-                RetraButton("Choose my ROM file", { h.pickBase(e) }, Modifier.fillMaxWidth(), icon = Icons.Rounded.FolderOpen, style = ButtonStyle.SECONDARY, compact = true)
-            }
-        }
-    }
+    Requirement(
+        done = patchReady,
+        title = "${e.formatLabel} patch",
+        detail = when {
+            patchReady -> "Ready"
+            e.download != null -> "Downloads automatically · ${formatBytes(e.download.size)}"
+            else -> "Shared on ${e.author}'s page"
+        },
+    )
+    Requirement(
+        done = baseReady,
+        warn = picked != null && !picked.matches,
+        title = "Your ${base.title}",
+        detail = when {
+            owned != null -> "Found in My Games: ${owned.second}"
+            picked?.matches == true -> "Matched: ${picked.name}"
+            picked != null -> "\"${picked.name}\" is another revision (CRC32 ${picked.crc32}); this patch needs CRC32 ${base.crc32}."
+            else -> "Not in My Games yet · ${base.gameCode} · CRC32 ${base.crc32}"
+        },
+    )
     if (job is EntryJob.Failed) {
         Spacer(Modifier.height(Space.s))
         Notice(Icons.Rounded.WarningAmber, job.message, c.warning)
     }
     Spacer(Modifier.height(Space.m))
-    val baseId = owned?.first ?: picked?.gameId
-    val canMake = ready && baseId != null
-    val force = owned == null && picked != null && !picked.matches
-    RetraButton(
-        if (force) "Make it anyway" else "Make this game",
-        { if (baseId != null) h.makeGame(e, baseId, force) },
-        Modifier.fillMaxWidth(),
-        icon = Icons.Rounded.AutoFixHigh,
-        enabled = canMake,
-        style = if (force) ButtonStyle.SECONDARY else ButtonStyle.PRIMARY,
-    )
+    when {
+        !patchReady && e.download == null -> {
+            RetraButton("Get the patch from ${e.author}", { actions.openUrl(e.homepage) }, Modifier.fillMaxWidth(), icon = Icons.AutoMirrored.Rounded.OpenInNew)
+            Spacer(Modifier.height(Space.xs))
+            RetraButton("I've downloaded it · choose file", { autoPlay = true; h.pickPatch(e) }, Modifier.fillMaxWidth(), icon = Icons.Rounded.FolderOpen, style = ButtonStyle.SECONDARY)
+            Spacer(Modifier.height(Space.xs))
+            Text("Pick the ${e.formatLabel} or zip you saved. Retra builds and starts the game from there.", style = RetraType.caption, color = c.inkMuted)
+        }
+        !baseReady && picked != null -> {
+            RetraButton("Choose another file", { autoPlay = true; h.pickBase(e) }, Modifier.fillMaxWidth(), icon = Icons.Rounded.FolderOpen)
+            Spacer(Modifier.height(Space.xs))
+            RetraButton(
+                "Use it anyway", { autoPlay = true; h.makeGame(e, picked.gameId, true) }, Modifier.fillMaxWidth(),
+                style = ButtonStyle.SECONDARY, enabled = patchReady,
+            )
+        }
+        !baseReady -> {
+            RetraButton("Choose my ${base.gameCode} ROM", { autoPlay = true; h.pickBase(e) }, Modifier.fillMaxWidth(), icon = Icons.Rounded.FolderOpen)
+            Spacer(Modifier.height(Space.xs))
+            Text(
+                "Retra never downloads commercial games. Pick the ROM you dumped from your own cartridge once; every fan game built on it then installs in one tap.",
+                style = RetraType.caption, color = c.inkMuted,
+            )
+        }
+        else -> {
+            RetraButton("Install & play", { autoPlay = true; h.install(e) }, Modifier.fillMaxWidth(), icon = Icons.Rounded.PlayArrow)
+            Spacer(Modifier.height(Space.xs))
+            Text("Takes a few seconds. The game appears in My Games too.", style = RetraType.caption, color = c.inkMuted)
+        }
+    }
 }
 
 @Composable
-private fun Step(n: Int, title: String, done: Boolean, content: @Composable () -> Unit) {
+private fun Requirement(done: Boolean, title: String, detail: String, warn: Boolean = false) {
     val c = Retra.colors
-    Row(Modifier.fillMaxWidth().padding(vertical = Space.xs)) {
-        Box(
-            Modifier.size(28.dp).clip(Radius.pillShape).background(if (done) c.success else c.accentSoft),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (done) Icon(Icons.Rounded.CheckCircle, "Done", tint = if (c.isDark) c.sky else Color.White, modifier = Modifier.size(18.dp))
-            else Text("$n", style = RetraType.label, color = c.onAccentSoft)
-        }
+    Row(Modifier.fillMaxWidth().padding(vertical = Space.xs), verticalAlignment = Alignment.Top) {
+        Icon(
+            when {
+                warn -> Icons.Rounded.WarningAmber
+                done -> Icons.Rounded.CheckCircle
+                else -> Icons.Rounded.RadioButtonUnchecked
+            },
+            null,
+            tint = when {
+                warn -> c.warning
+                done -> c.success
+                else -> c.inkMuted
+            },
+            modifier = Modifier.size(22.dp),
+        )
         Spacer(Modifier.width(Space.s))
         Column(Modifier.weight(1f)) {
             Text(title, style = RetraType.bodyStrong, color = c.ink)
-            Spacer(Modifier.height(Space.xxs))
-            content()
+            Text(detail, style = RetraType.label, color = if (warn) c.warning else c.inkMuted)
         }
     }
-    Divider(Modifier.padding(top = Space.xs))
 }
 
 @Composable

@@ -17,6 +17,8 @@ import app.retra.data.ImportResult
 import app.retra.data.MessageTone
 import app.retra.data.Provenance
 import app.retra.patcher.Checksums
+import app.retra.patcher.PatchArchive
+import app.retra.patcher.PatchFormat
 import app.retra.patcher.PatchResult
 import app.retra.patcher.Patcher
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +40,10 @@ sealed interface EntryJob {
     data class Patching(val progress: Float) : EntryJob
     data class Failed(val message: String) : EntryJob
     data class Done(val gameId: String) : EntryJob
+    /** Install is paused until the user picks their own base ROM. */
+    data object NeedsBase : EntryJob
+    /** Install is paused until the user brings the creator-hosted patch file. */
+    data object NeedsPatch : EntryJob
 }
 
 /** The base ROM the user picked for a patch (when it isn't already matched in the library). */
@@ -142,25 +148,73 @@ class StoreViewModel(private val container: AppContainer) : ViewModel() {
 
     fun patchFile(entry: CatalogEntry): File? = patchesDir.listFiles()?.firstOrNull { it.nameWithoutExtension == entry.id }
 
-    /** Downloads (and unzips) a fan-game patch, verifying size + SHA-256. */
-    fun downloadPatch(entry: CatalogEntry) {
-        val d = entry.download ?: return
-        if (running[entry.id]?.isActive == true) return
+    /** The user's clean base ROM for [entry]: already in the library, or picked for it and matching. */
+    private fun baseGameId(entry: CatalogEntry): String? {
+        val crc = entry.base?.crc32 ?: return null
+        return container.library.games.value.firstOrNull { it.crc32.equals(crc, true) }?.id
+            ?: picked.value[entry.id]?.takeIf { it.matches }?.gameId
+    }
+
+    /**
+     * One tap from the Library to a playable game: fetch the patch (when the creator hosts a direct
+     * file), find the user's own base ROM, apply, and add the result to My Games. Pauses with
+     * [EntryJob.NeedsPatch] / [EntryJob.NeedsBase] when it needs a file from the user, and the
+     * matching pick/import call resumes it.
+     */
+    fun install(entry: CatalogEntry) {
+        if (entry.isRom) return getRom(entry)
+        if (entry.base == null || running[entry.id]?.isActive == true) return
         running[entry.id] = viewModelScope.launch {
             try {
-                setJob(entry.id, EntryJob.Downloading(0f))
-                val bytes = container.downloader.download(d, entry.id) { p -> setJob(entry.id, EntryJob.Downloading(p)) }
-                if (Patcher.detect(bytes) == null) error("The downloaded file isn't a patch Retra can read.")
-                val ext = (d.archiveEntry?.substringAfterLast('.') ?: d.format).lowercase()
-                withContext(Dispatchers.IO) { AtomicFiles.write(File(patchesDir, "${entry.id}.$ext"), bytes) }
-                patchFiles.value = scanPatches()
-                setJob(entry.id, EntryJob.Idle)
+                if (patchFile(entry) == null) {
+                    val d = entry.download ?: return@launch setJob(entry.id, EntryJob.NeedsPatch)
+                    setJob(entry.id, EntryJob.Downloading(0f))
+                    val bytes = container.downloader.download(d, entry.id) { p -> setJob(entry.id, EntryJob.Downloading(p)) }
+                    storePatch(entry, bytes)
+                }
+                val baseId = baseGameId(entry) ?: return@launch setJob(entry.id, EntryJob.NeedsBase)
+                build(entry, baseId, force = false)
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
                 setJob(entry.id, EntryJob.Failed(friendly(e)))
             }
         }
+    }
+
+    /** Saves a verified patch for [entry] (unzipping a single-patch archive first). */
+    private suspend fun storePatch(entry: CatalogEntry, raw: ByteArray) {
+        val bytes = if (Patcher.detect(raw) == null) PatchArchive.extractSingle(raw)?.second ?: raw else raw
+        val format = Patcher.detect(bytes) ?: error("That file isn't a patch Retra can read (IPS, UPS, BPS or xdelta).")
+        val ext = when (format) {
+            PatchFormat.IPS -> "ips"
+            PatchFormat.UPS -> "ups"
+            PatchFormat.BPS -> "bps"
+            PatchFormat.VCDIFF -> "xdelta"
+        }
+        withContext(Dispatchers.IO) {
+            patchesDir.listFiles()?.filter { it.nameWithoutExtension == entry.id }?.forEach { it.delete() }
+            AtomicFiles.write(File(patchesDir, "${entry.id}.$ext"), bytes)
+        }
+        patchFiles.value = scanPatches()
+    }
+
+    /** The user brought the patch file from the creator's page; keep it and carry on installing. */
+    fun importPatch(entry: CatalogEntry, uri: Uri) = viewModelScope.launch {
+        val outcome = runCatching {
+            val bytes = container.importer.readBytes(uri)
+            storePatch(entry, bytes)
+            val expected = entry.base?.crc32?.toLongOrNull(16)
+            val source = patchFile(entry)?.let { f -> Patcher.inspect(withContext(Dispatchers.IO) { f.readBytes() })?.sourceCrc32 }
+            if (expected != null && source != null && source != expected) {
+                container.messages.show(
+                    "This patch was made for a different base ROM (CRC32 %08X). Check you downloaded the right version.".format(source),
+                    MessageTone.ERROR,
+                )
+            }
+        }
+        outcome.onSuccess { install(entry) }
+            .onFailure { container.messages.show(it.message ?: "Couldn't read that file.", MessageTone.ERROR) }
     }
 
     /** The user picked their own base ROM for [entry]; add it to the library and check its CRC. */
@@ -176,52 +230,62 @@ class StoreViewModel(private val container: AppContainer) : ViewModel() {
         }
         outcome.onSuccess { game ->
             val expected = entry.base?.crc32?.uppercase() ?: ""
-            picked.update { it + (entry.id to BaseCheck(game.title, game.crc32, game.crc32.equals(expected, true), game.id)) }
+            val matches = game.crc32.equals(expected, true)
+            picked.update { it + (entry.id to BaseCheck(game.title, game.crc32, matches, game.id)) }
+            if (matches) install(entry) else setJob(entry.id, EntryJob.Idle)
         }.onFailure { container.messages.show(it.message ?: "Couldn't read that file.", MessageTone.ERROR) }
     }
 
-    /** Applies the downloaded patch to the user's base ROM and adds the result as a new game. */
+    /** Applies the patch to a base ROM the user chose explicitly (e.g. "use it anyway" on a mismatch). */
     fun makeGame(entry: CatalogEntry, baseGameId: String, force: Boolean) {
-        val patch = patchFile(entry) ?: return
         if (running[entry.id]?.isActive == true) return
         running[entry.id] = viewModelScope.launch {
-            setJob(entry.id, EntryJob.Patching(0f))
             try {
-                val base = container.library.readRom(baseGameId) ?: error("The base game file is missing.")
-                val baseGame = container.library.game(baseGameId)
-                val patchBytes = withContext(Dispatchers.IO) { patch.readBytes() }
-                val result = withContext(Dispatchers.Default) {
-                    Patcher.apply(base, patchBytes, strict = !force) { p -> setJob(entry.id, EntryJob.Patching(p)) }
-                }
-                when (result) {
-                    is PatchResult.Error -> setJob(entry.id, EntryJob.Failed(result.message))
-                    is PatchResult.Ok -> {
-                        val add = container.library.addRom(
-                            result.output, "${entry.title}.gba",
-                            ImportOrigin(
-                                GameSource.PATCHED, catalogId = entry.id, title = entry.title,
-                                provenance = Provenance(
-                                    patchName = entry.title + (entry.version?.let { " $it" } ?: ""),
-                                    patchFormat = patch.extension,
-                                    baseTitle = baseGame?.title ?: entry.base?.title ?: "Base game",
-                                    baseCrc32 = Checksums.crc32Hex(base),
-                                    catalogId = entry.id,
-                                    appliedAt = System.currentTimeMillis(),
-                                    forced = force,
-                                ),
-                            ),
-                        )
-                        when (add) {
-                            is ImportResult.Added -> setJob(entry.id, EntryJob.Done(add.game.id))
-                            is ImportResult.Duplicate -> setJob(entry.id, EntryJob.Done(add.game.id))
-                            is ImportResult.Error -> setJob(entry.id, EntryJob.Failed(add.message))
-                        }
-                    }
-                }
+                build(entry, baseGameId, force)
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
                 setJob(entry.id, EntryJob.Failed(friendly(e)))
+            }
+        }
+    }
+
+    /** Applies the stored patch to [baseGameId] and adds the result as a new game. */
+    private suspend fun build(entry: CatalogEntry, baseGameId: String, force: Boolean) {
+        val patch = patchFile(entry) ?: return setJob(entry.id, EntryJob.NeedsPatch)
+        setJob(entry.id, EntryJob.Patching(0f))
+        val base = container.library.readRom(baseGameId) ?: error("The base game file is missing.")
+        val baseGame = container.library.game(baseGameId)
+        val patchBytes = withContext(Dispatchers.IO) { patch.readBytes() }
+        val result = withContext(Dispatchers.Default) {
+            Patcher.apply(base, patchBytes, strict = !force) { p -> setJob(entry.id, EntryJob.Patching(p)) }
+        }
+        when (result) {
+            is PatchResult.Error -> setJob(entry.id, EntryJob.Failed(result.message))
+            is PatchResult.Ok -> {
+                val add = container.library.addRom(
+                    result.output, "${entry.title}.gba",
+                    ImportOrigin(
+                        GameSource.PATCHED, catalogId = entry.id, title = entry.title,
+                        provenance = Provenance(
+                            patchName = entry.title + (entry.version?.let { " $it" } ?: ""),
+                            patchFormat = patch.extension,
+                            baseTitle = baseGame?.title ?: entry.base?.title ?: "Base game",
+                            baseCrc32 = Checksums.crc32Hex(base),
+                            catalogId = entry.id,
+                            appliedAt = System.currentTimeMillis(),
+                            forced = force,
+                        ),
+                    ),
+                )
+                when (add) {
+                    is ImportResult.Added -> {
+                        setJob(entry.id, EntryJob.Done(add.game.id))
+                        container.messages.show("${entry.title} is ready to play", MessageTone.SUCCESS)
+                    }
+                    is ImportResult.Duplicate -> setJob(entry.id, EntryJob.Done(add.game.id))
+                    is ImportResult.Error -> setJob(entry.id, EntryJob.Failed(add.message))
+                }
             }
         }
     }
