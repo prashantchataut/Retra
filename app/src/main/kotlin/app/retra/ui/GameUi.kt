@@ -3,6 +3,7 @@ package app.retra.ui
 import androidx.compose.runtime.Immutable
 import app.retra.data.CatalogEntry
 import app.retra.data.Game
+import app.retra.data.Originals
 import app.retra.data.SaveRepository
 import app.retra.ui.components.CoverModel
 
@@ -17,14 +18,39 @@ data class GameUi(
     val id get() = game.id
 }
 
-fun Game.coverModel(lastScreen: java.io.File?): CoverModel = CoverModel(
-    title = title,
-    gameCode = gameCode,
-    seed = crc32.toLongOrNull(16) ?: title.hashCode().toLong(),
-    assetPath = coverAsset,
-    filePath = if (coverAsset == null) lastScreen?.takeIf { it.exists() }?.absolutePath else null,
-    fileStamp = lastScreen?.lastModified() ?: 0,
-)
+/**
+ * Cover art Retra knows about besides a game's own bundled art: covers made for catalog entries
+ * (assets/covers/<catalog id>.png) and box art fetched for imported cartridges.
+ */
+object CoverArt {
+    @Volatile private var catalogCovers: Set<String> = emptySet()
+    @Volatile private var boxArtDir: java.io.File? = null
+
+    fun init(context: android.content.Context, filesRoot: java.io.File) {
+        catalogCovers = runCatching { context.assets.list("covers")?.map { it.removeSuffix(".png") }?.toSet() }.getOrNull() ?: emptySet()
+        boxArtDir = java.io.File(filesRoot, "boxart")
+    }
+
+    fun catalogAsset(catalogId: String?): String? =
+        catalogId?.let { id -> Originals.byCatalogId(id)?.coverAsset ?: id.takeIf { it in catalogCovers }?.let { "covers/$it.png" } }
+
+    fun boxArt(crc32: String): java.io.File? = boxArtDir?.let { java.io.File(it, crc32.uppercase() + ".png") }?.takeIf { it.exists() }
+}
+
+fun Game.coverModel(lastScreen: java.io.File?): CoverModel {
+    val asset = coverAsset ?: CoverArt.catalogAsset(catalogId)
+    val box = if (asset == null) CoverArt.boxArt(crc32) else null
+    val file = box ?: if (asset == null) lastScreen?.takeIf { it.exists() } else null
+    return CoverModel(
+        title = title,
+        gameCode = gameCode,
+        seed = crc32.toLongOrNull(16) ?: title.hashCode().toLong(),
+        assetPath = asset,
+        filePath = file?.absolutePath,
+        fileStamp = file?.lastModified() ?: 0,
+        boxArt = box != null,
+    )
+}
 
 fun Game.toUi(saves: SaveRepository): GameUi {
     val shot = saves.lastScreenFile(id).takeIf { it.exists() }
@@ -35,7 +61,7 @@ fun CatalogEntry.coverModel(): CoverModel = CoverModel(
     title = title,
     gameCode = base?.gameCode ?: "",
     seed = id.hashCode().toLong(),
-    assetPath = if (id == "mochi-hop") "games/mochi_hop_cover.png" else null,
+    assetPath = CoverArt.catalogAsset(id),
     accent = accentArgb,
 )
 
