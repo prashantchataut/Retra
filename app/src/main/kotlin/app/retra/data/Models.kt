@@ -24,6 +24,8 @@ data class Settings(
     val fastForwardSpeed: Int = 2,
     val fastForwardAudio: Boolean = false,
     val rewindEnabled: Boolean = true,
+    /** Leaving a game writes a Continue snapshot (auto state). In-game saves are kept either way. */
+    val autoSaveOnExit: Boolean = true,
     val rtcOffsetSeconds: Long = 0,
     val onboardingDone: Boolean = false,
     val bundledInstalled: Boolean = false,
