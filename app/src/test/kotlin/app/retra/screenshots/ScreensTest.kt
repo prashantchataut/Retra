@@ -32,6 +32,8 @@ import app.retra.ui.store.EntryJob
 import app.retra.ui.store.StoreContent
 import app.retra.ui.store.StoreState
 import org.junit.Before
+import app.retra.ui.games.CheatBook
+import app.retra.data.CheatPackCheat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -80,6 +82,7 @@ class ScreensTest(private val dark: Boolean) {
                         continueGame = hero,
                         recent = listOf(Fakes.emerald, Fakes.hns, Fakes.apotris, Fakes.skyland).map { Fakes.ui(it) },
                         featured = Fakes.catalog.entries.filter { it.featured },
+                        ready = Fakes.catalog.entries.filter { it.isPatch && it.base?.crc32 == "1F1C08FB" }.take(3),
                         gameCount = 6, loaded = true,
                     ),
                 )
@@ -139,6 +142,10 @@ class ScreensTest(private val dark: Boolean) {
         StoreContent(storeState(jobs = mapOf("pokemon-heart-and-soul" to EntryJob.Downloading(0.42f)), owned = false), selectedId = "pokemon-heart-and-soul", onSelect = {})
     }
 
+    @Test fun store_need_base() = compose.snap("patch-flow-0-need-base", dark) {
+        StoreContent(storeState(owned = false), selectedId = "pokemon-heart-and-soul", onSelect = {})
+    }
+
     @Test fun store_make_game_patching() = compose.snap("patch-flow-2-patching", dark) {
         StoreContent(storeState(jobs = mapOf("pokemon-heart-and-soul" to EntryJob.Patching(0.64f)), ready = setOf("pokemon-heart-and-soul")), selectedId = "pokemon-heart-and-soul", onSelect = {})
     }
@@ -188,6 +195,7 @@ class ScreensTest(private val dark: Boolean) {
         compose.snap(
             when {
                 menu && page == MenuPage.CHEATS -> "player-cheats"
+                menu && page == MenuPage.EXIT -> "player-exit"
                 menu -> "player-menu"
                 else -> "player"
             },
@@ -201,6 +209,16 @@ class ScreensTest(private val dark: Boolean) {
                         StateSlot(1, true, now - 3_600_000, Fakes.screenFile("slot1").absolutePath),
                     ) + (2..6).map { StateSlot(it, false, null, null) },
                     cheats = listOf(Cheat("1", "Infinite hearts", "0300203C:03", true)),
+                    cheatBook = CheatBook(
+                        "Mochi Hop",
+                        listOf(
+                            CheatPackCheat("Master code", "D8BAE4D9 4864DCE5", master = true),
+                            CheatPackCheat("Infinite hearts", "0300203C:03"),
+                            CheatPackCheat("Every level unlocked", "0300204A:06"),
+                            CheatPackCheat("99 stars", "03002050:63"),
+                            CheatPackCheat("Moon jump (hold A)", "74000130 03FE\n0300201C:F0"),
+                        ),
+                    ),
                 ),
                 settings = Settings(showFps = true),
                 gamepadConnected = false,
@@ -221,11 +239,13 @@ class ScreensTest(private val dark: Boolean) {
 
     @Test fun player_cheats() = player(menu = true, page = MenuPage.CHEATS)
 
+    @Test fun player_exit() = player(menu = true, page = MenuPage.EXIT)
+
     @Test fun settings() = compose.snap("settings", dark) {
         SettingsContent(
             Settings(rtcOffsetSeconds = 3600 * 5), biosPresent = false,
             storage = StorageUsage(52_428_800, 393_216, 4_718_592, 1_048_576, 0),
-            licences = listOf(LicenceItem("Fredoka", "Display typeface", "OFL-1.1")),
+            licences = listOf(LicenceItem("Fraunces", "Display typeface", "OFL-1.1")),
         )
     }
 }
