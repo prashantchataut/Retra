@@ -144,7 +144,7 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
 
     fun licences(): List<LicenceItem> {
         val base = listOf(
-            LicenceItem("Fredoka", "Display typeface by the Fredoka Project Authors", "SIL Open Font License 1.1", asset = "licenses/OFL-Fredoka.txt"),
+            LicenceItem("Fraunces", "Display typeface by the Fraunces Project Authors", "SIL Open Font License 1.1", asset = "licenses/OFL-Fraunces.txt"),
             LicenceItem("Nunito", "Body typeface by the Nunito Project Authors", "SIL Open Font License 1.1", asset = "licenses/OFL-Nunito.txt"),
             LicenceItem("Retra engine", "Original C++ GBA core and replacement BIOS written for Retra. No code from other emulators; behaviour implemented from public documentation (GBATEK, Tonc).", "Apache-2.0"),
             LicenceItem("Mochi Hop", "Original game, art and music made for Retra", "Apache-2.0"),
