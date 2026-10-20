@@ -49,6 +49,8 @@ data class CoverModel(
     val fileStamp: Long = 0,
     /** Optional ARGB pastel (catalog accent) used instead of the seeded palette. */
     val accent: Int? = null,
+    /** Box art (a painted, roughly square image): shown whole over a soft wash, smooth-filtered. */
+    val boxArt: Boolean = false,
 )
 
 /** Small decode cache shared by all covers. */
@@ -88,7 +90,11 @@ fun GameCover(model: CoverModel, modifier: Modifier = Modifier, showTitle: Boole
     }
     Box(modifier) {
         val img = image
-        if (img != null) {
+        if (img != null && model.boxArt) {
+            Image(img, contentDescription = null, contentScale = ContentScale.Crop, alpha = 0.35f, filterQuality = FilterQuality.Low, modifier = Modifier.fillMaxSize())
+            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.18f)))
+            Image(img, contentDescription = null, contentScale = ContentScale.Fit, filterQuality = FilterQuality.Medium, modifier = Modifier.fillMaxSize().padding(6.dp))
+        } else if (img != null) {
             Image(
                 img, contentDescription = null, contentScale = ContentScale.Crop,
                 filterQuality = FilterQuality.None, modifier = Modifier.fillMaxSize(),
