@@ -20,7 +20,7 @@ import app.retra.R
  * Retra design tokens. See app/DESIGN.md. Components consume only these semantic tokens.
  */
 
-/** Semantic colour layer; light ("cloud cream") and dark ("night indigo") are separate palettes. */
+/** Semantic colour layer; light ("mint mist") and dark ("deep matcha") are separate palettes. */
 @Immutable
 data class RetraColors(
     val isDark: Boolean,
@@ -46,58 +46,64 @@ data class RetraColors(
     val shadow: Color,
     val scrim: Color,
     val divider: Color,
+    /** Mochi pink, for the few brand moments (favourites, the logo); never for text. */
+    val brand: Color,
 )
 
+// Light: a cool mint-white ground, deep pine ink, and ink-coloured primary pills (Mochi stays the colour).
 val LightColors = RetraColors(
     isDark = false,
-    sky = Color(0xFFFBF5F1),
-    skyGlowA = Color(0xFFFFD3E1),
-    skyGlowB = Color(0xFFFFE6C7),
-    skyGlowC = Color(0xFFD7E4FF),
-    glassFill = Color.White.copy(alpha = 0.62f),
-    glassFillStrong = Color(0xFFFFFCFA).copy(alpha = 0.90f),
+    sky = Color(0xFFEEF5F2),
+    skyGlowA = Color(0xFFC6EEDC),
+    skyGlowB = Color(0xFFCBE6F5),
+    skyGlowC = Color(0xFFFBE1E8),
+    glassFill = Color.White.copy(alpha = 0.66f),
+    glassFillStrong = Color(0xFFFBFEFC).copy(alpha = 0.92f),
     glassRimTop = Color.White.copy(alpha = 0.95f),
-    glassRimBottom = Color.White.copy(alpha = 0.10f),
-    glassSheen = Color.White.copy(alpha = 0.55f),
-    ink = Color(0xFF2B2130),
-    inkMuted = Color(0xFF6B5E70),
-    inkFaint = Color(0xFF2B2130).copy(alpha = 0.10f),
-    accent = Color(0xFFC7366B),
+    glassRimBottom = Color.White.copy(alpha = 0.12f),
+    glassSheen = Color.White.copy(alpha = 0.5f),
+    ink = Color(0xFF14231E),
+    inkMuted = Color(0xFF52645C),
+    inkFaint = Color(0xFF14231E).copy(alpha = 0.08f),
+    accent = Color(0xFF17302A),
     onAccent = Color.White,
-    accentSoft = Color(0xFFFFE1EA),
-    onAccentSoft = Color(0xFF6E1739),
-    success = Color(0xFF23794F),
-    warning = Color(0xFF965C0A),
-    danger = Color(0xFFC4364A),
-    shadow = Color(0xFF7A4A60).copy(alpha = 0.16f),
-    scrim = Color(0xFF2B2130).copy(alpha = 0.32f),
-    divider = Color(0xFF2B2130).copy(alpha = 0.08f),
+    accentSoft = Color(0xFFD2F0E3),
+    onAccentSoft = Color(0xFF0D4A35),
+    success = Color(0xFF1E7A50),
+    warning = Color(0xFF8F5A0A),
+    danger = Color(0xFFC0364A),
+    shadow = Color(0xFF2E5A4C).copy(alpha = 0.14f),
+    scrim = Color(0xFF14231E).copy(alpha = 0.30f),
+    divider = Color(0xFF14231E).copy(alpha = 0.07f),
+    brand = Color(0xFFE8628F),
 )
 
+// Dark: a green-black ground with lighter glass steps for depth (no coloured glows), soft mint actions.
 val DarkColors = RetraColors(
     isDark = true,
-    sky = Color(0xFF15132B),
-    skyGlowA = Color(0xFF3B2C66),
-    skyGlowB = Color(0xFF2A3A6E),
-    skyGlowC = Color(0xFF4A2A55),
-    glassFill = Color(0xFF2C2950).copy(alpha = 0.62f),
-    glassFillStrong = Color(0xFF232044).copy(alpha = 0.94f),
-    glassRimTop = Color.White.copy(alpha = 0.32f),
-    glassRimBottom = Color.White.copy(alpha = 0.04f),
-    glassSheen = Color.White.copy(alpha = 0.10f),
-    ink = Color(0xFFF4EFFB),
-    inkMuted = Color(0xFFB9B0CE),
-    inkFaint = Color(0xFFF4EFFB).copy(alpha = 0.12f),
-    accent = Color(0xFFFF8FB4),
-    onAccent = Color(0xFF2A0E1D),
-    accentSoft = Color(0xFF4A2846),
-    onAccentSoft = Color(0xFFFFD6E4),
+    sky = Color(0xFF0C1412),
+    skyGlowA = Color(0xFF10291F),
+    skyGlowB = Color(0xFF0D2329),
+    skyGlowC = Color(0xFF11201E),
+    glassFill = Color(0xFF1A2824).copy(alpha = 0.70f),
+    glassFillStrong = Color(0xFF141F1C).copy(alpha = 0.96f),
+    glassRimTop = Color.White.copy(alpha = 0.16f),
+    glassRimBottom = Color.White.copy(alpha = 0.03f),
+    glassSheen = Color.White.copy(alpha = 0.05f),
+    ink = Color(0xFFE8F1ED),
+    inkMuted = Color(0xFF9EB1A9),
+    inkFaint = Color(0xFFE8F1ED).copy(alpha = 0.10f),
+    accent = Color(0xFF9BE8C9),
+    onAccent = Color(0xFF06201A),
+    accentSoft = Color(0xFF173A30),
+    onAccentSoft = Color(0xFFB9F2DA),
     success = Color(0xFF7FE0AE),
-    warning = Color(0xFFF6C56E),
+    warning = Color(0xFFF2C46E),
     danger = Color(0xFFFF8F9C),
-    shadow = Color.Black.copy(alpha = 0.40f),
-    scrim = Color(0xFF07060F).copy(alpha = 0.55f),
-    divider = Color.White.copy(alpha = 0.08f),
+    shadow = Color.Black.copy(alpha = 0.45f),
+    scrim = Color(0xFF030806).copy(alpha = 0.60f),
+    divider = Color.White.copy(alpha = 0.07f),
+    brand = Color(0xFFFF9DBB),
 )
 
 /** Mochi's own palette (mascot + brand art); not used for UI chrome. */
@@ -115,9 +121,10 @@ object MochiPalette {
     val mouth = Color(0xFFB8486A)
 }
 
-val Fredoka = FontFamily(
-    Font(R.font.fredoka_medium, FontWeight.Medium),
-    Font(R.font.fredoka_semibold, FontWeight.SemiBold),
+/** Soft serif for display text (static Fraunces instances: SOFT 100, WONK 0). */
+val Fraunces = FontFamily(
+    Font(R.font.fraunces_medium, FontWeight.Medium),
+    Font(R.font.fraunces_semibold, FontWeight.SemiBold),
 )
 val Nunito = FontFamily(
     Font(R.font.nunito_regular, FontWeight.Normal),
@@ -130,9 +137,9 @@ private val Trim = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightS
 /** The 7-step type scale. */
 @Immutable
 object RetraType {
-    val display = TextStyle(fontFamily = Fredoka, fontWeight = FontWeight.SemiBold, fontSize = 32.sp, lineHeight = 38.sp, letterSpacing = (-0.3).sp, lineHeightStyle = Trim)
-    val title = TextStyle(fontFamily = Fredoka, fontWeight = FontWeight.SemiBold, fontSize = 24.sp, lineHeight = 30.sp, letterSpacing = (-0.2).sp, lineHeightStyle = Trim)
-    val headline = TextStyle(fontFamily = Fredoka, fontWeight = FontWeight.Medium, fontSize = 20.sp, lineHeight = 26.sp, lineHeightStyle = Trim)
+    val display = TextStyle(fontFamily = Fraunces, fontWeight = FontWeight.SemiBold, fontSize = 34.sp, lineHeight = 38.sp, letterSpacing = (-0.6).sp, lineHeightStyle = Trim)
+    val title = TextStyle(fontFamily = Fraunces, fontWeight = FontWeight.SemiBold, fontSize = 24.sp, lineHeight = 29.sp, letterSpacing = (-0.3).sp, lineHeightStyle = Trim)
+    val headline = TextStyle(fontFamily = Fraunces, fontWeight = FontWeight.Medium, fontSize = 20.sp, lineHeight = 25.sp, letterSpacing = (-0.1).sp, lineHeightStyle = Trim)
     val bodyStrong = TextStyle(fontFamily = Nunito, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, lineHeight = 22.sp, lineHeightStyle = Trim)
     val body = TextStyle(fontFamily = Nunito, fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 23.sp, lineHeightStyle = Trim)
     val label = TextStyle(fontFamily = Nunito, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, lineHeight = 18.sp, lineHeightStyle = Trim)
