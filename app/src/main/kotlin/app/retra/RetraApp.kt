@@ -3,6 +3,11 @@ package app.retra
 import android.app.Application
 import android.content.Context
 import app.retra.data.BackupManager
+import app.retra.data.BoxArtRepository
+import app.retra.data.CheatDatabase
+import app.retra.data.GameIndex
+import app.retra.ui.CoverArt
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import app.retra.data.BiosRepository
 import app.retra.data.CatalogRepository
 import app.retra.data.CheatRepository
@@ -41,6 +46,13 @@ class AppContainer(private val context: Context) {
     val messages = Messages()
     val incoming = IncomingFiles()
     val importer = app.retra.data.ImportController(context, library, messages)
+    val gameIndex = GameIndex { runCatching { context.assets.open("metadata/gba_games.tsv.gz") }.getOrNull() }
+    val cheatBooks = CheatDatabase { runCatching { context.assets.open("metadata/gba_cheats.json.gz") }.getOrNull() }
+    val boxArt = BoxArtRepository(filesRoot, gameIndex, fetch = { url -> downloader.fetchBytes(url) })
+
+    init {
+        CoverArt.init(context, filesRoot)
+    }
 
     fun start() {
         scope.launch {
@@ -48,6 +60,24 @@ class AppContainer(private val context: Context) {
             installBundledGame()
             catalog.refresh()
         }
+        // Box art for newly added cartridges (only reacts when the set of games changes).
+        scope.launch {
+            library.games.distinctUntilChangedBy { list -> list.map { it.id } }.collect { list ->
+                if (!settings.current.downloadCoverArt) return@collect
+                list.forEach { g ->
+                    if (runCatching { boxArt.fetch(g) }.getOrDefault(false)) {
+                        library.update(g.id) { it.copy(artAt = System.currentTimeMillis()) }
+                    }
+                }
+            }
+        }
+    }
+
+    /** The built-in cheat book for [game], if Retra knows one. */
+    fun cheatBook(game: app.retra.data.Game?): app.retra.ui.games.CheatBook? {
+        game ?: return null
+        val found = cheatBooks.lookup(game) ?: return null
+        return app.retra.ui.games.CheatBook(game.title, found.cheats)
     }
 
     /** Mochi Hop ships in the APK; add it once on first launch (the user may delete it later). */
