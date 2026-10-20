@@ -85,6 +85,8 @@ data class HomeState(
     val continueGame: GameUi? = null,
     val recent: List<GameUi> = emptyList(),
     val featured: List<CatalogEntry> = emptyList(),
+    /** Fan games whose base ROM the user already owns (one-tap installs). */
+    val ready: List<CatalogEntry> = emptyList(),
     val gameCount: Int = 0,
     val loaded: Boolean = false,
 )
@@ -99,6 +101,11 @@ class HomeViewModel(container: AppContainer) : ViewModel() {
             recent = (played.drop(1) + games.filter { it.lastPlayedAt == null }.sortedByDescending { it.addedAt })
                 .filter { it.id != hero?.id }.take(10).map { it.toUi(container.saves) },
             featured = catalog.catalog?.entries?.filter { it.featured }.orEmpty(),
+            ready = run {
+                val owned = games.map { it.crc32.uppercase() }.toSet()
+                val installed = games.mapNotNull { it.catalogId }.toSet()
+                catalog.catalog?.entries.orEmpty().filter { e -> e.isPatch && e.id !in installed && e.base?.crc32?.uppercase() in owned }
+            },
             gameCount = games.size,
             loaded = true,
         )
@@ -168,6 +175,21 @@ fun HomeContent(state: HomeState) {
             item("recent") {
                 LazyRow(contentPadding = g, horizontalArrangement = Arrangement.spacedBy(Space.s), modifier = Modifier.staggerIn(4)) {
                     items(state.recent, key = { it.id }) { game -> RecentCard(game) }
+                }
+            }
+        }
+        if (state.ready.isNotEmpty()) {
+            item("ready-title") {
+                Spacer(Modifier.height(Space.xl))
+                SectionHeader(
+                    "Fan games ready for you", Modifier.padding(g).staggerIn(5),
+                    subtitle = "You own the base ROM, so each one installs in a tap",
+                )
+                Spacer(Modifier.height(Space.s))
+            }
+            item("ready") {
+                LazyRow(contentPadding = g, horizontalArrangement = Arrangement.spacedBy(Space.s), modifier = Modifier.staggerIn(6)) {
+                    items(state.ready, key = { "ready-" + it.id }) { e -> FeaturedCard(e) { actions.openStore(e.id) } }
                 }
             }
         }
