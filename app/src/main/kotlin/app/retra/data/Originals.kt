@@ -1,0 +1,13 @@
+package app.retra.data
+
+/** Retra's own games: shipped inside the APK (assets/games) and added to My Games on first launch. */
+object Originals {
+    data class Original(val catalogId: String, val title: String, val romAsset: String, val coverAsset: String)
+
+    // Only games that actually ship in the APK (OriginalsTest checks the assets and the catalog agree).
+    val all = listOf(
+        Original("mochi-hop", "Mochi Hop", "games/mochi_hop.gba", "games/mochi_hop_cover.png"),
+    )
+
+    fun byCatalogId(id: String): Original? = all.firstOrNull { it.catalogId == id }
+}
