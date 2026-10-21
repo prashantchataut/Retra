@@ -1,14 +1,12 @@
 {
   "schema": 1,
-  "updated": "2026-10-20",
+  "updated": "2026-10-21",
   "collections": [
     {
       "id": "featured",
       "title": "Featured",
       "subtitle": "Hand-picked highlights from the library",
       "entryIds": [
-        "sky-sprout",
-        "turbo-drift",
         "mochi-hop",
         "apotris",
         "the-purple-night",
@@ -59,8 +57,6 @@
       "subtitle": "Original games made for the GBA, free to download",
       "entryIds": [
         "skyland",
-        "sky-sprout",
-        "turbo-drift",
         "apotris",
         "minicraft-gba",
         "ucity-advance",
@@ -882,62 +878,6 @@
       "accent": "#B8F0A8",
       "featured": false,
       "bundled": false
-    },
-    {
-      "id": "turbo-drift",
-      "kind": "rom",
-      "title": "Turbo Drift",
-      "author": "Retra Team",
-      "version": null,
-      "description": "Retra's own arcade street racer: four neon night tracks, drifting, nitro, traffic and a garage of upgradable cars, all in pseudo-3D at 60 fps.",
-      "tags": [
-        "homebrew",
-        "original",
-        "racing",
-        "arcade"
-      ],
-      "status": "complete",
-      "license": "Apache-2.0",
-      "homepage": "https://github.com/prashantchataut/Retra",
-      "source": null,
-      "download": {
-        "url": "https://raw.githubusercontent.com/prashantchataut/Retra/main/catalog/games/turbo_drift.gba",
-        "size": 479232,
-        "sha256": "c94eed09db6c20b366f90287a7b1a42fcae632c6e683b6ecf598de381340c21d",
-        "format": "gba"
-      },
-      "base": null,
-      "accent": "#FF9EC2",
-      "featured": true,
-      "bundled": true
-    },
-    {
-      "id": "sky-sprout",
-      "kind": "rom",
-      "title": "Sky Sprout",
-      "author": "Retra Team",
-      "version": null,
-      "description": "Retra's own side-scrolling shoot-'em-up: five sky-garden stages, five bosses, weapon power-ups and a chase for the high score, with Mochi at the controls.",
-      "tags": [
-        "homebrew",
-        "original",
-        "shooter",
-        "arcade"
-      ],
-      "status": "complete",
-      "license": "Apache-2.0",
-      "homepage": "https://github.com/prashantchataut/Retra",
-      "source": null,
-      "download": {
-        "url": "https://raw.githubusercontent.com/prashantchataut/Retra/main/catalog/games/sky_sprout.gba",
-        "size": 266240,
-        "sha256": "06a5176a96329e7e085cb11e0e8a44065f1e3cc08c320c7a8a688e4f061adc12",
-        "format": "gba"
-      },
-      "base": null,
-      "accent": "#7ED2F0",
-      "featured": true,
-      "bundled": true
     }
   ]
 }

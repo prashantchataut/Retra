@@ -7,8 +7,6 @@ object Originals {
     // Only games that actually ship in the APK (OriginalsTest checks the assets and the catalog agree).
     val all = listOf(
         Original("mochi-hop", "Mochi Hop", "games/mochi_hop.gba", "games/mochi_hop_cover.png"),
-        Original("turbo-drift", "Turbo Drift", "games/turbo_drift.gba", "games/turbo_drift_cover.png"),
-        Original("sky-sprout", "Sky Sprout", "games/sky_sprout.gba", "games/sky_sprout_cover.png"),
     )
 
     fun byCatalogId(id: String): Original? = all.firstOrNull { it.catalogId == id }
