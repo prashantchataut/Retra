@@ -45,6 +45,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.style.TextOverflow
@@ -220,6 +222,7 @@ fun MyGamesContent(
     val actions = LocalAppActions.current
     val c = Retra.colors
     val g = gutter()
+    val focusManager = LocalFocusManager.current
     var sheetFor by remember { mutableStateOf(initialSheetFor) }
     var renaming by remember { mutableStateOf<GameUi?>(null) }
     var confirmDelete by remember { mutableStateOf<GameUi?>(null) }
@@ -253,7 +256,12 @@ fun MyGamesContent(
                         GlassIconButton(Icons.Rounded.Add, "Import games", actions::importGames, tint = c.accent)
                     }
                     Spacer(Modifier.height(Space.m))
-                    RetraTextField(state.query, onQuery, "Search your games", Modifier.fillMaxWidth(), leadingIcon = Icons.Rounded.Search)
+                    RetraTextField(
+                        state.query, onQuery, "Search your games", Modifier.fillMaxWidth(),
+                        leadingIcon = Icons.Rounded.Search,
+                        imeAction = ImeAction.Search,
+                        onImeAction = { focusManager.clearFocus() },
+                    )
                 }
             }
             item("filters", span = { GridItemSpan(maxLineSpan) }) {
