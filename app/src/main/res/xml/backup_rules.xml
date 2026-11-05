@@ -2,5 +2,6 @@
 <full-backup-content>
     <include domain="file" path="saves/" />
     <include domain="file" path="cheats/" />
+    <include domain="file" path="challenges/" />
     <include domain="file" path="settings.json" />
 </full-backup-content>

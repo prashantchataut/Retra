@@ -22,6 +22,8 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ExitToApp
 import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.Code
+import androidx.compose.material.icons.rounded.EmojiEvents
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.RestartAlt
 import androidx.compose.material.icons.rounded.Save
@@ -56,7 +58,7 @@ import app.retra.ui.theme.RetraType
 import app.retra.ui.theme.Space
 
 /** [EXIT] is the main page with the leave-the-game choice already open. */
-enum class MenuPage { MAIN, CHEATS, EXIT }
+enum class MenuPage { MAIN, CHEATS, CHALLENGE, EXIT }
 
 /** Leaving the game: keep a Continue point, or just go. In-game (battery) saves are kept either way. */
 @Composable
@@ -96,7 +98,7 @@ fun QuickMenu(state: PlayerUiState, settings: Settings, cb: PlayerCallbacks, ini
     GlassSheet(
         visible = state.menuOpen,
         onDismiss = { if (page != MenuPage.MAIN) page = MenuPage.MAIN else cb.onMenu(false) },
-        title = if (page == MenuPage.CHEATS) null else state.title,
+        title = if (page == MenuPage.CHEATS || page == MenuPage.CHALLENGE) null else state.title,
     ) {
         if (page == MenuPage.CHEATS) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -104,7 +106,20 @@ fun QuickMenu(state: PlayerUiState, settings: Settings, cb: PlayerCallbacks, ini
                 Text("Cheats", style = RetraType.title, color = c.ink)
             }
             Spacer(Modifier.height(Space.s))
-            CheatsEditor(state.cheats, cb.onCheats, book = state.cheatBook, onImportFile = cb.onImportCheats)
+            if (state.challenge?.active == true) {
+                Text("Your ${state.challenge.mode.label} keeps cheats off. You can still prepare codes for later.", style = RetraType.label, color = c.inkMuted)
+                Spacer(Modifier.height(Space.xs))
+            }
+            CheatsEditor(state.cheats, cb.onCheats, book = state.cheatBook, onImportFile = cb.onImportCheats, onOpenLibrary = cb.onOpenLibrary)
+            return@GlassSheet
+        }
+        if (page == MenuPage.CHALLENGE) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                PlainIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Back to menu", { page = MenuPage.MAIN; cb.onChallengeChanged() })
+                Text("Challenge", style = RetraType.title, color = c.ink)
+            }
+            Spacer(Modifier.height(Space.s))
+            cb.challengePanel()
             return@GlassSheet
         }
         Row(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
@@ -136,6 +151,10 @@ fun QuickMenu(state: PlayerUiState, settings: Settings, cb: PlayerCallbacks, ini
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.xs), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
             RetraButton("Screenshot", cb.onScreenshot, icon = Icons.Rounded.CameraAlt, style = ButtonStyle.SECONDARY, compact = true)
             RetraButton("Cheats" + if (state.cheats.any { it.enabled }) " · ${state.cheats.count { it.enabled }} on" else "", { page = MenuPage.CHEATS }, icon = Icons.Rounded.Code, style = ButtonStyle.SECONDARY, compact = true)
+            RetraButton(
+                if (state.challenge?.active == true) state.challenge.mode.label else "Challenge", { page = MenuPage.CHALLENGE },
+                icon = if (state.challenge?.active == true) Icons.Rounded.Lock else Icons.Rounded.EmojiEvents, style = ButtonStyle.SECONDARY, compact = true,
+            )
             RetraButton("Reset", { confirmReset = true }, icon = Icons.Rounded.RestartAlt, style = ButtonStyle.SECONDARY, compact = true)
         }
         state.lastCapture?.let { path ->

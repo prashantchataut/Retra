@@ -48,9 +48,10 @@ fun systemReducedMotion(): Boolean {
 fun RetraTheme(
     dark: Boolean,
     reduceMotion: Boolean = false,
+    palette: app.retra.data.AppPalette = app.retra.data.AppPalette.MINT,
     content: @Composable () -> Unit,
 ) {
-    val colors = if (dark) DarkColors else LightColors
+    val colors = remember(palette, dark) { paletteColors(palette, dark) }
     val reduce = reduceMotion || systemReducedMotion()
     val scheme = remember(colors) {
         val base = if (colors.isDark) darkColorScheme() else lightColorScheme()

@@ -13,6 +13,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import app.retra.AppContainer
+import app.retra.core.ChallengePolicy
+import app.retra.core.PlayerTool
 import app.retra.core.PlaytimeTracker
 import app.retra.data.Cheat
 import app.retra.data.MessageTone
@@ -52,6 +54,10 @@ data class PlayerUiState(
     val cheats: List<Cheat> = emptyList(),
     val cheatBook: app.retra.ui.games.CheatBook? = null,
     val lastCapture: String? = null,
+    val challenge: app.retra.core.ChallengeRun? = null,
+    /** Bumped on each one-tap rewind so the screen can flash "-5s". */
+    val rewindPulse: Int = 0,
+    val rewindSeconds: Float = 0f,
     val exiting: Boolean = false,
     /** True while exiting writes the Continue snapshot (false = leaving without one). */
     val savingOnExit: Boolean = true,
@@ -129,17 +135,22 @@ class PlayerViewModel(
         }
         val sav = withContext(Dispatchers.IO) { saves.readBatterySave(gameId) }
         val cheats = withContext(Dispatchers.IO) { container.cheats.cheats(gameId) }
+        val run = withContext(Dispatchers.IO) { container.challenges.load(gameId) }
+        _state.update { it.copy(challenge = run) }
         val book = withContext(Dispatchers.IO) { container.cheatBook(container.library.game(gameId)) }
         val st = container.settings.current
         s.run { c ->
             if (sav != null) c.loadBatterySave(sav)
             c.setColorCorrection(st.colorCorrection)
             c.setRtcOffsetSeconds(st.rtcOffsetSeconds)
-            val codes = cheats.filter { it.enabled }.map { it.code }
+            // A challenge run keeps cheats off the engine entirely, even ones the player enabled earlier.
+            val codes = if (ChallengePolicy.allows(run, PlayerTool.CHEATS)) cheats.filter { it.enabled }.map { it.code } else emptyList()
             if (codes.isNotEmpty()) c.setCheats(codes)
             c.consumeSaveDirty() // loading the .sav isn't a new write
         }
-        if (startSlot >= 0) {
+        if (startSlot > 0 && !ChallengePolicy.allows(run, PlayerTool.LOAD_STATE)) {
+            blocked(PlayerTool.LOAD_STATE)
+        } else if (startSlot >= 0) {
             val data = withContext(Dispatchers.IO) { saves.readState(gameId, startSlot) }
             val ok = data != null && s.run { it.loadState(data) }
             if (!ok) container.messages.show("That save state couldn't be loaded, so the game started fresh.", MessageTone.ERROR)
@@ -214,7 +225,35 @@ class PlayerViewModel(
         _state.update { it.copy(fastForward = on) }
     }
 
+    /** Tells the player a locked tool is locked, and counts the attempt on the run card. */
+    private fun blocked(tool: PlayerTool): Boolean {
+        val run = _state.value.challenge
+        if (ChallengePolicy.allows(run, tool)) return false
+        container.messages.show(ChallengePolicy.lockedMessage(run, tool), MessageTone.INFO)
+        viewModelScope.launch(Dispatchers.IO) { container.challenges.recordBlocked(gameId)?.let { r -> _state.update { it.copy(challenge = r) } } }
+        return true
+    }
+
+    /** Re-reads the run after the challenge sheet changed it. */
+    fun refreshChallenge() = viewModelScope.launch {
+        val run = withContext(Dispatchers.IO) { container.challenges.load(gameId) }
+        _state.update { it.copy(challenge = run) }
+        if (!ChallengePolicy.allows(run, PlayerTool.CHEATS)) session?.run { it.setCheats(emptyList()) }
+    }
+
+    /** One tap: jump back [Settings.rewindSeconds] seconds. */
+    fun rewindJump() = viewModelScope.launch {
+        if (blocked(PlayerTool.REWIND)) return@launch
+        val st = container.settings.current
+        if (!st.rewindEnabled) return@launch container.messages.show("Rewind is off. Turn it on in Settings.")
+        val s = session ?: return@launch
+        val got = runCatching { s.rewindJump(st.rewindSeconds) }.getOrDefault(0f)
+        if (got <= 0f) container.messages.show("Nothing to rewind to yet. Play a little first.")
+        else _state.update { it.copy(rewindPulse = it.rewindPulse + 1, rewindSeconds = got) }
+    }
+
     fun setRewinding(on: Boolean) {
+        if (on && blocked(PlayerTool.REWIND)) return
         if (on && !container.settings.current.rewindEnabled) {
             container.messages.show("Rewind is off. Turn it on in Settings.")
             return
@@ -248,6 +287,7 @@ class PlayerViewModel(
     }
 
     fun loadState(slot: Int) = viewModelScope.launch {
+        if (slot > 0 && blocked(PlayerTool.LOAD_STATE)) return@launch
         val s = session ?: return@launch
         val data = withContext(Dispatchers.IO) { saves.readState(gameId, slot) } ?: return@launch
         val ok = s.run { it.loadState(data) }
@@ -261,6 +301,7 @@ class PlayerViewModel(
     }
 
     fun reset() = viewModelScope.launch {
+        if (blocked(PlayerTool.RESET)) return@launch
         val s = session ?: return@launch
         s.run { it.reset() }
         s.clearRewind()
@@ -271,6 +312,8 @@ class PlayerViewModel(
         withContext(Dispatchers.IO) { container.cheats.save(gameId, list) }
         _state.update { it.copy(cheats = list) }
         val s = session ?: return@launch
+        // Cheats can still be browsed and saved during a challenge; they just never reach the engine.
+        if (list.any { it.enabled } && blocked(PlayerTool.CHEATS)) return@launch
         val codes = list.filter { it.enabled }.map { it.code }
         val accepted = s.run { it.setCheats(codes) }
         val lines = codes.sumOf { it.lines().size }
@@ -341,6 +384,7 @@ class PlayerViewModel(
         withContext(Dispatchers.IO) { s.stop() }
         session = null
         container.library.recordSession(gameId, playtime.drain())
+        container.scope.launch { runCatching { container.drive.autoSync() } }
     }
 
     override fun onCleared() {

@@ -16,6 +16,10 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccessTime
+import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.material.icons.rounded.Cloud
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.SportsEsports
 import androidx.compose.material.icons.rounded.Animation
 import androidx.compose.material.icons.rounded.Archive
 import androidx.compose.material.icons.rounded.Contrast
@@ -180,7 +184,20 @@ fun SettingsScreen(container: AppContainer) {
     val biosPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let(vm::importBios) }
     val backup = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { it?.let { u -> vm.backup(u, context.contentResolver) } }
     val restore = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let { u -> vm.restore(u, context.contentResolver) } }
+    var showPad by remember { mutableStateOf(false) }
+    var showRouter by remember { mutableStateOf(false) }
+    var showDrive by remember { mutableStateOf(false) }
+    var showLink by remember { mutableStateOf(false) }
+    GamepadMappingSheet(showPad, settings, vm::update) { showPad = false }
+    OpenRouterSheet(container, showRouter, settings) { showRouter = false }
+    DriveSheet(container, showDrive, settings) { showDrive = false }
+    LinkRoomSheet(container, showLink, settings) { showLink = false }
     SettingsContent(
+        onOpenGamepad = { showPad = true },
+        onOpenOpenRouter = { showRouter = true },
+        onOpenDrive = { showDrive = true },
+        onOpenLink = { showLink = true },
+        routerKeySet = container.openRouter.hasKey,
         settings = settings,
         biosPresent = bios,
         storage = storage,
@@ -206,6 +223,11 @@ fun SettingsContent(
     onBackup: () -> Unit = {},
     onRestore: () -> Unit = {},
     readAsset: (String) -> String = { "" },
+    onOpenGamepad: () -> Unit = {},
+    onOpenOpenRouter: () -> Unit = {},
+    onOpenDrive: () -> Unit = {},
+    onOpenLink: () -> Unit = {},
+    routerKeySet: Boolean = false,
 ) {
     val c = Retra.colors
     val g = gutter()
@@ -220,6 +242,10 @@ fun SettingsContent(
                     Text("Theme", style = RetraType.label, color = c.inkMuted, modifier = Modifier.padding(top = Space.xs))
                     Spacer(Modifier.height(Space.xxs))
                     Segmented(listOf(ThemeMode.SYSTEM to "System", ThemeMode.LIGHT to "Light", ThemeMode.DARK to "Dark"), settings.theme, { v -> onUpdate { it.copy(theme = v) } })
+                    Spacer(Modifier.height(Space.s))
+                    Text("Colours", style = RetraType.label, color = c.inkMuted)
+                    Spacer(Modifier.height(Space.xxs))
+                    PalettePicker(settings.palette, { v -> onUpdate { it.copy(palette = v) } })
                     Spacer(Modifier.height(Space.xs))
                     SwitchRow("Reduce motion", settings.reduceMotion, { v -> onUpdate { it.copy(reduceMotion = v) } }, subtitle = "Calmer transitions, no drifting sky", icon = Icons.Rounded.Animation)
                     Divider()
@@ -239,9 +265,19 @@ fun SettingsContent(
             }
             item("controls") {
                 Section("Touch controls", g) {
+                    SkinPicker(settings, onUpdate)
+                    Divider()
                     SliderRow("Opacity", settings.controlsOpacity, { v -> onUpdate { it.copy(controlsOpacity = v) } }, "${(settings.controlsOpacity * 100).toInt()} %", range = 0.2f..1f, icon = Icons.Rounded.Opacity)
                     SliderRow("Size", settings.controlsScale, { v -> onUpdate { it.copy(controlsScale = v) } }, "${(settings.controlsScale * 100).toInt()} %", range = 0.8f..1.3f, icon = Icons.Rounded.OpenInFull)
                     RetraButton("Reset controls", { onUpdate { it.copy(controlsOpacity = Settings().controlsOpacity, controlsScale = 1f) } }, icon = Icons.Rounded.Restore, style = ButtonStyle.TERTIARY, compact = true)
+                }
+            }
+            item("controller") {
+                Section("Controller", g) {
+                    NavRow(
+                        "Gamepad mapping", onOpenGamepad, icon = Icons.Rounded.SportsEsports,
+                        subtitle = "Remap any button, or pick a layout", trailing = if (settings.padBindings.isEmpty()) "Default" else "Custom",
+                    )
                 }
             }
             item("display") {
@@ -265,12 +301,33 @@ fun SettingsContent(
                     Spacer(Modifier.height(Space.xs))
                     SwitchRow("Sound while fast-forwarding", settings.fastForwardAudio, { v -> onUpdate { it.copy(fastForwardAudio = v) } }, icon = Icons.Rounded.FastForward)
                     Divider()
-                    SwitchRow("Rewind", settings.rewindEnabled, { v -> onUpdate { it.copy(rewindEnabled = v) } }, subtitle = "Hold the rewind button to go back up to 10 seconds", icon = Icons.Rounded.FastRewind)
+                    SwitchRow("Rewind", settings.rewindEnabled, { v -> onUpdate { it.copy(rewindEnabled = v) } }, subtitle = "Tap to jump back a few seconds, hold to scrub back up to 20", icon = Icons.Rounded.FastRewind)
+                    if (settings.rewindEnabled) {
+                        Text("One-tap jump", style = RetraType.label, color = c.inkMuted, modifier = Modifier.padding(top = Space.xs))
+                        Spacer(Modifier.height(Space.xxs))
+                        Segmented(listOf(3 to "3 s", 5 to "5 s", 8 to "8 s", 12 to "12 s"), settings.rewindSeconds, { v -> onUpdate { it.copy(rewindSeconds = v) } })
+                        Spacer(Modifier.height(Space.xs))
+                    }
                     Divider()
                     SwitchRow(
                         "Save a Continue point on exit", settings.autoSaveOnExit, { v -> onUpdate { it.copy(autoSaveOnExit = v) } },
                         subtitle = "Off: leaving a game skips the snapshot. In-game saves are always kept.", icon = Icons.Rounded.Save,
                     )
+                }
+            }
+            item("connect") {
+                Section("Cheats, cloud and friends", g) {
+                    NavRow(
+                        "Online cheat search", onOpenOpenRouter, icon = Icons.Rounded.AutoAwesome,
+                        subtitle = "Find codes with your OpenRouter key", trailing = if (routerKeySet) "Key saved" else "Set up",
+                    )
+                    Divider()
+                    NavRow(
+                        "Google Drive saves", onOpenDrive, icon = Icons.Rounded.Cloud,
+                        subtitle = "Back saves up and carry them between phones", trailing = settings.driveAccount ?: "Connect",
+                    )
+                    Divider()
+                    NavRow("Link rooms", onOpenLink, icon = Icons.Rounded.Groups, subtitle = "Host a room and play with friends", trailing = "Beta")
                 }
             }
             item("clock") {

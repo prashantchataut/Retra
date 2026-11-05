@@ -4,6 +4,8 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import app.retra.core.AtomicFiles
+import app.retra.core.FolderPlan
+import app.retra.core.SaveFiles
 import app.retra.core.RomImport
 import app.retra.patcher.PatchArchive
 import app.retra.patcher.Patcher
@@ -16,6 +18,7 @@ class ImportController(
     private val context: Context,
     private val library: LibraryRepository,
     private val messages: Messages,
+    private val saves: SaveRepository? = null,
 ) {
     data class Outcome(val added: List<Game>, val duplicates: List<Game>, val errors: List<String>, val patch: IncomingFile.Patch?)
 
@@ -79,6 +82,109 @@ class ImportController(
             errors.isNotEmpty() && added.isEmpty() -> messages.show(errors.first().substringAfter(": "), MessageTone.ERROR)
             errors.isNotEmpty() -> messages.show("Added ${added.size}, ${errors.size} couldn't be imported", MessageTone.INFO)
         }
+    }
+
+    // ---- Folders and .sav files ----
+
+    data class FolderProgress(val done: Int, val total: Int, val current: String)
+
+    data class FolderOutcome(
+        val scanned: Int,
+        val added: List<Game>,
+        val duplicates: List<Game>,
+        val savesLoaded: Int,
+        val errors: List<String>,
+        val patch: IncomingFile.Patch?,
+    )
+
+    /** Lists the importable files in a picked folder (up to 4 levels deep, 3000 files). */
+    suspend fun scanFolder(tree: Uri): Pair<FolderPlan.Plan, Map<String, Uri>> = withContext(Dispatchers.IO) {
+        val root = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, tree)
+        val entries = ArrayList<FolderPlan.Entry>()
+        val uris = HashMap<String, Uri>()
+        fun walk(dir: androidx.documentfile.provider.DocumentFile?, depth: Int) {
+            if (dir == null || depth > 4 || entries.size >= 3000) return
+            for (f in dir.listFiles()) {
+                if (f.isDirectory) walk(f, depth + 1)
+                else {
+                    val name = f.name ?: continue
+                    val ext = name.substringAfterLast('.', "").lowercase()
+                    if (ext in FolderPlan.romExtensions || ext in FolderPlan.patchExtensions || ext in SaveFiles.extensions) {
+                        val key = f.uri.toString()
+                        entries += FolderPlan.Entry(name, key, f.length())
+                        uris[key] = f.uri
+                    }
+                }
+            }
+        }
+        walk(root, 0)
+        FolderPlan.plan(entries) to uris
+    }
+
+    /** Adds every game in a folder; a save next to a game (same file name) is loaded into it. */
+    suspend fun importFolder(tree: Uri, onProgress: (FolderProgress) -> Unit = {}): FolderOutcome {
+        val (plan, uris) = scanFolder(tree)
+        val added = ArrayList<Game>()
+        val dups = ArrayList<Game>()
+        val errors = ArrayList<String>()
+        var loaded = 0
+        var patch: IncomingFile.Patch? = null
+        val total = plan.roms.size + plan.patches.size
+        var done = 0
+        for (rom in plan.roms) {
+            onProgress(FolderProgress(done++, total, rom.name))
+            val uri = uris[rom.uri] ?: continue
+            val bytes = try { readBytes(uri) } catch (e: Exception) { errors += "${rom.name}: ${e.message ?: "couldn't be read"}"; continue }
+            val game = when (val r = library.import(bytes, rom.name)) {
+                is ImportResult.Added -> r.game.also { added += it }
+                is ImportResult.Duplicate -> r.game.also { dups += it }
+                is ImportResult.Error -> { errors += "${rom.name}: ${r.message}"; null }
+            } ?: continue
+            val save = plan.pairs[rom]
+            if (save != null) {
+                val isNew = game in added
+                val hasSave = saves?.readBatterySave(game.id) != null
+                if (isNew || !hasSave) {
+                    when (val r = loadSaveFile(game, uris[save.uri] ?: continue)) {
+                        is SaveFiles.Result.Ok -> loaded++
+                        is SaveFiles.Result.Error -> errors += "${save.name}: ${r.message}"
+                    }
+                }
+            }
+        }
+        for (p in plan.patches.take(1)) {
+            onProgress(FolderProgress(done++, total, p.name))
+            val uri = uris[p.uri] ?: continue
+            runCatching { stashPatch(readBytes(uri), p.name) }.onSuccess { patch = it }
+        }
+        onProgress(FolderProgress(total, total, ""))
+        val outcome = FolderOutcome(plan.roms.size + plan.saves.size + plan.patches.size, added, dups, loaded, errors, patch)
+        messages.show(folderSummary(outcome), if (added.isEmpty() && loaded == 0) MessageTone.INFO else MessageTone.SUCCESS)
+        return outcome
+    }
+
+    fun folderSummary(o: FolderOutcome): String {
+        val parts = ArrayList<String>()
+        if (o.added.isNotEmpty()) parts += "${o.added.size} game${if (o.added.size == 1) "" else "s"} added"
+        if (o.savesLoaded > 0) parts += "${o.savesLoaded} save${if (o.savesLoaded == 1) "" else "s"} loaded"
+        if (o.duplicates.isNotEmpty()) parts += "${o.duplicates.size} already in your library"
+        if (o.errors.isNotEmpty()) parts += "${o.errors.size} skipped"
+        return if (parts.isEmpty()) "No GBA games found in that folder." else parts.joinToString(", ")
+    }
+
+    /** Reads a save file, fits it to [game]'s save chip and writes it (the old save is backed up). */
+    suspend fun loadSaveFile(game: Game, uri: Uri): SaveFiles.Result = withContext(Dispatchers.IO) {
+        val repo = saves ?: return@withContext SaveFiles.Result.Error("Saves aren't available right now.")
+        val bytes = try { readBytes(uri, max = 1024L * 1024) } catch (e: Exception) {
+            return@withContext SaveFiles.Result.Error(e.message ?: "Couldn't read that file.")
+        }
+        val result = SaveFiles.normalize(bytes, game.saveType)
+        if (result is SaveFiles.Result.Ok) {
+            repo.writeBatterySave(game.id, result.data, backup = true)
+            // A Continue snapshot would resurrect the old progress over the freshly loaded save.
+            repo.deleteState(game.id, SaveRepository.AUTO_SLOT)
+        }
+        result
     }
 
     fun isPatch(bytes: ByteArray, name: String): Boolean {

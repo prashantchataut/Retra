@@ -131,6 +131,22 @@ class CheatDatabase(private val open: () -> InputStream?) {
 
     val source: String get() = pack.source
 
+    val gameCount: Int get() = pack.games.size
+    val cheatCount: Int get() = pack.games.sumOf { it.cheats.size }
+
+    /** Every game with a list, by title, for browsing the library. */
+    fun all(): List<CheatPackGame> = pack.games.sortedBy { it.title.lowercase() }
+
+    /** Games whose title or serial contains every word of [query] (case-insensitive). */
+    fun search(query: String, limit: Int = 60): List<CheatPackGame> {
+        val words = query.lowercase().split(Regex("\\s+")).filter { it.isNotBlank() }
+        if (words.isEmpty()) return all().take(limit)
+        return pack.games.filter { g ->
+            val hay = g.title.lowercase() + " " + g.serials.joinToString(" ").lowercase()
+            words.all { it in hay }
+        }.sortedBy { it.title.lowercase() }.take(limit)
+    }
+
     fun lookup(game: Game): CheatPackGame? {
         game.catalogId?.let { id -> byCatalog[id]?.let { return it } }
         if (game.source == GameSource.PATCHED) return null

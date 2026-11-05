@@ -75,6 +75,10 @@ import app.retra.data.Cheat
 import app.retra.data.ScreenFilter
 import app.retra.data.Settings
 import app.retra.emu.InputMapper
+import app.retra.core.GamepadBindings
+import app.retra.core.PadAction
+import app.retra.ui.games.ChallengePanel
+import app.retra.ui.games.CheatLibrarySheet
 import app.retra.emu.InputRouter
 import app.retra.emu.SurfaceRenderer
 import app.retra.ui.LocalAppActions
@@ -116,6 +120,10 @@ class PlayerCallbacks(
     val onCheats: (List<Cheat>) -> Unit = {},
     val onImportCheats: (() -> Unit)? = null,
     val onSettings: ((Settings) -> Settings) -> Unit = {},
+    val onRewindJump: () -> Unit = {},
+    val onOpenLibrary: (() -> Unit)? = null,
+    val onChallengeChanged: () -> Unit = {},
+    val challengePanel: @Composable () -> Unit = {},
 )
 
 @Composable
@@ -131,6 +139,8 @@ fun PlayerScreen(container: AppContainer, gameId: String, slot: Int, origin: Str
     val fps by vm.fps.collectAsStateWithLifecycle()
 
     ImmersiveMode()
+    var showLibrary by remember { mutableStateOf(false) }
+    CheatLibrarySheet(container, gameId, state.cheats, showLibrary, { showLibrary = false }, vm::setCheats)
     renderer.smooth = settings.screenFilter == ScreenFilter.SMOOTH
     renderer.integerScale = settings.integerScale
     LaunchedEffect(settings.screenFilter, settings.integerScale) { renderer.redraw() }
@@ -196,6 +206,10 @@ fun PlayerScreen(container: AppContainer, gameId: String, slot: Int, origin: Str
             onCheats = { vm.setCheats(it) },
             onImportCheats = { pickCheats.launch(arrayOf("*/*")) },
             onSettings = { t -> container.settings.update(t) },
+            onRewindJump = vm::rewindJump,
+            onOpenLibrary = { showLibrary = true },
+            onChallengeChanged = vm::refreshChallenge,
+            challengePanel = { ChallengePanel(container, gameId) },
         ),
         screen = { mod ->
             Box(mod.background(Color(0xFF0E0C1A))) {
@@ -257,6 +271,7 @@ fun PlayerContent(
                 GamepadLayer(
                     landscape = true, opacity = if (showControls) settings.controlsOpacity else 0f, scale = settings.controlsScale * 0.88f,
                     haptics = settings.haptics, onKeys = callbacks.onKeys, pressedPreview = pressedPreview,
+                    skin = SkinConfig(settings.controlSkin, settings.controlTint.takeIf { it != 0L }?.let { androidx.compose.ui.graphics.Color(it.toInt()) }, settings.controlLabels),
                     leftAux = {
                         Row(horizontalArrangement = Arrangement.spacedBy(Space.xs), verticalAlignment = Alignment.CenterVertically) {
                             GlassIconButton(Icons.Rounded.Menu, "Open menu", { callbacks.onMenu(true) }, size = 44.dp)
@@ -265,7 +280,7 @@ fun PlayerContent(
                     },
                     rightAux = {
                         Row(horizontalArrangement = Arrangement.spacedBy(Space.xs)) {
-                            HoldButton(Icons.Rounded.FastRewind, "Rewind (hold)", active = state.rewinding, onHold = callbacks.onRewind, onTap = null, compact = true)
+                            HoldButton(Icons.Rounded.FastRewind, "Rewind: tap to jump back, hold to scrub", active = state.rewinding, onHold = callbacks.onRewind, onTap = callbacks.onRewindJump, compact = true)
                             HoldButton(Icons.Rounded.FastForward, "Fast-forward (tap to toggle, hold for a burst)", active = state.fastForward, onHold = callbacks.onFfHold, onTap = callbacks.onFfToggle, compact = true)
                         }
                     },
@@ -299,6 +314,7 @@ fun PlayerContent(
                         GamepadLayer(
                             landscape = false, opacity = settings.controlsOpacity, scale = settings.controlsScale,
                             haptics = settings.haptics, onKeys = callbacks.onKeys, pressedPreview = pressedPreview,
+                            skin = SkinConfig(settings.controlSkin, settings.controlTint.takeIf { it != 0L }?.let { androidx.compose.ui.graphics.Color(it.toInt()) }, settings.controlLabels),
                         )
                     } else {
                         Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -343,7 +359,7 @@ private fun AuxButtons(state: PlayerUiState, settings: Settings, fps: Float, cb:
         } else if (settings.showFps && fps > 0f) {
             Tag("%.0f fps".format(fps))
         }
-        HoldButton(Icons.Rounded.FastRewind, "Rewind (hold)", active = state.rewinding, onHold = cb.onRewind, onTap = null, compact = compact)
+        HoldButton(Icons.Rounded.FastRewind, "Rewind: tap to jump back, hold to scrub", active = state.rewinding, onHold = cb.onRewind, onTap = cb.onRewindJump, compact = compact)
         HoldButton(Icons.Rounded.FastForward, "Fast-forward (tap to toggle, hold for a burst)", active = state.fastForward, onHold = cb.onFfHold, onTap = cb.onFfToggle, compact = compact)
     }
 }
@@ -438,6 +454,9 @@ private fun rememberGamepadConnected(): Boolean {
 /** Routes hardware keys and sticks (via MainActivity) into the session. */
 @Composable
 private fun PhysicalInput(vm: PlayerViewModel) {
+    val padSettings by vm.settings.collectAsStateWithLifecycle()
+    val bindings = remember(padSettings.padBindings) { GamepadBindings.resolve(padSettings.padBindings) }
+    val currentBindings by androidx.compose.runtime.rememberUpdatedState(bindings)
     DisposableEffect(vm) {
         var buttons = 0
         var axes = 0
@@ -445,24 +464,26 @@ private fun PhysicalInput(vm: PlayerViewModel) {
         var triggerRw = false
         val handler = object : InputRouter.Handler {
             override fun onKeyEvent(event: KeyEvent): Boolean {
+                val action = GamepadBindings.action(event.keyCode, currentBindings)
                 // While the menu is open, let keyboards type (cheat names/codes); controllers still work.
-                if (vm.state.value.menuOpen && !event.isFromSource(android.view.InputDevice.SOURCE_GAMEPAD) &&
-                    InputMapper.hotkey(event.keyCode) != InputMapper.Hotkey.MENU
-                ) return false
-                if (event.repeatCount > 0 && event.action == KeyEvent.ACTION_DOWN) return InputMapper.gbaKey(event.keyCode) != 0
+                if (vm.state.value.menuOpen && !event.isFromSource(android.view.InputDevice.SOURCE_GAMEPAD) && action != PadAction.MENU) return false
+                if (action == null) return false
                 val down = event.action == KeyEvent.ACTION_DOWN
-                val bit = InputMapper.gbaKey(event.keyCode)
+                if (event.repeatCount > 0 && down) return true
+                val bit = action.gbaKey
                 if (bit != 0) {
                     buttons = if (down) buttons or bit else buttons and bit.inv()
                     vm.setPadKeys(buttons or axes)
                     return true
                 }
-                when (InputMapper.hotkey(event.keyCode)) {
-                    InputMapper.Hotkey.FAST_FORWARD -> { vm.holdFastForward(down); return true }
-                    InputMapper.Hotkey.REWIND -> { vm.setRewinding(down); return true }
-                    InputMapper.Hotkey.MENU -> { if (down) vm.openMenu(!vm.state.value.menuOpen); return true }
-                    null -> return false
+                when (action) {
+                    PadAction.FAST_FORWARD -> vm.holdFastForward(down)
+                    PadAction.REWIND_HOLD -> vm.setRewinding(down)
+                    PadAction.REWIND_JUMP -> if (down) vm.rewindJump()
+                    PadAction.MENU -> if (down) vm.openMenu(!vm.state.value.menuOpen)
+                    else -> return false
                 }
+                return true
             }
 
             override fun onMotionEvent(event: MotionEvent): Boolean {
