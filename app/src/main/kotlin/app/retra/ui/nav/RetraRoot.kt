@@ -43,6 +43,19 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.SportsEsports
 import androidx.compose.material.icons.rounded.Storefront
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.material3.Text
+import app.retra.ui.theme.Space
+import app.retra.ui.theme.RetraType
+import app.retra.ui.components.Divider
+import app.retra.ui.components.NavRow
+import app.retra.ui.components.GlassGroup
+import app.retra.ui.components.GlassSheet
+import androidx.compose.material.icons.rounded.FolderOpen
+import androidx.compose.material.icons.rounded.FileOpen
+import app.retra.data.ImportController
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -90,6 +103,7 @@ import app.retra.ui.player.PlayerScreen
 import app.retra.ui.settings.SettingsScreen
 import app.retra.ui.store.StoreScreen
 import app.retra.ui.theme.Motion
+import app.retra.ui.theme.Retra
 import app.retra.ui.theme.RetraTheme
 import app.retra.ui.theme.isDarkTheme
 import dev.chrisbanes.haze.hazeSource
@@ -128,7 +142,7 @@ fun RetraRoot(container: AppContainer) {
         // The floating dock draws its own glass; don't let the system add a scrim behind 3-button nav.
         if (android.os.Build.VERSION.SDK_INT >= 29) activity?.window?.isNavigationBarContrastEnforced = false
     }
-    RetraTheme(dark = dark, reduceMotion = settings.reduceMotion) {
+    RetraTheme(dark = dark, reduceMotion = settings.reduceMotion, palette = settings.palette) {
         val nav = rememberNavController()
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
@@ -139,9 +153,22 @@ fun RetraRoot(container: AppContainer) {
         val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
             if (uris.isNotEmpty()) scope.launchImport(container, uris, nav)
         }
+        var showImportChooser by remember { mutableStateOf(false) }
+        var folderProgress by remember { mutableStateOf<ImportController.FolderProgress?>(null) }
+        val folderLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { tree ->
+            if (tree != null) scope.launch {
+                val o = container.importer.importFolder(tree) { folderProgress = it }
+                folderProgress = null
+                when {
+                    o.patch != null -> nav.navigateTab(PatcherRoute(patchPath = o.patch.path, patchName = o.patch.name))
+                    o.added.size == 1 -> nav.navigate(DetailsRoute(o.added[0].id, "import"))
+                    o.added.isNotEmpty() -> nav.navigateTab(GamesRoute)
+                }
+            }
+        }
         val actions = remember(nav) {
             object : AppActions {
-                override fun importGames() = importLauncher.launch(arrayOf("*/*"))
+                override fun importGames() { showImportChooser = true }
                 override fun openGame(id: String, origin: String) = nav.navigate(DetailsRoute(id, origin)) { launchSingleTop = true }
                 override fun playSlot(id: String, slot: Int, origin: String) = nav.navigate(PlayerRoute(id, slot, origin)) { launchSingleTop = true }
                 override fun openStore(entryId: String?) = nav.navigateTab(StoreRoute(entryId))
@@ -223,11 +250,18 @@ fun RetraRoot(container: AppContainer) {
                     ) {
                         Dock(dockItems, tabIndex.coerceAtLeast(0), onSelect = { i -> actions.openTab(Tab.entries[i]) })
                     }
+                    ImportChooser(
+                        visible = showImportChooser, progress = folderProgress,
+                        onDismiss = { showImportChooser = false },
+                        onFiles = { showImportChooser = false; importLauncher.launch(arrayOf("*/*")) },
+                        onFolder = { showImportChooser = false; folderLauncher.launch(null) },
+                    )
                     SheetLayer(sheets)
                     ToastHost(message) { message = null }
                 }
                 AnimatedVisibility(!settings.onboardingDone, enter = fadeIn(), exit = fadeOut(tween(300))) {
                     OnboardingScreen(
+                        settings = settings, onUpdate = { t -> container.settings.update(t) },
                         onFinish = { container.settings.update { it.copy(onboardingDone = true) } },
                         onImport = { actions.importGames() },
                         onExplore = { actions.openStore() },
@@ -283,6 +317,37 @@ fun openUrl(context: Context, url: String) {
             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         } catch (e2: ActivityNotFoundException) {
             (context.applicationContext as? app.retra.RetraApp)?.container?.messages?.show("No browser found to open $url", MessageTone.ERROR)
+        }
+    }
+}
+
+/** Where do the games come from: a handful of files, or a whole folder (games and their saves, paired by name). */
+@Composable
+private fun ImportChooser(visible: Boolean, progress: ImportController.FolderProgress?, onDismiss: () -> Unit, onFiles: () -> Unit, onFolder: () -> Unit) {
+    val c = Retra.colors
+    GlassSheet(visible || progress != null, onDismiss, title = "Add games") {
+        if (progress != null) {
+            Text("Importing your folder…", style = RetraType.headline, color = c.ink)
+            Spacer(Modifier.height(Space.xs))
+            Text(progress.current.ifBlank { "Almost done" }, style = RetraType.label, color = c.inkMuted, maxLines = 1)
+            Spacer(Modifier.height(Space.s))
+            androidx.compose.material3.LinearProgressIndicator(
+                progress = { if (progress.total == 0) 0f else progress.done / progress.total.toFloat() },
+                modifier = Modifier.fillMaxWidth(), color = c.accent, trackColor = c.inkFaint,
+            )
+            Spacer(Modifier.height(Space.xs))
+            Text("${progress.done} of ${progress.total}", style = RetraType.caption, color = c.inkMuted)
+            return@GlassSheet
+        }
+        Text("Games stay on this device. Retra never uploads your ROMs.", style = RetraType.body, color = c.inkMuted)
+        Spacer(Modifier.height(Space.s))
+        GlassGroup {
+            NavRow("Pick files", onFiles, icon = Icons.Rounded.FileOpen, subtitle = "Choose any number of .gba, .zip, patch or .sav files")
+            Divider()
+            NavRow(
+                "Import a folder", onFolder, icon = Icons.Rounded.FolderOpen,
+                subtitle = "Adds every game inside, and loads the .sav sitting next to each one",
+            )
         }
     }
 }

@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -141,9 +142,13 @@ fun GameDetailsScreen(container: AppContainer, gameId: String, origin: String) {
     val pickCheats = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) vm.importCheats(uri)
     }
+    var showLibrary by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    CheatLibrarySheet(container, gameId, state.cheats, showLibrary, { showLibrary = false }, vm::setCheats)
     GameDetailsContent(
         state, origin, onFavorite = vm::setFavorite, onCheats = vm::setCheats, onDeleteSlot = vm::deleteSlot,
         onImportCheats = { pickCheats.launch(arrayOf("*/*")) },
+        onOpenLibrary = { showLibrary = true },
+        challengeContent = { ChallengePanel(container, gameId) },
     )
 }
 
@@ -155,6 +160,8 @@ fun GameDetailsContent(
     onCheats: (List<Cheat>) -> Unit = {},
     onDeleteSlot: (Int) -> Unit = {},
     onImportCheats: (() -> Unit)? = null,
+    onOpenLibrary: (() -> Unit)? = null,
+    challengeContent: (@androidx.compose.runtime.Composable () -> Unit)? = null,
 ) {
     val c = Retra.colors
     val actions = LocalAppActions.current
@@ -239,10 +246,14 @@ fun GameDetailsContent(
                     }
                 }
             }
+            if (challengeContent != null) item("challenge") {
+                SectionHeader("Challenge", Modifier.padding(g).padding(top = Space.xl, bottom = Space.s), subtitle = "No-Cheat Run and Nuzlocke")
+                Box(Modifier.padding(g)) { challengeContent() }
+            }
             item("cheats") {
                 SectionHeader("Cheats", Modifier.padding(g).padding(top = Space.xl, bottom = Space.s))
                 GlassGroup(Modifier.padding(g)) {
-                    Box(Modifier.padding(vertical = Space.xs)) { CheatsEditor(state.cheats, onCheats, book = state.cheatBook, onImportFile = onImportCheats) }
+                    Box(Modifier.padding(vertical = Space.xs)) { CheatsEditor(state.cheats, onCheats, book = state.cheatBook, onImportFile = onImportCheats, onOpenLibrary = onOpenLibrary) }
                 }
             }
             item("info") {

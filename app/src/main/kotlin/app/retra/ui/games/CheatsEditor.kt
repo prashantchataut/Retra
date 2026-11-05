@@ -18,6 +18,7 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.AddCircleOutline
 import androidx.compose.material.icons.rounded.AutoStories
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.ContentPaste
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.FileOpen
@@ -71,6 +72,7 @@ fun CheatsEditor(
     startAdding: Boolean = false,
     book: CheatBook? = null,
     onImportFile: (() -> Unit)? = null,
+    onOpenLibrary: (() -> Unit)? = null,
 ) {
     val c = Retra.colors
     var adding by remember { mutableStateOf(startAdding) }
@@ -146,6 +148,7 @@ fun CheatsEditor(
         }
         if (!adding) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.xxs)) {
+                if (onOpenLibrary != null) RetraButton("Cheat library", onOpenLibrary, icon = Icons.Rounded.AutoAwesome, style = ButtonStyle.SECONDARY, compact = true)
                 RetraButton("Paste codes", { adding = true }, icon = Icons.Rounded.ContentPaste, style = ButtonStyle.TERTIARY, compact = true)
                 if (onImportFile != null) RetraButton("Import file", onImportFile, icon = Icons.Rounded.FileOpen, style = ButtonStyle.TERTIARY, compact = true)
             }

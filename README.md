@@ -18,6 +18,21 @@ Everything here is written from scratch: the emulation core, the patcher, the ap
 | `catalog/` | The online Game Library manifest and its format — see `catalog/README.md` |
 | `docs/` | `REBUILD_PLAN.md` (the architecture contract) and screenshots |
 
+## What's new in this branch
+
+| Feature | Where |
+|---|---|
+| Import a **whole folder**; a `.sav` next to a game is paired and loaded; multi-select import | Add games sheet (`ImportController`, `core/SaveFiles.kt`) |
+| Load a `.sav` from other emulators (padding, RTC footers and wrong sizes are fixed or refused safely) | Game menu in My Games |
+| **Six colour worlds** (light + dark each) and **five button skins** with a custom pressed colour | Settings (`ui/theme/Palettes.kt`, `ui/player/Controls.kt`) |
+| **Gamepad mapping**: tap a row, press a button; layout presets | Settings → Controller (`core/GamepadBindings.kt`) |
+| **One-tap rewind** (3-12 s, hold to scrub up to 20 s) | Player rewind button / gamepad shortcut |
+| **No-Cheat Run** and **Nuzlocke** (locks cheats, rewind, state loading, reset; encounter log, dupes clause, wipe rule) | Game page and player menu (`core/Challenge.kt`) |
+| **Cheat library**: built-in lists, browse every game, and **online search with your own OpenRouter key** | Cheats → Cheat library |
+| **Google Drive** save sync (hidden app folder) | Settings, see `docs/GOOGLE_DRIVE.md` |
+| **Link rooms**: host/join with a room code, ready checks, chat (cable emulation not in the core yet) | Settings → Link rooms |
+| New five-page animated **onboarding** with parallax, live palette picker and confetti | First run |
+
 ## Content rules
 
 These are hard rules, not preferences:

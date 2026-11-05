@@ -66,7 +66,8 @@ class EmulatorSession(
     companion object {
         const val PERIOD_NANOS = (1_000_000_000.0 / EmuCore.FRAME_RATE).toLong()
         const val REWIND_INTERVAL = 10
-        const val REWIND_CAPACITY = 60 // 60 states x 10 frames = ~10 s
+        const val REWIND_CAPACITY = 120 // 120 states x 10 frames = ~20 s
+        const val STATES_PER_SECOND = 6 // 59.7 fps / REWIND_INTERVAL
         const val SAVE_DEBOUNCE_NANOS = 1_000_000_000L
     }
 
@@ -98,6 +99,30 @@ class EmulatorSession(
     fun snapshotFrame(): IntArray = video.copyOf()
 
     fun clearRewind() = commands.offer(Runnable { rewind.clear() })
+
+    /**
+     * One-tap rewind: jumps back about [seconds] in a single step and returns how far it really got (the
+     * buffer may hold less). Works while paused; the screen is refreshed with the restored frame.
+     */
+    suspend fun rewindJump(seconds: Int): Float = run { c ->
+        val want = (seconds * STATES_PER_SECOND).coerceIn(1, REWIND_CAPACITY)
+        var popped = 0
+        var target: ByteArray? = null
+        while (popped < want) {
+            val st = rewind.pop() ?: break
+            target = st
+            popped++
+        }
+        if (target != null && c.loadState(target)) {
+            c.runFrame(video, audioBuf)
+            frameSink?.onFrame(video)
+            popped / STATES_PER_SECOND.toFloat()
+        } else 0f
+    }
+
+    /** Seconds of history currently available to rewind. */
+    @Volatile var rewindAvailable = 0f
+        private set
 
     /** Stops the thread, flushes the battery save, and releases the core. Blocks briefly. */
     fun stop() {
@@ -150,7 +175,7 @@ class EmulatorSession(
                     val frames = core.runFrame(video, audioBuf)
                     if (i == 0 && audible) audio?.write(audioBuf, frames)
                     frameCounter++
-                    if (rewindEnabled && frameCounter % REWIND_INTERVAL == 0L) rewind.push(core.saveState())
+                    if (rewindEnabled && frameCounter % REWIND_INTERVAL == 0L) { rewind.push(core.saveState()); rewindAvailable = rewind.size / STATES_PER_SECOND.toFloat() }
                 }
             }
             frameSink?.onFrame(video)

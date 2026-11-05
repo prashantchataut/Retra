@@ -154,12 +154,12 @@ class GamesViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     fun importSave(id: String, uri: Uri) = viewModelScope.launch {
-        runCatching {
-            val bytes = container.importer.readBytes(uri, 512 * 1024)
-            require(bytes.isNotEmpty() && bytes.size <= 256 * 1024) { "That file isn't a GBA save (.sav files are 512 bytes to 128 KB)." }
-            withContext(Dispatchers.IO) { container.saves.writeBatterySave(id, bytes, backup = true) }
-        }.onSuccess { container.messages.show("Save imported. Your old save was backed up.", MessageTone.SUCCESS) }
-            .onFailure { container.messages.show(it.message ?: "Couldn't import that save.", MessageTone.ERROR) }
+        val game = container.library.game(id) ?: return@launch
+        when (val r = container.importer.loadSaveFile(game, uri)) {
+            is app.retra.core.SaveFiles.Result.Ok ->
+                container.messages.show("Save loaded. ${r.note?.let { "$it " } ?: ""}Your old save was backed up.", MessageTone.SUCCESS)
+            is app.retra.core.SaveFiles.Result.Error -> container.messages.show(r.message, MessageTone.ERROR)
+        }
     }
 
     fun exportSave(id: String, uri: Uri, resolver: android.content.ContentResolver) = viewModelScope.launch {

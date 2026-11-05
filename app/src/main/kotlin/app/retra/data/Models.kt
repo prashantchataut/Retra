@@ -8,9 +8,36 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
 @Serializable
 enum class ScreenFilter { SHARP, SMOOTH }
 
+/** Colour worlds for the whole app. Each one has a light and a dark version. */
+@Serializable
+enum class AppPalette(val label: String) {
+    MINT("Mint mist"), SAKURA("Sakura"), LAVENDER("Lavender"), SUNSET("Peach sunset"), OCEAN("Ocean"), POCKET("Pocket green"),
+}
+
+/** How the on-screen buttons look. */
+@Serializable
+enum class ControlSkin(val label: String) {
+    GLASS("Glass"), CLASSIC("Classic"), CANDY("Candy"), NEON("Neon"), FLAT("Flat"),
+}
+
 @Serializable
 data class Settings(
     val theme: ThemeMode = ThemeMode.SYSTEM,
+    val palette: AppPalette = AppPalette.MINT,
+    val controlSkin: ControlSkin = ControlSkin.GLASS,
+    /** ARGB of a custom button colour; 0 follows the palette. */
+    val controlTint: Long = 0,
+    val controlLabels: Boolean = true,
+    /** Physical button bindings as `keyCode -> PadAction name`. Empty means the defaults. */
+    val padBindings: Map<Int, String> = emptyMap(),
+    /** How far the one-tap rewind button jumps back. */
+    val rewindSeconds: Int = 5,
+    val openRouterModel: String = "openai/gpt-4o-mini:online",
+    /** Google account that Drive sync is connected to (the token itself is never stored). */
+    val driveAccount: String? = null,
+    val driveAutoSync: Boolean = true,
+    val driveLastSync: Long = 0,
+    val playerName: String = "Player",
     val reduceMotion: Boolean = false,
     val haptics: Boolean = true,
     val volume: Float = 1f,

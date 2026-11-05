@@ -42,11 +42,16 @@ class AppContainer(private val context: Context) {
     val library = LibraryRepository(filesRoot, homebrewLookup = { sha -> catalog.homebrewBySha256(sha) })
     val saves = SaveRepository(filesRoot)
     val cheats = CheatRepository(filesRoot)
+    val challenges = app.retra.data.ChallengeRepository(filesRoot)
+    val secrets = app.retra.data.SecretStore(filesRoot)
+    val openRouter = app.retra.data.OpenRouterClient(secrets, settings)
+    val link = app.retra.link.LinkRoom()
     val bios = BiosRepository(filesRoot)
     val backups = BackupManager(filesRoot)
     val messages = Messages()
     val incoming = IncomingFiles()
-    val importer = app.retra.data.ImportController(context, library, messages)
+    val drive = app.retra.data.DriveSync(context, settings, saves, library, messages)
+    val importer = app.retra.data.ImportController(context, library, messages, saves)
     val gameIndex = GameIndex { runCatching { context.assets.open("metadata/gba_games.tsv.gz") }.getOrNull() }
     val cheatBooks = CheatDatabase { runCatching { context.assets.open("metadata/gba_cheats.json.gz") }.getOrNull() }
     val boxArt = BoxArtRepository(filesRoot, gameIndex, fetch = { url -> downloader.fetchBytes(url) })
@@ -61,6 +66,7 @@ class AppContainer(private val context: Context) {
             installOriginals()
             catalog.refresh()
         }
+        scope.launch { runCatching { drive.autoSync() } }
         // Box art for newly added cartridges (only reacts when the set of games changes).
         scope.launch {
             library.games.distinctUntilChangedBy { list -> list.map { it.id } }.collect { list ->
@@ -127,6 +133,7 @@ class AppContainer(private val context: Context) {
         kotlinx.coroutines.withContext(Dispatchers.IO) {
             saves.deleteAll(id)
             cheats.delete(id)
+            challenges.clear(id)
         }
     }
 

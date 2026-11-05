@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
@@ -120,6 +121,7 @@ fun GamepadLayer(
     onKeys: (Int) -> Unit,
     modifier: Modifier = Modifier,
     pressedPreview: Int = 0,
+    skin: SkinConfig = SkinConfig(),
     centre: @Composable BoxScope.() -> Unit = {},
     leftAux: @Composable () -> Unit = {},
     rightAux: @Composable () -> Unit = {},
@@ -154,7 +156,9 @@ fun GamepadLayer(
     ) {
         centre()
         Box(Modifier.fillMaxSize().graphicsLayer { alpha = opacity }) {
-            if (landscape) LandscapeControls(registry, pressed, scale) else PortraitControls(registry, pressed, scale)
+            androidx.compose.runtime.CompositionLocalProvider(LocalSkin provides skin) {
+                if (landscape) LandscapeControls(registry, pressed, scale) else PortraitControls(registry, pressed, scale)
+            }
         }
         if (landscape) {
             // Menu / rewind / fast-forward live between the shoulder buttons and the pads.
@@ -209,71 +213,128 @@ private fun FaceButtons(reg: ControlRegistry, pressed: IntState, scale: Float) {
     }
 }
 
+/** The player's choice of button look, from Settings. [tint] null follows the palette's accent. */
+@androidx.compose.runtime.Immutable
+data class SkinConfig(val skin: app.retra.data.ControlSkin = app.retra.data.ControlSkin.GLASS, val tint: Color? = null, val labels: Boolean = true)
+
+val LocalSkin = androidx.compose.runtime.staticCompositionLocalOf { SkinConfig() }
+
+/** Resolved colours and finish for the current skin. */
+@androidx.compose.runtime.Immutable
+private class SkinSpec(
+    val fill: Color,
+    val rim: Color,
+    val ink: Color,
+    val pressed: Color,
+    val onPressed: Color,
+    val shadow: Color,
+    val gloss: Float,
+    val glow: Color?,
+    val faceA: Color?,
+    val faceB: Color?,
+    val rimWidth: Float,
+    val labels: Boolean,
+)
+
 @Composable
-private fun glassColors(): Triple<Color, Color, Color> {
+private fun skinSpec(): SkinSpec {
     val c = Retra.colors
-    // Controls sit over a dark game frame or the sky: a light, translucent glass in both themes.
-    val fill = if (c.isDark) Color.White.copy(alpha = 0.14f) else Color.White.copy(alpha = 0.55f)
-    val rim = Color.White.copy(alpha = if (c.isDark) 0.45f else 0.95f)
-    val ink = if (c.isDark) Color.White.copy(alpha = 0.9f) else c.ink.copy(alpha = 0.8f)
-    return Triple(fill, rim, ink)
+    val cfg = LocalSkin.current
+    val tint = cfg.tint ?: c.accent
+    val onTint = if (tint.luminance() > 0.5f) Color(0xFF14231E) else Color.White
+    return when (cfg.skin) {
+        app.retra.data.ControlSkin.GLASS -> SkinSpec(
+            fill = if (c.isDark) Color.White.copy(alpha = 0.14f) else Color.White.copy(alpha = 0.55f),
+            rim = Color.White.copy(alpha = if (c.isDark) 0.45f else 0.95f),
+            ink = if (c.isDark) Color.White.copy(alpha = 0.9f) else c.ink.copy(alpha = 0.8f),
+            pressed = tint, onPressed = onTint, shadow = c.shadow, gloss = 0.4f, glow = null, faceA = null, faceB = null, rimWidth = 1.5f, labels = cfg.labels,
+        )
+        // Solid plastic like a handheld: dark body, coloured face buttons, a hard rim light.
+        app.retra.data.ControlSkin.CLASSIC -> SkinSpec(
+            fill = Color(0xFF353849), rim = Color.White.copy(alpha = 0.22f), ink = Color(0xFFEDEFF7),
+            pressed = tint.copy(alpha = 1f), onPressed = onTint, shadow = Color.Black.copy(alpha = 0.5f), gloss = 0.12f, glow = null,
+            faceA = Color(0xFFC84B86), faceB = Color(0xFFA23D70), rimWidth = 1.5f, labels = cfg.labels,
+        )
+        app.retra.data.ControlSkin.CANDY -> SkinSpec(
+            fill = Color(0xFFFFF3E8), rim = Color.White, ink = Color(0xFF47283A),
+            pressed = tint, onPressed = onTint, shadow = Color(0xFF8A4F66).copy(alpha = 0.28f), gloss = 0.55f, glow = null,
+            faceA = Color(0xFFFF9DBB), faceB = Color(0xFF9BE8C9), rimWidth = 2f, labels = cfg.labels,
+        )
+        app.retra.data.ControlSkin.NEON -> SkinSpec(
+            fill = Color.Black.copy(alpha = 0.18f), rim = tint, ink = tint,
+            pressed = tint, onPressed = if (tint.luminance() > 0.5f) Color(0xFF06201A) else Color.White,
+            shadow = Color.Transparent, gloss = 0f, glow = tint.copy(alpha = 0.35f), faceA = null, faceB = null, rimWidth = 2f, labels = cfg.labels,
+        )
+        app.retra.data.ControlSkin.FLAT -> SkinSpec(
+            fill = if (c.isDark) Color.White.copy(alpha = 0.18f) else Color(0xFF14231E).copy(alpha = 0.16f), rim = Color.Transparent,
+            ink = if (c.isDark) Color.White else Color(0xFF14231E),
+            pressed = tint, onPressed = onTint, shadow = Color.Transparent, gloss = 0f, glow = null, faceA = null, faceB = null, rimWidth = 0f, labels = cfg.labels,
+        )
+    }
 }
 
 @Composable
 private fun RoundButton(label: String, key: Int, reg: ControlRegistry, pressed: IntState, size: Dp, modifier: Modifier = Modifier) {
-    val c = Retra.colors
-    val (fill, rim, ink) = glassColors()
+    val sk = skinSpec()
     val down = pressed.intValue and key != 0
+    val face = if (key == GbaKey.A) sk.faceA else sk.faceB
+    val scale by androidx.compose.animation.core.animateFloatAsState(if (down) 0.9f else 1f, androidx.compose.animation.core.spring(0.55f, 900f), label = "press")
     Box(
         modifier
             .size(size)
             .onGloballyPositioned { reg.place(key, it) }
-            .graphicsLayer { val s = if (down) 0.92f else 1f; scaleX = s; scaleY = s },
+            .graphicsLayer { scaleX = scale; scaleY = scale },
         contentAlignment = Alignment.Center,
     ) {
-        Canvas(Modifier.fillMaxSize()) { glassCircle(if (down) c.accent else fill, rim, c.shadow) }
-        Text(label, style = RetraType.title.copy(fontFamily = Nunito, fontWeight = FontWeight.ExtraBold), color = if (down) c.onAccent else ink)
+        Canvas(Modifier.fillMaxSize()) { skinCircle(sk, if (down) sk.pressed else face ?: sk.fill, down) }
+        if (sk.labels) {
+            val labelInk = when {
+                down -> sk.onPressed
+                face != null -> if (face.luminance() > 0.5f) Color(0xFF47283A) else Color.White
+                else -> sk.ink
+            }
+            Text(label, style = RetraType.title.copy(fontFamily = Nunito, fontWeight = FontWeight.ExtraBold), color = labelInk)
+        }
     }
 }
 
 @Composable
 private fun Shoulder(label: String, key: Int, reg: ControlRegistry, pressed: IntState, scale: Float) {
-    val c = Retra.colors
-    val (fill, rim, ink) = glassColors()
+    val sk = skinSpec()
     val down = pressed.intValue and key != 0
+    val s by androidx.compose.animation.core.animateFloatAsState(if (down) 0.93f else 1f, androidx.compose.animation.core.spring(0.55f, 900f), label = "press")
     Box(
         Modifier
             .size(104.dp * scale, 48.dp * scale)
             .onGloballyPositioned { reg.place(key, it) }
-            .graphicsLayer { val s = if (down) 0.94f else 1f; scaleX = s; scaleY = s },
+            .graphicsLayer { scaleX = s; scaleY = s },
         contentAlignment = Alignment.Center,
     ) {
-        Canvas(Modifier.fillMaxSize()) { glassPill(if (down) c.accent else fill, rim, c.shadow) }
-        Text(label, style = RetraType.headline, color = if (down) c.onAccent else ink)
+        Canvas(Modifier.fillMaxSize()) { skinPill(sk, if (down) sk.pressed else sk.fill, down) }
+        if (sk.labels) Text(label, style = RetraType.headline, color = if (down) sk.onPressed else sk.ink)
     }
 }
 
 @Composable
 private fun Pill(label: String, key: Int, reg: ControlRegistry, pressed: IntState, scale: Float) {
-    val c = Retra.colors
-    val (fill, rim, ink) = glassColors()
+    val sk = skinSpec()
     val down = pressed.intValue and key != 0
+    val s by androidx.compose.animation.core.animateFloatAsState(if (down) 0.93f else 1f, androidx.compose.animation.core.spring(0.55f, 900f), label = "press")
     Box(
         Modifier
             .size(92.dp * scale, 40.dp * scale)
             .onGloballyPositioned { reg.place(key, it) }
-            .graphicsLayer { val s = if (down) 0.94f else 1f; scaleX = s; scaleY = s },
+            .graphicsLayer { scaleX = s; scaleY = s },
         contentAlignment = Alignment.Center,
     ) {
-        Canvas(Modifier.fillMaxSize()) { glassPill(if (down) c.accent else fill, rim, c.shadow) }
-        Text(label, style = RetraType.caption, color = if (down) c.onAccent else ink, textAlign = TextAlign.Center)
+        Canvas(Modifier.fillMaxSize()) { skinPill(sk, if (down) sk.pressed else sk.fill, down) }
+        if (sk.labels) Text(label, style = RetraType.caption, color = if (down) sk.onPressed else sk.ink, textAlign = TextAlign.Center)
     }
 }
 
 @Composable
 private fun DPad(reg: ControlRegistry, pressed: IntState, size: Dp) {
-    val c = Retra.colors
-    val (fill, rim, ink) = glassColors()
+    val sk = skinSpec()
     val mask = pressed.intValue
     Box(Modifier.size(size).onGloballyPositioned { reg.place(DPAD, it) }) {
         Canvas(Modifier.fillMaxSize()) {
@@ -284,19 +345,17 @@ private fun DPad(reg: ControlRegistry, pressed: IntState, size: Dp) {
                 addRoundRect(androidx.compose.ui.geometry.RoundRect(Rect((w - arm) / 2, 0f, (w + arm) / 2, w), CornerRadius(r)))
                 addRoundRect(androidx.compose.ui.geometry.RoundRect(Rect(0f, (w - arm) / 2, w, (w + arm) / 2), CornerRadius(r)))
             }
-            // Soft shadow + glass cross.
-            drawPath(cross, c.shadow, style = Stroke(6.dp.toPx()))
-            drawPath(cross, fill)
-            drawPath(cross, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.35f), Color.Transparent), endY = w * 0.5f))
-            drawPath(cross, rim, style = Stroke(1.5.dp.toPx()))
-            // Pressed arms.
-            fun arm(rect: Rect) = drawRoundRect(c.accent, rect.topLeft, rect.size, CornerRadius(r))
+            sk.glow?.let { drawPath(cross, it, style = Stroke(10.dp.toPx())) }
+            if (sk.shadow != Color.Transparent) drawPath(cross, sk.shadow, style = Stroke(6.dp.toPx()))
+            drawPath(cross, sk.fill)
+            if (sk.gloss > 0f) drawPath(cross, Brush.verticalGradient(listOf(Color.White.copy(alpha = sk.gloss * 0.9f), Color.Transparent), endY = w * 0.5f))
+            if (sk.rimWidth > 0f) drawPath(cross, sk.rim, style = Stroke(sk.rimWidth.dp.toPx()))
+            fun arm(rect: Rect) = drawRoundRect(sk.pressed, rect.topLeft, rect.size, CornerRadius(r))
             val pad = 2.dp.toPx()
             if (mask and GbaKey.UP != 0) arm(Rect((w - arm) / 2 + pad, pad, (w + arm) / 2 - pad, w * 0.4f))
             if (mask and GbaKey.DOWN != 0) arm(Rect((w - arm) / 2 + pad, w * 0.6f, (w + arm) / 2 - pad, w - pad))
             if (mask and GbaKey.LEFT != 0) arm(Rect(pad, (w - arm) / 2 + pad, w * 0.4f, (w + arm) / 2 - pad))
             if (mask and GbaKey.RIGHT != 0) arm(Rect(w * 0.6f, (w - arm) / 2 + pad, w - pad, (w + arm) / 2 - pad))
-            // Arrow nubs.
             val nub = w * 0.06f
             fun tri(cx: Float, cy: Float, dx: Float, dy: Float, on: Boolean) {
                 val p = Path().apply {
@@ -305,29 +364,56 @@ private fun DPad(reg: ControlRegistry, pressed: IntState, size: Dp) {
                     lineTo(cx + dy * nub - dx * nub * 0.2f, cy - dx * nub - dy * nub * 0.2f)
                     close()
                 }
-                drawPath(p, if (on) c.onAccent else ink.copy(alpha = 0.7f))
+                drawPath(p, if (on) sk.onPressed else sk.ink.copy(alpha = 0.7f))
             }
             tri(w / 2, w * 0.14f, 0f, -1f, mask and GbaKey.UP != 0)
             tri(w / 2, w * 0.86f, 0f, 1f, mask and GbaKey.DOWN != 0)
             tri(w * 0.14f, w / 2, -1f, 0f, mask and GbaKey.LEFT != 0)
             tri(w * 0.86f, w / 2, 1f, 0f, mask and GbaKey.RIGHT != 0)
-            drawCircle(ink.copy(alpha = 0.12f), radius = arm * 0.22f, center = Offset(w / 2, w / 2))
+            drawCircle(sk.ink.copy(alpha = 0.12f), radius = arm * 0.22f, center = Offset(w / 2, w / 2))
         }
     }
 }
 
-private fun DrawScope.glassCircle(fill: Color, rim: Color, shadow: Color) {
+private fun DrawScope.skinCircle(sk: SkinSpec, fill: Color, down: Boolean) {
     val r = size.minDimension / 2
-    drawCircle(shadow, radius = r, center = center + Offset(0f, 3.dp.toPx()))
+    sk.glow?.let { drawCircle(it.copy(alpha = if (down) 0.6f else it.alpha), radius = r + 2.dp.toPx(), style = Stroke(7.dp.toPx())) }
+    if (sk.shadow != Color.Transparent) drawCircle(sk.shadow, radius = r, center = center + Offset(0f, 3.dp.toPx()))
     drawCircle(fill, radius = r)
-    drawCircle(Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.4f), Color.Transparent), startY = 0f, endY = size.height * 0.55f), radius = r)
-    drawCircle(rim, radius = r - 0.75.dp.toPx(), style = Stroke(1.5.dp.toPx()))
+    if (sk.gloss > 0f) drawCircle(Brush.verticalGradient(listOf(Color.White.copy(alpha = sk.gloss), Color.Transparent), startY = 0f, endY = size.height * 0.55f), radius = r)
+    if (sk.rimWidth > 0f) drawCircle(sk.rim, radius = r - 0.75.dp.toPx(), style = Stroke(sk.rimWidth.dp.toPx()))
 }
 
-private fun DrawScope.glassPill(fill: Color, rim: Color, shadow: Color) {
+private fun DrawScope.skinPill(sk: SkinSpec, fill: Color, down: Boolean) {
     val cr = CornerRadius(size.height / 2)
-    drawRoundRect(shadow, topLeft = Offset(0f, 3.dp.toPx()), size = size, cornerRadius = cr)
+    sk.glow?.let { drawRoundRect(it.copy(alpha = if (down) 0.6f else it.alpha), cornerRadius = cr, style = Stroke(7.dp.toPx())) }
+    if (sk.shadow != Color.Transparent) drawRoundRect(sk.shadow, topLeft = Offset(0f, 3.dp.toPx()), size = size, cornerRadius = cr)
     drawRoundRect(fill, cornerRadius = cr)
-    drawRoundRect(Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.4f), Color.Transparent), endY = size.height * 0.6f), cornerRadius = cr)
-    drawRoundRect(rim, topLeft = Offset(0.75.dp.toPx(), 0.75.dp.toPx()), size = Size(size.width - 1.5.dp.toPx(), size.height - 1.5.dp.toPx()), cornerRadius = cr, style = Stroke(1.5.dp.toPx()))
+    if (sk.gloss > 0f) drawRoundRect(Brush.verticalGradient(listOf(Color.White.copy(alpha = sk.gloss), Color.Transparent), endY = size.height * 0.6f), cornerRadius = cr)
+    if (sk.rimWidth > 0f) drawRoundRect(sk.rim, topLeft = Offset(0.75.dp.toPx(), 0.75.dp.toPx()), size = Size(size.width - 1.5.dp.toPx(), size.height - 1.5.dp.toPx()), cornerRadius = cr, style = Stroke(sk.rimWidth.dp.toPx()))
+}
+
+/** A small live preview of a skin (used by Settings): the buttons press themselves in a loop. */
+@Composable
+fun SkinPreview(cfg: SkinConfig, modifier: Modifier = Modifier) {
+    val reg = remember { ControlRegistry() }
+    val pressed = remember { mutableIntStateOf(0) }
+    val reduce = Retra.reduceMotion
+    androidx.compose.runtime.LaunchedEffect(reduce) {
+        if (reduce) return@LaunchedEffect
+        val steps = listOf(GbaKey.RIGHT, 0, GbaKey.A, 0, GbaKey.UP, 0, GbaKey.B, 0, GbaKey.START, 0)
+        var i = 0
+        while (true) {
+            pressed.intValue = steps[i % steps.size]
+            i++
+            kotlinx.coroutines.delay(if (steps[(i - 1) % steps.size] == 0) 260 else 520)
+        }
+    }
+    androidx.compose.runtime.CompositionLocalProvider(LocalSkin provides cfg) {
+        Row(modifier, horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+            DPad(reg, pressed, 92.dp)
+            Pill("START", GbaKey.START, reg, pressed, 0.8f)
+            FaceButtons(reg, pressed, 0.72f)
+        }
+    }
 }

@@ -47,9 +47,9 @@ const val SHOTS = "../docs/screenshots"
 
 val shotOptions = RoborazziOptions(recordOptions = RoborazziOptions.RecordOptions(resizeScale = 0.5))
 
-fun ComposeContentTestRule.snap(name: String, dark: Boolean, tab: Int? = null, content: @Composable () -> Unit) {
+fun ComposeContentTestRule.snap(name: String, dark: Boolean, tab: Int? = null, palette: app.retra.data.AppPalette = app.retra.data.AppPalette.MINT, content: @Composable () -> Unit) {
     setContent {
-        RetraTheme(dark = dark, reduceMotion = true) {
+        RetraTheme(dark = dark, reduceMotion = true, palette = palette) {
             Shell(tab, content)
         }
     }
